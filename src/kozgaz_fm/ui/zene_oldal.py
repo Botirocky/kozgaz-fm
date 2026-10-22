@@ -199,7 +199,7 @@ class ZeneOldal(Oldal):
             jelzes = "   (most ez szól)" if f is aktiv else ""
             cim = f.cim if f.tipus != "fajlok" else f"{len(f.cim.splitlines())} fájl"
             cim = cim if len(cim) <= 60 else cim[:57] + "…"
-            elem = QListWidgetItem(ikon(FORRAS_IKON[f.tipus], SZIN["kiemelt"] if f is aktiv else SZIN["szoveg"]),
+            elem = QListWidgetItem(ikon(FORRAS_IKON[f.tipus], SZIN["elo_szin"] if f is aktiv else SZIN["szoveg"]),
                                    f"{f.nev}{jelzes}\n{FORRAS_TIPUSOK[f.tipus]}: {cim}")
             elem.setFlags(elem.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             elem.setCheckState(Qt.CheckState.Checked if f.aktiv else Qt.CheckState.Unchecked)

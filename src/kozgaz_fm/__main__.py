@@ -53,16 +53,16 @@ def main() -> int:
     _naplozas()
     from kozgaz_fm import hatter
     from kozgaz_fm.ui.fo_ablak import FoAblak
-    from kozgaz_fm.ui.tema import betutipus, logo_ikon, stilus
+    from kozgaz_fm.ui.tema import alkalmaz, betutipus, logo_ikon, stilus
     from kozgaz_fm.vezerlo import Vezerlo
 
+    elso_inditas = not beallitas_fajl().exists()
+    beallitasok = Beallitasok.betoltes()
+    alkalmaz(beallitasok.tema)
     app.setStyle("Fusion")
     app.setFont(betutipus())
     app.setWindowIcon(logo_ikon())
     app.setStyleSheet(stilus())
-
-    elso_inditas = not beallitas_fajl().exists()
-    beallitasok = Beallitasok.betoltes()
     if elso_inditas:
         beallitasok.mentes()
     kioszk = "--kioszk" in sys.argv

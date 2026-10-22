@@ -7,6 +7,7 @@ __lazy_modules__ = [
     "PySide6.QtWidgets",
     "kozgaz_fm",
     "kozgaz_fm.beallitasok",
+    "kozgaz_fm.ui",
     "kozgaz_fm.ui.fo_ablak",
     "kozgaz_fm.ui.tema",
     "kozgaz_fm.utvonalak",
@@ -26,6 +27,7 @@ from PySide6.QtWidgets import QApplication
 
 from kozgaz_fm import sajat_hangok
 from kozgaz_fm.beallitasok import Bemondas, Szunnap, ZeneForras, alapertelmezett
+from kozgaz_fm.ui import tema
 from kozgaz_fm.ui.fo_ablak import FoAblak
 from kozgaz_fm.ui.tema import betutipus, stilus
 from kozgaz_fm.utvonalak import beepitett_hang
@@ -36,6 +38,7 @@ def main() -> None:
     cel = Path(sys.argv[1] if len(sys.argv) > 1 else "kepek")
     cel.mkdir(parents=True, exist_ok=True)
     app = QApplication(sys.argv)
+    tema.alkalmaz(sys.argv[2] if len(sys.argv) > 2 else "vilagos")
     app.setStyle("Fusion")
     app.setFont(betutipus())
     app.setStyleSheet(stilus())

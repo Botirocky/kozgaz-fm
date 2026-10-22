@@ -29,7 +29,8 @@ def cimke(szoveg: str = "", szerep: str = "", sortores: bool = False) -> QLabel:
 def gomb(szoveg: str, ikon_nev: str = "", szerep: str = "", tipp: str = "", szin: str | None = None) -> QPushButton:
     g = QPushButton(szoveg)
     if ikon_nev:
-        alap = {"fo": "#FFFFFF", "adas": SZIN["kiemelt_szoveg"], "veszely": "#F2B8B2"}.get(szerep, SZIN["szoveg"])
+        alap = {"fo": "#FFFFFF", "adas": SZIN["kiemelt_szoveg"], "veszely": SZIN["veszely_szoveg"]}.get(szerep,
+                                                                                                SZIN["szoveg"])
         g.setIcon(ikon(ikon_nev, szin or alap))
         g.setIconSize(QSize(18, 18))
     if szerep:

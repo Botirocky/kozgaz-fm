@@ -22,10 +22,17 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
 - **Folyosói kijelző:** teljes képernyős óra, visszaszámláló, épp szóló szám (F11).
 - **Működés:** tálcán fut, automatikus indítás, egyetlen példány, hangkimenet-választás, napló,
   beállítás-export/import, beépített súgó, óraszinkron-figyelés.
-- **Automatikus frissítés a GitHubról:** csak tanítási időn kívül, SHA-256-tal ellenőrzött csomagból
-  (Windows-telepítő, Linux-csomag és a Pi is).
+- **Saját hangok:** saját csengőhang, dallam, jingle bemásolva a program mappájába; hiányzó hang helyett a
+  beépített szól.
+- **Átúsztatás:** a szünetzene számai egymásba úsznak (állítható, csengőnél azonnal elhallgat).
+- **PIN-kód:** a beállító oldalak rendszergazda-PIN-nel zárhatók, a Vezérlőpult szabadon használható marad.
+- **Világos és sötét téma**, a mai nap idővonala a Vezérlőpulton.
+- **Automatikus frissítés a GitHubról:** saját frissítő ablak változáslistával; csak tanítási időn kívül
+  települ magától, SHA-256-tal ellenőrzött csomagból (Windows-telepítő, Linux-csomag és a Pi is).
+
+![Frissítés](docs/frissites.png)
 - **Közgáz FM OS:** saját Raspberry Pi rendszer – bekapcsolás után kioszk módban indul, VNC-n távolról
-  kezelhető, Spotify Connect hangszóró. Leírás: [pi-os/OLVASS-EL.md](pi-os/OLVASS-EL.md).
+  kezelhető, Spotify Connect hangszóró, hardveres watchdog és lefagyás-figyelő. Leírás: [pi-os/OLVASS-EL.md](pi-os/OLVASS-EL.md).
 
 ## Telepítés
 

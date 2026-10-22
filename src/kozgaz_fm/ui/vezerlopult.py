@@ -270,7 +270,7 @@ class Vezerlopult(Oldal):
             if ido is None:
                 continue
             mult = ido <= most
-            elem.setForeground(QColor("#5F6773") if mult else QColor(SZIN["szoveg"]))
+            elem.setForeground(QColor(SZIN["tiltott"]) if mult else QColor(SZIN["szoveg"]))
             if not mult and kovetkezo_sor is None:
                 kovetkezo_sor = i
         if kovetkezo_sor is not None and getattr(self, "_kovetkezo_sor", None) != kovetkezo_sor:

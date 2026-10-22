@@ -59,7 +59,7 @@ class Idovonal(QWidget):
         if self.zene_szol:
             for (_k, v1), (k2, _v) in zip(self.orak, self.orak[1:], strict=False):
                 if v1 <= self.most < k2:
-                    p.setBrush(QColor(SZIN["kiemelt"]))
+                    p.setBrush(QColor(SZIN["elo_szin"]))
                     p.drawRoundedRect(QRectF(x(v1) + 2, sav_y + sav_m / 2 - 2, x(k2) - x(v1) - 4, 4), 2, 2)
         szam_font = szam_betu(9)
         ido_font = szam_betu(8.5, szam_font.weight())
@@ -70,20 +70,20 @@ class Idovonal(QWidget):
             ut = QPainterPath()
             ut.addRoundedRect(teglalap, 3, 3)
             if veg <= self.most:
-                p.fillPath(ut, QColor("#232A33"))
-                szoveg_szin = QColor("#5F6773")
+                p.fillPath(ut, QColor(SZIN["mult_blokk"]))
+                szoveg_szin = QColor(SZIN["mult_szoveg"])
             elif kezdet <= self.most < veg:
                 p.fillPath(ut, QColor(SZIN["kek_halvany"]))
                 arany = (self.most - kezdet) / (veg - kezdet)
                 p.save()
                 p.setClipPath(ut)
-                p.fillRect(QRectF(bal, sav_y, (jobb - bal) * arany, sav_m), QColor(SZIN["kek_sotet"]))
+                p.fillRect(QRectF(bal, sav_y, (jobb - bal) * arany, sav_m), QColor(SZIN["halad_kitoltes"]))
                 p.restore()
                 p.setPen(QPen(QColor(SZIN["kek"]), 1.2))
                 p.setBrush(Qt.BrushStyle.NoBrush)
                 p.drawPath(ut)
                 p.setPen(Qt.PenStyle.NoPen)
-                szoveg_szin = QColor("#FFFFFF")
+                szoveg_szin = QColor(SZIN["aktiv_szoveg"])
             else:
                 p.fillPath(ut, QColor(SZIN["felulet2"]))
                 p.setPen(QPen(QColor(SZIN["keret_eros"]), 1))
@@ -110,10 +110,10 @@ class Idovonal(QWidget):
                        f"{utolso:%H:%M}")
         if eleje <= self.most <= vege:
             mx = x(self.most)
-            p.setPen(QPen(QColor(SZIN["kiemelt"]), 2))
+            p.setPen(QPen(QColor(SZIN["elo_szin"]), 2))
             p.drawLine(int(mx), int(sav_y - 6), int(mx), int(sav_y + sav_m + 2))
             p.setPen(Qt.PenStyle.NoPen)
-            p.setBrush(QColor(SZIN["kiemelt"]))
+            p.setBrush(QColor(SZIN["elo_szin"]))
             haromszog = QPainterPath()
             haromszog.moveTo(mx - 5, sav_y - 12)
             haromszog.lineTo(mx + 5, sav_y - 12)

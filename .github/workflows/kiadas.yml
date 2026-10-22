@@ -104,6 +104,21 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Változások listája
+        run: |
+          elozo=$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)
+          tartomany="${elozo:+$elozo..}${GITHUB_REF_NAME}"
+          {
+            echo "## Változások"
+            echo
+            git log --no-merges --reverse --format='%s%n%b' "$tartomany" \
+              | grep -v -e '^Co-Authored-By:' -e '^Claude-Session:' -e '^[[:space:]]*$' \
+              | sed -e 's/^  \([^ -]\)/    \1/' -e 's/^- /  - /' -e '/^ /!s/^/- /'
+          } > valtozasok.md
+          cat valtozasok.md
       - uses: actions/download-artifact@v4
         with:
           path: kiadas
@@ -113,4 +128,4 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           files: kiadas/*
-          generate_release_notes: true
+          body_path: valtozasok.md

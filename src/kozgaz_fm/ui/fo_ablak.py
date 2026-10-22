@@ -49,10 +49,12 @@ from PySide6.QtWidgets import (
 from kozgaz_fm import APP_NEV, __version__, rendszer
 from kozgaz_fm.hang import kimeneti_eszkoz
 from kozgaz_fm.orarend import Szakasz, allapot
+from kozgaz_fm.ui import tema
 from kozgaz_fm.ui.beallitas_oldal import BeallitasOldal
 from kozgaz_fm.ui.bemondas_oldal import BemondasOldal
 from kozgaz_fm.ui.csengetes_oldal import CsengetesOldal
 from kozgaz_fm.ui.elemek import Ertesites, cimke, gomb
+from kozgaz_fm.ui.frissites_ablak import FrissitesAblak
 from kozgaz_fm.ui.kijelzo import Kijelzo
 from kozgaz_fm.ui.naplo_oldal import NaploOldal
 from kozgaz_fm.ui.naptar_oldal import NaptarOldal
@@ -107,6 +109,24 @@ class FoAblak(QMainWindow):
         self.setWindowIcon(logo_ikon())
         self.resize(1320, 860)
         self.setMinimumSize(1000, 680)
+        self._felulet_epit()
+        self._talca()
+        v.uzenet.connect(self._uzenet)
+        v.frissito.kiadas_valtozott.connect(self._uj_kiadas)
+        v.riasztas_valtozott.connect(self._riasztas)
+        self._masodperc = QTimer(self)
+        self._masodperc.setInterval(1000)
+        self._masodperc.timeout.connect(self._tick)
+        self._masodperc.start()
+        QShortcut(QKeySequence("F11"), self, activated=self._kijelzo_nyit)
+        app = QApplication.instance()
+        self._figyelo = _Tevekenyseg(self._tevekenyseg, self)
+        app.installEventFilter(self._figyelo)
+        app.aboutToQuit.connect(lambda: app.removeEventFilter(self._figyelo))
+        self._zar_frissit()
+        self._tick()
+
+    def _felulet_epit(self, oldal: int = 0) -> None:
         kozep = QWidget()
         e = QHBoxLayout(kozep)
         e.setContentsMargins(0, 0, 0, 0)
@@ -122,21 +142,18 @@ class FoAblak(QMainWindow):
         e.addLayout(jobb, 1)
         self.setCentralWidget(kozep)
         self.ertesites = Ertesites(kozep)
-        self._oldalak_epit()
-        self._talca()
-        v.uzenet.connect(self._uzenet)
-        v.riasztas_valtozott.connect(self._riasztas)
-        self._masodperc = QTimer(self)
-        self._masodperc.setInterval(1000)
-        self._masodperc.timeout.connect(self._tick)
-        self._masodperc.start()
-        QShortcut(QKeySequence("F11"), self, activated=self._kijelzo_nyit)
-        app = QApplication.instance()
-        self._figyelo = _Tevekenyseg(self._tevekenyseg, self)
-        app.installEventFilter(self._figyelo)
-        app.aboutToQuit.connect(lambda: app.removeEventFilter(self._figyelo))
+        self._oldalak_epit(oldal)
+        self.nav.button(oldal).setChecked(True)
+
+    def tema_valtas(self, nev: str) -> None:
+        oldal = self.lapok.currentIndex()
+        tema.alkalmaz(nev)
+        QApplication.instance().setStyleSheet(tema.stilus())
+        self._felulet_epit(oldal)
+        self._uj_kiadas(self.v.frissito.kiadas)
         self._zar_frissit()
         self._tick()
+        QTimer.singleShot(0, self.oldalak[oldal].frissit)
 
     def _oldalsav(self) -> QFrame:
         sav = QFrame()
@@ -196,6 +213,10 @@ class FoAblak(QMainWindow):
         elo_e.addWidget(self.elo_ikon)
         elo_e.addWidget(self.elo_szoveg)
         e.addWidget(self.elo)
+        self.uj_verzio = gomb("", "le", "fo", "Új verzió érhető el – részletek és telepítés", SZIN["kek"])
+        self.uj_verzio.clicked.connect(self.frissites_ablak)
+        self.uj_verzio.hide()
+        e.addWidget(self.uj_verzio)
         jobb = QVBoxLayout()
         jobb.setSpacing(1)
         self.fej_szakasz = cimke()
@@ -232,8 +253,9 @@ class FoAblak(QMainWindow):
         e.addWidget(cimke(f"{APP_NEV} {__version__}"))
         return sor_
 
-    def _oldalak_epit(self) -> None:
-        aktualis = max(0, self.lapok.currentIndex())
+    def _oldalak_epit(self, aktualis: int | None = None) -> None:
+        if aktualis is None:
+            aktualis = max(0, self.lapok.currentIndex())
         while self.lapok.count():
             regi = self.lapok.widget(0)
             self.lapok.removeWidget(regi)
@@ -247,8 +269,23 @@ class FoAblak(QMainWindow):
         beall.kijelzo_kerelem.connect(self._kijelzo_nyit)
         beall.importalva.connect(lambda: QTimer.singleShot(0, self._oldalak_epit))
         beall.zar_valtozott.connect(self._pin_valtozott)
+        beall.frissites_kerelem.connect(self.frissites_ablak)
+        beall.tema_kerelem.connect(lambda nev: QTimer.singleShot(0, lambda: self.tema_valtas(nev)))
         self.lapok.setCurrentIndex(aktualis)
         self.fej_cim.setText(OLDALAK[aktualis][0])
+
+    def _uj_kiadas(self, kiadas) -> None:
+        self.uj_verzio.setVisible(kiadas is not None)
+        if kiadas is None:
+            return
+        self.uj_verzio.setText(f"Új verzió: {kiadas.verzio}")
+        if getattr(self, "_jelzett_kiadas", None) != kiadas.verzio:
+            self._jelzett_kiadas = kiadas.verzio
+            self.ertesites.mutat(f"Új verzió érhető el: {kiadas.verzio}. A fejlécben a gombbal nézheted meg, mi "
+                                 "változott.", "info")
+
+    def frissites_ablak(self) -> None:
+        FrissitesAblak(self, self.v, self._hozzaferes).exec()
 
     def _vedett(self, index: int) -> bool:
         return issubclass(OLDALAK[index][2], VEDETT)
@@ -303,6 +340,7 @@ class FoAblak(QMainWindow):
         if self._vedett(index) and not self._hozzaferes():
             self.nav.button(self.lapok.currentIndex()).setChecked(True)
             return
+        self.nav.button(index).setChecked(True)
         self.lapok.setCurrentIndex(index)
         self.fej_cim.setText(OLDALAK[index][0])
         self.oldalak[index].frissit()
@@ -391,7 +429,7 @@ class FoAblak(QMainWindow):
             self.elo_ikon.setPixmap(ikon("riasztas", SZIN["hiba"]).pixmap(16, 16))
             self.elo_szoveg.setText("Riasztás szól")
         elif szol:
-            self.elo_ikon.setPixmap(ikon("zene", SZIN["kiemelt"]).pixmap(16, 16))
+            self.elo_ikon.setPixmap(ikon("zene", SZIN["elo_szin"]).pixmap(16, 16))
             cim = self.v.zene.most_cim or "Szünetzene"
             metrika = self.elo_szoveg.fontMetrics()
             self.elo_szoveg.setText(metrika.elidedText(cim, Qt.TextElideMode.ElideRight, 340))

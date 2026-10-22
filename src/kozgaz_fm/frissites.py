@@ -51,6 +51,7 @@ class Kiadas:
     leiras: str
     oldal: str
     eszkozok: dict[str, str] = field(default_factory=dict)
+    datum: str = ""
 
     @property
     def uj(self) -> bool:
@@ -95,6 +96,7 @@ def legujabb(repo: str = FRISSITES_REPO) -> Kiadas:
         leiras=adat.get("body") or "",
         oldal=adat.get("html_url", ""),
         eszkozok=eszkozok,
+        datum=str(adat.get("published_at") or "")[:10],
     )
 
 

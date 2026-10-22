@@ -124,7 +124,7 @@ class NaptarOldal(Oldal):
         self.naptar.currentPageChanged.connect(lambda *_: self._szinez())
         self.info = cimke("", "alcim", sortores=True)
         jelmagyarazat = cimke(f"<span style='color:{SZIN['hiba']}'>■</span> szünnap   "
-                              f"<span style='color:{SZIN['kiemelt']}'>■</span> kivételnap   "
+                              f"<span style='color:{SZIN['elo_szin']}'>■</span> kivételnap   "
                               f"<span style='color:{SZIN['halvany']}'>■</span> nincs csengetés", "halvany")
         k.add(self.naptar)
         k.add(self.info)
@@ -187,7 +187,7 @@ class NaptarOldal(Oldal):
             nap = elso + timedelta(days=i)
             f = QTextCharFormat()
             if nap.isoformat() in b.kivetelek:
-                f.setForeground(QColor(SZIN["kiemelt"]))
+                f.setForeground(QColor(SZIN["elo_szin"]))
                 f.setFontWeight(700)
             elif szunnap_nev(b, nap) is not None:
                 f.setForeground(QColor(SZIN["hiba"]))

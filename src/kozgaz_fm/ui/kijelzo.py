@@ -18,7 +18,8 @@ from PySide6.QtWidgets import QProgressBar, QVBoxLayout, QWidget
 
 from kozgaz_fm.orarend import Szakasz, allapot
 from kozgaz_fm.ui.elemek import cimke, sor
-from kozgaz_fm.ui.tema import SZIN, logo_pixmap
+from kozgaz_fm.ui.tema import SOTET as SZIN
+from kozgaz_fm.ui.tema import logo_pixmap
 from kozgaz_fm.ui.vezerlopult import HONAPOK, NAPOK, idotartam
 from kozgaz_fm.vezerlo import Vezerlo
 

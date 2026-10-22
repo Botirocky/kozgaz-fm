@@ -30,7 +30,6 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QSpinBox,
-    QTextBrowser,
 )
 
 from kozgaz_fm import APP_NEV, KESZITO, __version__, rendszer
@@ -38,7 +37,7 @@ from kozgaz_fm.beallitasok import Beallitasok, _ebbol
 from kozgaz_fm.hang import eszkoz_azonosito
 from kozgaz_fm.ui.elemek import Kartya, Oldal, cimke, gomb, kapcsolo, keskeny, sor
 from kozgaz_fm.ui.pin_ablak import UjPinAblak
-from kozgaz_fm.ui.tema import logo_pixmap
+from kozgaz_fm.ui.tema import TEMA_NEVEK, logo_pixmap
 from kozgaz_fm.utvonalak import adat_mappa
 from kozgaz_fm.vezerlo import Vezerlo
 
@@ -47,6 +46,8 @@ class BeallitasOldal(Oldal):
     kijelzo_kerelem = Signal(int)
     importalva = Signal()
     zar_valtozott = Signal()
+    frissites_kerelem = Signal()
+    tema_kerelem = Signal(str)
 
     def __init__(self, v: Vezerlo) -> None:
         super().__init__("Beállítások")
@@ -93,8 +94,14 @@ class BeallitasOldal(Oldal):
         talca = kapcsolo("Bezáráskor fusson tovább a tálcán", self.v.b.talcara_zar,
                          "Kikapcsolva az ablak bezárása leállítja a csengetést is")
         talca.toggled.connect(lambda e: self._allit("talcara_zar", e))
+        self.tema_valaszto = QComboBox()
+        for kulcs, nev in TEMA_NEVEK.items():
+            self.tema_valaszto.addItem(nev, kulcs)
+        self.tema_valaszto.setCurrentIndex(max(0, self.tema_valaszto.findData(self.v.b.tema)))
+        self.tema_valaszto.activated.connect(self._tema)
         k.add(auto)
         k.add(talca)
+        k.add(sor(cimke("Megjelenés:"), self.tema_valaszto, None))
         k.add(cimke("Fontos: a csengetés csak akkor működik, ha a program fut. Az energiagazdálkodásban "
                     "kapcsold ki a gép alvó állapotát.", "halvany", sortores=True))
         return k
@@ -141,24 +148,18 @@ class BeallitasOldal(Oldal):
         self.frissites_halad.hide()
         keres = gomb("Keresés most", "frissites")
         keres.clicked.connect(lambda: f.kereses(kezi=True))
-        self.telepites_gomb = gomb("Telepítés most", "le", "fo")
-        self.telepites_gomb.clicked.connect(self._telepites)
-        self.telepites_gomb.setEnabled(f.kiadas is not None and f.tamogatott)
+        self.telepites_gomb = gomb("Részletek és telepítés…", "le", "fo")
+        self.telepites_gomb.clicked.connect(self.frissites_kerelem.emit)
         auto_kereses = kapcsolo("Új verzió keresése automatikusan", self.v.b.frissites_kereses)
         auto_kereses.toggled.connect(lambda e: self._allit("frissites_kereses", e))
         auto = kapcsolo("Automatikus telepítés tanítási időn kívül", self.v.b.frissites_auto,
                         "Csak ha nincs óra, zene és riasztás, és a következő csengetésig van még 45 perc")
         auto.toggled.connect(lambda e: self._allit("frissites_auto", e))
-        self.ujdonsagok = QTextBrowser()
-        self.ujdonsagok.setOpenExternalLinks(True)
-        self.ujdonsagok.setMaximumHeight(140)
-        self.ujdonsagok.hide()
         k.add(self.frissites_allapot)
         k.add(self.frissites_halad)
         k.add(sor(keres, self.telepites_gomb, None))
         k.add(auto_kereses)
         k.add(auto)
-        k.add(self.ujdonsagok)
         f.allapot_valtozott.connect(self.frissites_allapot.setText)
         f.halad.connect(self._halad)
         f.kiadas_valtozott.connect(self._kiadas)
@@ -170,7 +171,7 @@ class BeallitasOldal(Oldal):
         self.ido_cimke = cimke("", "halvany", sortores=True)
         ujra = gomb("Gép újraindítása", "frissites")
         ujra.clicked.connect(lambda: self._gep("újraindítod", rendszer.gep_ujrainditas))
-        le = gomb("Gép leállítása", "stop", "veszely", szin="#FFFFFF")
+        le = gomb("Gép leállítása", "stop", "veszely")
         le.clicked.connect(lambda: self._gep("leállítod", rendszer.gep_leallitas))
         k.add(cimke("A pontos csengetéshez a gép órájának pontosnak kell lennie (internetes időszinkron).",
                     "halvany", sortores=True))
@@ -204,23 +205,15 @@ class BeallitasOldal(Oldal):
         self.frissites_halad.setValue(int(ertek * 1000))
 
     def _kiadas(self, kiadas) -> None:
-        f = self.v.frissito
-        self.telepites_gomb.setEnabled(kiadas is not None and f.tamogatott)
-        if kiadas is None:
-            self.ujdonsagok.hide()
-            return
-        self.telepites_gomb.setText(f"Telepítés: {kiadas.verzio}")
-        self.ujdonsagok.setMarkdown(f"**{kiadas.cim}**\n\n{kiadas.leiras}\n\n[Megnyitás a GitHubon]({kiadas.oldal})")
-        self.ujdonsagok.show()
+        self.telepites_gomb.setText(f"Új verzió: {kiadas.verzio}…" if kiadas is not None else "Részletek…")
 
-    def _telepites(self) -> None:
-        f = self.v.frissito
-        if f.kiadas is None:
+    def _tema(self, _sor: int) -> None:
+        nev = self.tema_valaszto.currentData()
+        if nev == self.v.b.tema:
             return
-        if QMessageBox.question(self, "Frissítés", f"Telepíted a(z) {f.kiadas.verzio} verziót? A program "
-                                "a telepítés után újraindul (pár másodpercig nincs csengetés)."
-                                ) == QMessageBox.StandardButton.Yes:
-            f.telepites()
+        self.v.b.tema = nev
+        self.v.mentes()
+        self.tema_kerelem.emit(nev)
 
     def _hozzaferes_kartya(self) -> Kartya:
         k = Kartya("Hozzáférés")
