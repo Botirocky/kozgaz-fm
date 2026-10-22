@@ -110,7 +110,7 @@ class BeallitasOldal(Oldal):
         k = Kartya("Frissítések")
         modok = {"windows": "Windows-telepítő", "linux-csomag": "Linux-csomag", "venv": "Közgáz FM OS / Python",
                  "fejlesztoi": "fejlesztői futtatás (git)"}
-        k.add(cimke(f"Telepített verzió: <b>{__version__}</b> · {modok.get(f.mod, f.mod)}", sortores=True))
+        k.add(cimke(f"Telepített verzió: <b>{__version__}</b> ({modok.get(f.mod, f.mod)})", sortores=True))
         self.frissites_allapot = cimke(f.allapot or "Az új verziókat a GitHubról tölti le, ellenőrzött "
                                        "csomagból.", "halvany", sortores=True)
         self.frissites_halad = QProgressBar()
@@ -162,9 +162,9 @@ class BeallitasOldal(Oldal):
         if allapot is None:
             self.ido_cimke.setText("Időszinkron: a Windows kezeli (Gépház → Idő és nyelv → Szinkronizálás most).")
         elif allapot:
-            self.ido_cimke.setText("✓ Az óra szinkronban van az internetes időszerverrel.")
+            self.ido_cimke.setText("Az óra szinkronban van az internetes időszerverrel.")
         else:
-            self.ido_cimke.setText("⚠ Az óra NINCS szinkronizálva – ellenőrizd a hálózatot!")
+            self.ido_cimke.setText("Az óra nincs szinkronban. Ellenőrizd a hálózatot, különben a csengetés elcsúszhat.")
 
     def _gep(self, mit: str, muvelet) -> None:
         if QMessageBox.question(self, "Rendszer", f"Biztosan {mit} a gépet? Addig nem lesz csengetés."

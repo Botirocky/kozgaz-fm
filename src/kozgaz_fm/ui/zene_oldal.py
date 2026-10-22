@@ -143,12 +143,13 @@ class ZeneOldal(Oldal):
     def _spotify_kartya(self) -> Kartya:
         b = self.v.b
         k = Kartya("Spotify")
-        k.add(cimke(
+        leiras = cimke(
             "A Spotify vezérléséhez <b>Premium</b> fiók és a gépen futó Spotify alkalmazás kell. Egyszeri "
             "beállítás: <a href='https://developer.spotify.com/dashboard' style='color:" + SZIN["kek"] + "'>"
             "developer.spotify.com/dashboard</a> → <i>Create app</i> → Redirect URI: <b>" + ATIRANYITAS +
-            "</b>, API: <i>Web API</i>. A kapott <b>Client ID</b>-t másold ide.", "halvany", sortores=True))
-        k.elrendezes.itemAt(k.elrendezes.count() - 1).widget().setOpenExternalLinks(True)
+            "</b>, API: <i>Web API</i>. A kapott <b>Client ID</b>-t másold ide.", "halvany", sortores=True)
+        leiras.setOpenExternalLinks(True)
+        k.add(leiras)
         self.client_id = QLineEdit(b.spotify_client_id)
         self.client_id.setPlaceholderText("Client ID (32 karakter)")
         self.client_id.editingFinished.connect(self._client_id)
@@ -180,11 +181,11 @@ class ZeneOldal(Oldal):
         self.forrasok.blockSignals(True)
         self.forrasok.clear()
         for f in b.forrasok:
-            jelzes = "   ▶ most ez szól" if f is aktiv else ""
+            jelzes = "   (most ez szól)" if f is aktiv else ""
             cim = f.cim if f.tipus != "fajlok" else f"{len(f.cim.splitlines())} fájl"
             cim = cim if len(cim) <= 60 else cim[:57] + "…"
             elem = QListWidgetItem(ikon(FORRAS_IKON[f.tipus], SZIN["kiemelt"] if f is aktiv else SZIN["szoveg"]),
-                                   f"{f.nev}{jelzes}\n{FORRAS_TIPUSOK[f.tipus]} · {cim}")
+                                   f"{f.nev}{jelzes}\n{FORRAS_TIPUSOK[f.tipus]}: {cim}")
             elem.setFlags(elem.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             elem.setCheckState(Qt.CheckState.Checked if f.aktiv else Qt.CheckState.Unchecked)
             self.forrasok.addItem(elem)
@@ -348,7 +349,7 @@ class ZeneOldal(Oldal):
         if not self.v.b.spotify_client_id:
             self.spotify_allapot.setText("Nincs Client ID megadva.")
         elif be:
-            self.spotify_allapot.setText("✓ Összekapcsolva a Spotify-jal.")
+            self.spotify_allapot.setText("Összekapcsolva a Spotify-jal.")
             self._eszkozok_frissit()
         else:
             self.spotify_allapot.setText("Nincs bejelentkezve.")

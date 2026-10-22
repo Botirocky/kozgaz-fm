@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from PySide6.QtCore import QSize, Qt, QTimer
 from PySide6.QtGui import QAction, QCloseEvent, QGuiApplication, QKeySequence, QShortcut
@@ -17,7 +17,8 @@ from PySide6.QtWidgets import (
 )
 
 from kozgaz_fm import APP_NEV, __version__, rendszer
-from kozgaz_fm.orarend import allapot
+from kozgaz_fm.hang import kimeneti_eszkoz
+from kozgaz_fm.orarend import Szakasz, allapot
 from kozgaz_fm.ui.beallitas_oldal import BeallitasOldal
 from kozgaz_fm.ui.bemondas_oldal import BemondasOldal
 from kozgaz_fm.ui.csengetes_oldal import CsengetesOldal
@@ -26,7 +27,7 @@ from kozgaz_fm.ui.kijelzo import Kijelzo
 from kozgaz_fm.ui.naplo_oldal import NaploOldal
 from kozgaz_fm.ui.naptar_oldal import NaptarOldal
 from kozgaz_fm.ui.sugo_oldal import SugoOldal
-from kozgaz_fm.ui.tema import SZIN, ikon, logo_ikon, logo_pixmap
+from kozgaz_fm.ui.tema import SZIN, ikon, logo_ikon, logo_pixmap, szam_betu
 from kozgaz_fm.ui.vezerlopult import Vezerlopult, idotartam
 from kozgaz_fm.ui.zene_oldal import ZeneOldal
 from kozgaz_fm.vezerlo import Vezerlo
@@ -60,8 +61,14 @@ class FoAblak(QMainWindow):
         e.setContentsMargins(0, 0, 0, 0)
         e.setSpacing(0)
         e.addWidget(self._oldalsav())
+        jobb = QVBoxLayout()
+        jobb.setContentsMargins(0, 0, 0, 0)
+        jobb.setSpacing(0)
+        jobb.addWidget(self._fejlec())
         self.lapok = QStackedWidget()
-        e.addWidget(self.lapok, 1)
+        jobb.addWidget(self.lapok, 1)
+        jobb.addWidget(self._allapotsor())
+        e.addLayout(jobb, 1)
         self.setCentralWidget(kozep)
         self.ertesites = Ertesites(kozep)
         self._oldalak_epit()
@@ -78,37 +85,89 @@ class FoAblak(QMainWindow):
     def _oldalsav(self) -> QFrame:
         sav = QFrame()
         sav.setObjectName("oldalsav")
-        sav.setFixedWidth(240)
+        sav.setFixedWidth(220)
         e = QVBoxLayout(sav)
-        e.setContentsMargins(16, 22, 16, 18)
-        e.setSpacing(4)
+        e.setContentsMargins(0, 22, 0, 16)
+        e.setSpacing(2)
         logo = cimke()
-        logo.setPixmap(logo_pixmap(150))
+        logo.setPixmap(logo_pixmap(116))
         logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         e.addWidget(logo)
-        e.addSpacing(18)
+        e.addSpacing(22)
         self.nav = QButtonGroup(self)
         self.nav.setExclusive(True)
         for i, (nev, ikon_nev, _osztaly) in enumerate(OLDALAK):
             g = gomb(nev, szerep="nav")
-            g.setIcon(ikon(ikon_nev, SZIN["halvany"], SZIN["kiemelt"]))
-            g.setIconSize(QSize(20, 20))
+            g.setIcon(ikon(ikon_nev, SZIN["halvany"], SZIN["kek"]))
+            g.setIconSize(QSize(18, 18))
             g.setCheckable(True)
             g.setChecked(i == 0)
             self.nav.addButton(g, i)
             e.addWidget(g)
         self.nav.idClicked.connect(self._lapozas)
         e.addStretch(1)
-        self.sav_allapot = cimke("", sortores=True)
-        self.sav_allapot.setStyleSheet(f"color: {SZIN['halvany']}; font-size: 9pt;")
-        e.addWidget(self.sav_allapot)
-        kijelzo = gomb("Kijelző mód", "kijelzo", tipp="Teljes képernyős óra (F11)")
-        kijelzo.clicked.connect(self._kijelzo_nyit)
-        e.addWidget(kijelzo)
-        verzio = cimke(f"v{__version__}", "halvany")
-        verzio.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        e.addWidget(verzio)
+        kijelzo = gomb("Folyosói kijelző", "kijelzo", "sav", "Teljes képernyős óra kivetítőre vagy TV-re (F11)")
+        alja = QHBoxLayout()
+        alja.setContentsMargins(16, 0, 16, 0)
+        alja.addWidget(kijelzo)
+        e.addLayout(alja)
         return sav
+
+    def _fejlec(self) -> QFrame:
+        fejlec = QFrame()
+        fejlec.setObjectName("fejlec")
+        fejlec.setFixedHeight(68)
+        e = QHBoxLayout(fejlec)
+        e.setContentsMargins(28, 0, 28, 0)
+        e.setSpacing(18)
+        self.fej_cim = cimke("", "cim")
+        e.addWidget(self.fej_cim)
+        e.addStretch(1)
+        self.elo = QFrame()
+        self.elo.setObjectName("elo")
+        elo_e = QHBoxLayout(self.elo)
+        elo_e.setContentsMargins(10, 5, 12, 5)
+        elo_e.setSpacing(8)
+        self.elo_ikon = cimke()
+        self.elo_szoveg = cimke()
+        self.elo_szoveg.setMaximumWidth(360)
+        elo_e.addWidget(self.elo_ikon)
+        elo_e.addWidget(self.elo_szoveg)
+        e.addWidget(self.elo)
+        jobb = QVBoxLayout()
+        jobb.setSpacing(1)
+        self.fej_szakasz = cimke()
+        self.fej_szakasz.setFont(szam_betu(11))
+        self.fej_szakasz.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.fej_hatra = cimke("", "halvany")
+        self.fej_hatra.setFont(szam_betu(9, self.fej_hatra.font().weight()))
+        self.fej_hatra.setAlignment(Qt.AlignmentFlag.AlignRight)
+        jobb.addStretch(1)
+        jobb.addWidget(self.fej_szakasz)
+        jobb.addWidget(self.fej_hatra)
+        jobb.addStretch(1)
+        e.addLayout(jobb)
+        self.fej_ora = cimke()
+        self.fej_ora.setFont(szam_betu(22, szam_betu(1).weight()))
+        e.addWidget(self.fej_ora)
+        return fejlec
+
+    def _allapotsor(self) -> QFrame:
+        sor_ = QFrame()
+        sor_.setObjectName("allapotsor")
+        sor_.setFixedHeight(30)
+        e = QHBoxLayout(sor_)
+        e.setContentsMargins(16, 0, 16, 0)
+        e.setSpacing(22)
+        self.as_automatika = cimke()
+        self.as_kimenet = cimke()
+        self.as_ido = cimke()
+        self.as_frissites = cimke()
+        for c in (self.as_automatika, self.as_kimenet, self.as_ido, self.as_frissites):
+            e.addWidget(c)
+        e.addStretch(1)
+        e.addWidget(cimke(f"{APP_NEV} {__version__}"))
+        return sor_
 
     def _oldalak_epit(self) -> None:
         aktualis = max(0, self.lapok.currentIndex())
@@ -118,14 +177,18 @@ class FoAblak(QMainWindow):
             regi.deleteLater()
         self.oldalak = [osztaly(self.v) for _n, _i, osztaly in OLDALAK]
         for oldal in self.oldalak:
+            if hasattr(oldal, "cim_cimke"):
+                oldal.cim_cimke.hide()
             self.lapok.addWidget(oldal)
         beall = next(o for o in self.oldalak if isinstance(o, BeallitasOldal))
         beall.kijelzo_kerelem.connect(self._kijelzo_nyit)
         beall.importalva.connect(lambda: QTimer.singleShot(0, self._oldalak_epit))
         self.lapok.setCurrentIndex(aktualis)
+        self.fej_cim.setText(OLDALAK[aktualis][0])
 
     def _lapozas(self, index: int) -> None:
         self.lapok.setCurrentIndex(index)
+        self.fej_cim.setText(OLDALAK[index][0])
         self.oldalak[index].frissit()
 
     def _talca(self) -> None:
@@ -167,23 +230,70 @@ class FoAblak(QMainWindow):
         most = datetime.now()
         a = allapot(self.v.b, most)
         hatra = a.hatralevo(most)
-        szoveg = a.cim + (f" · még {idotartam(hatra)}" if hatra is not None else "")
-        zene = "\n♪ zene szól" if self.v.zene.szol else ""
+        szoveg = a.cim + (f", még {idotartam(hatra)}" if hatra is not None else "")
+        zene = f"\nZene: {self.v.zene.most_cim}" if self.v.zene.szol and self.v.zene.most_cim else ""
         if most.second == 0 and most.minute % 5 == 0 or not hasattr(self, "_ido_nezve"):
             self._ido_nezve = True
             self._ido_ok = rendszer.ido_szinkronban()
-        extra = "<br>♪ zene szól" if zene else ""
-        if self._ido_ok is False:
-            extra += f"<br><span style='color:{SZIN['figyelem']}'>⚠ Az óra nincs szinkronban</span>"
-        if self.v.frissito.kiadas is not None:
-            extra += f"<br><span style='color:{SZIN['kiemelt']}'>↑ Új verzió: {self.v.frissito.kiadas.verzio}</span>"
-        self.sav_allapot.setText(f"<span style='color:{SZIN['szol']}'>●</span> Automatika fut<br>{szoveg}{extra}")
+        self._fejlec_frissit(most, a, hatra)
+        self._allapotsor_frissit()
         self.talca.setToolTip(f"{APP_NEV}\n{szoveg}{zene}")
         aktualis = self.lapok.currentWidget()
         if isinstance(aktualis, Vezerlopult):
             aktualis.frissit()
         if self.kijelzo is not None:
             self.kijelzo.frissit()
+
+    def _fejlec_frissit(self, most: datetime, a, hatra) -> None:
+        self.fej_ora.setText(f"{most:%H:%M:%S}")
+        pulton = isinstance(self.lapok.currentWidget(), Vezerlopult)
+        self.fej_szakasz.setVisible(not pulton)
+        self.fej_hatra.setVisible(not pulton)
+        self.fej_szakasz.setText(a.cim)
+        if a.szakasz is Szakasz.ORA:
+            self.fej_hatra.setText(f"Kicsengetésig {idotartam(hatra)}")
+        elif a.szakasz in (Szakasz.SZUNET, Szakasz.REGGEL):
+            self.fej_hatra.setText(f"Becsengetésig {idotartam(hatra)}")
+        elif a.kovetkezo is not None:
+            nap = "holnap" if a.kovetkezo.ido.date() == most.date() + timedelta(days=1) else f"{a.kovetkezo.ido:%m.%d.}"
+            self.fej_hatra.setText(f"Következő csengetés {nap} {a.kovetkezo.ido:%H:%M}")
+        else:
+            self.fej_hatra.setText("A következő két hétben nincs csengetés")
+        riaszt = self.v.riasztas
+        szol = self.v.zene.szol
+        self.elo.setVisible(riaszt or szol)
+        allapot_ = "szol" if szol and not riaszt else ""
+        if self.elo.property("allapot") != allapot_:
+            self.elo.setProperty("allapot", allapot_)
+            self.elo.style().unpolish(self.elo)
+            self.elo.style().polish(self.elo)
+        if riaszt:
+            self.elo_ikon.setPixmap(ikon("riasztas", SZIN["hiba"]).pixmap(16, 16))
+            self.elo_szoveg.setText("Riasztás szól")
+        elif szol:
+            self.elo_ikon.setPixmap(ikon("zene", SZIN["kiemelt"]).pixmap(16, 16))
+            cim = self.v.zene.most_cim or "Szünetzene"
+            metrika = self.elo_szoveg.fontMetrics()
+            self.elo_szoveg.setText(metrika.elidedText(cim, Qt.TextElideMode.ElideRight, 340))
+
+    def _allapotsor_frissit(self) -> None:
+        if self.v.riasztas:
+            self.as_automatika.setText(f"<span style='color:{SZIN['hiba']}'>&#9679;</span>&nbsp; Riasztás")
+        else:
+            self.as_automatika.setText(f"<span style='color:{SZIN['szol']}'>&#9679;</span>&nbsp; Automatika fut")
+        nev = getattr(self, "_kimenet_nev", None)
+        if nev is None or getattr(self, "_kimenet_kulcs", None) != self.v.b.kimenet:
+            self._kimenet_kulcs = self.v.b.kimenet
+            self._kimenet_nev = nev = kimeneti_eszkoz(self.v.b.kimenet).description() or "alapértelmezett"
+        self.as_kimenet.setText(f"Hangkimenet: {nev}")
+        if self._ido_ok is False:
+            self.as_ido.setText(f"<span style='color:{SZIN['figyelem']}'>Az óra nincs szinkronban "
+                                "az internetes időszerverrel</span>")
+        else:
+            self.as_ido.setText("Pontos idő: szinkronban" if self._ido_ok else "")
+        kiadas = self.v.frissito.kiadas
+        self.as_frissites.setText(f"<span style='color:{SZIN['kek']}'>Új verzió érhető el: {kiadas.verzio}</span>"
+                                  if kiadas is not None else "")
 
     def _uzenet(self, szoveg: str, szint: str) -> None:
         self.ertesites.mutat(szoveg, szint)

@@ -97,6 +97,11 @@ def napi_rend(b: Beallitasok, nap: date) -> Csengetesirend | None:
     return b.rend(nev) if nev else None
 
 
+def napi_orak(b: Beallitasok, nap: date) -> list[tuple[datetime, datetime]]:
+    rend = napi_rend(b, nap)
+    return _idopontok(rend, nap) if rend else []
+
+
 def _idopontok(rend: Csengetesirend, nap: date) -> list[tuple[datetime, datetime]]:
     parok = [(datetime.combine(nap, ido(o.kezdet)), datetime.combine(nap, ido(o.vege))) for o in rend.orak]
     return sorted(p for p in parok if p[1] > p[0])

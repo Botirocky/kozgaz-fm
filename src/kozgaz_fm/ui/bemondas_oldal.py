@@ -215,8 +215,8 @@ class BemondasOldal(Oldal):
         self.lista.clear()
         for b in self.v.b.bemondasok:
             mikor = b.datum if b.datum else ", ".join(NAPOK[i][:3] for i in b.napok)
-            mit = "♪ hangfájl" if b.tipus == "fajl" else f"„{b.tartalom[:50]}{'…' if len(b.tartalom) > 50 else ''}”"
-            elem = QListWidgetItem(ikon("bemondas", SZIN["szoveg"]), f"{b.ido}  {b.nev}\n{mikor} · {mit}")
+            mit = "hangfájl" if b.tipus == "fajl" else f"„{b.tartalom[:50]}{'…' if len(b.tartalom) > 50 else ''}”"
+            elem = QListWidgetItem(ikon("bemondas", SZIN["szoveg"]), f"{b.ido}  {b.nev}\n{mikor}, {mit}")
             elem.setFlags(elem.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             elem.setCheckState(Qt.CheckState.Checked if b.aktiv else Qt.CheckState.Unchecked)
             self.lista.addItem(elem)

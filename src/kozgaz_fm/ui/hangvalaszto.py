@@ -152,7 +152,7 @@ class SajatHangokKartya(Kartya):
         zene = ikon("zene")
         for h in sajat_hangok.lista():
             hasznalat = [MEZO_NEVEK.get(m, m) for m in self.v.sajat_hang_hasznalat(h.ertek)]
-            felirat = h.nev + (f"   ·   {', '.join(hasznalat)}" if hasznalat else "")
+            felirat = h.nev + (f"   (használja: {', '.join(hasznalat)})" if hasznalat else "")
             elem = QListWidgetItem(zene, felirat)
             elem.setData(Qt.ItemDataRole.UserRole, h.ertek)
             elem.setToolTip(str(h.ut))

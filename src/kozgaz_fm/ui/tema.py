@@ -7,24 +7,25 @@ from PySide6.QtSvg import QSvgRenderer
 from kozgaz_fm.utvonalak import csomag_mappa
 
 SZIN = {
-    "hatter": "#0A1020",
-    "oldalsav": "#0D1426",
-    "felulet": "#131C31",
-    "felulet2": "#1A2540",
-    "keret": "#24304D",
-    "keret_eros": "#34446A",
-    "szoveg": "#F1F5F9",
-    "halvany": "#93A1BD",
-    "kiemelt": "#E3C234",
-    "kiemelt_sotet": "#C9A91F",
-    "kiemelt_szoveg": "#14110A",
-    "kek": "#4A8FD0",
-    "kek_sotet": "#2F6CA6",
-    "szol": "#22C55E",
-    "info": "#4A8FD0",
-    "figyelem": "#FBBF24",
-    "hiba": "#EF4444",
-    "hiba_sotet": "#B91C1C",
+    "hatter": "#101317",
+    "oldalsav": "#0C0F12",
+    "felulet": "#171B21",
+    "felulet2": "#1F242C",
+    "keret": "#262C35",
+    "keret_eros": "#363E4A",
+    "szoveg": "#E8EBEF",
+    "halvany": "#8D96A3",
+    "kiemelt": "#DCBD31",
+    "kiemelt_sotet": "#C4A722",
+    "kiemelt_szoveg": "#16140A",
+    "kek": "#4085C0",
+    "kek_sotet": "#336DA0",
+    "kek_halvany": "#1B2B3B",
+    "szol": "#3FB66B",
+    "info": "#4085C0",
+    "figyelem": "#E0A43A",
+    "hiba": "#D9483B",
+    "hiba_sotet": "#A8342A",
 }
 
 IKONOK = {
@@ -126,6 +127,14 @@ def logo_ikon() -> QIcon:
     return i
 
 
+def szam_betu(meret: float, suly: QFont.Weight = QFont.Weight.DemiBold) -> QFont:
+    f = betutipus()
+    f.setPointSizeF(meret)
+    f.setWeight(suly)
+    f.setFeature(QFont.Tag("tnum"), 1)
+    return f
+
+
 def betutipus() -> QFont:
     f = QFont()
     f.setFamilies(["Segoe UI Variable Text", "Segoe UI", "Inter", "Noto Sans", "Cantarell", "sans-serif"])
@@ -140,92 +149,116 @@ def stilus() -> str:
     return f"""
     QWidget {{ background: {s['hatter']}; color: {s['szoveg']}; }}
     QToolTip {{ background: {s['felulet2']}; color: {s['szoveg']}; border: 1px solid {s['keret_eros']};
-                padding: 6px 8px; border-radius: 6px; }}
+                padding: 6px 8px; border-radius: 4px; }}
     QLabel {{ background: transparent; }}
     QLabel[szerep="halvany"] {{ color: {s['halvany']}; }}
-    QLabel[szerep="cim"] {{ font-size: 21pt; font-weight: 700; }}
-    QLabel[szerep="alcim"] {{ font-size: 12.5pt; font-weight: 650; }}
-    QLabel[szerep="szekcio"] {{ color: {s['halvany']}; font-size: 8.5pt; font-weight: 700;
-                                letter-spacing: 1.2px; }}
+    QLabel[szerep="cim"] {{ font-size: 17pt; font-weight: 600; }}
+    QLabel[szerep="alcim"] {{ font-size: 12.5pt; font-weight: 600; }}
+    QLabel[szerep="szekcio"] {{ color: {s['szoveg']}; font-size: 11pt; font-weight: 600; }}
+    QLabel[szerep="szekcio_leiras"] {{ color: {s['halvany']}; }}
     QFrame#oldalsav {{ background: {s['oldalsav']}; border-right: 1px solid {s['keret']}; }}
     QFrame#oldalsav QLabel {{ background: transparent; }}
-    QFrame[szerep="kartya"] {{ background: {s['felulet']}; border: 1px solid {s['keret']}; border-radius: 14px; }}
+    QFrame#fejlec {{ background: {s['hatter']}; border-bottom: 1px solid {s['keret']}; }}
+    QFrame#fejlec QLabel {{ background: transparent; }}
+    QFrame#allapotsor {{ background: {s['oldalsav']}; border-top: 1px solid {s['keret']}; }}
+    QFrame#allapotsor QLabel {{ background: transparent; color: {s['halvany']}; font-size: 9pt; }}
+    QFrame#elo {{ background: {s['kek_halvany']}; border: 1px solid {s['kek_sotet']}; border-radius: 4px; }}
+    QFrame#elo[allapot="szol"] {{ background: #2A2610; border-color: {s['kiemelt_sotet']}; }}
+    QFrame[szerep="kartya"] {{ background: {s['felulet']}; border: 1px solid {s['keret']}; border-radius: 6px; }}
     QFrame[szerep="kartya"] QLabel, QFrame[szerep="kartya"] QCheckBox,
     QFrame[szerep="kartya"] QRadioButton {{ background: transparent; }}
-    QFrame[szerep="kartya"][allapot="riasztas"] {{ background: #3A0D12; border-color: {s['hiba']}; }}
-    QPushButton {{ background: {s['felulet2']}; border: 1px solid {s['keret_eros']}; border-radius: 9px;
-                   padding: 8px 14px; color: {s['szoveg']}; font-weight: 600; }}
-    QPushButton:hover {{ border-color: {s['kiemelt']}; }}
-    QPushButton:pressed {{ background: {s['keret']}; }}
-    QPushButton:disabled {{ color: {s['halvany']}; border-color: {s['keret']}; }}
-    QPushButton:focus {{ outline: none; border-color: {s['info']}; }}
-    QPushButton[szerep="fo"] {{ background: {s['kiemelt']}; color: {s['kiemelt_szoveg']};
-                                border-color: {s['kiemelt']}; }}
-    QPushButton[szerep="fo"]:hover {{ background: {s['kiemelt_sotet']}; }}
-    QPushButton[szerep="fo"]:disabled {{ background: {s['felulet2']}; color: {s['halvany']};
+    QFrame[szerep="kartya"][allapot="riasztas"] {{ background: #2E1412; border-color: {s['hiba']}; }}
+    QFrame[szerep="elvalaszto"] {{ background: {s['keret']}; border: none; max-height: 1px; min-height: 1px; }}
+    QPushButton {{ background: {s['felulet2']}; border: 1px solid {s['keret_eros']}; border-radius: 5px;
+                   padding: 7px 14px; color: {s['szoveg']}; font-weight: 600; }}
+    QPushButton:hover {{ background: {s['keret']}; border-color: #4A5462; }}
+    QPushButton:pressed {{ background: {s['keret_eros']}; }}
+    QPushButton:disabled {{ color: #5F6773; border-color: {s['keret']}; background: {s['felulet']}; }}
+    QPushButton:focus {{ outline: none; border-color: {s['kek']}; }}
+    QPushButton[szerep="fo"] {{ background: {s['kek']}; color: #FFFFFF; border-color: {s['kek']}; }}
+    QPushButton[szerep="fo"]:hover {{ background: {s['kek_sotet']}; border-color: {s['kek_sotet']}; }}
+    QPushButton[szerep="fo"]:disabled {{ background: {s['felulet2']}; color: #5F6773;
                                          border-color: {s['keret']}; }}
-    QPushButton[szerep="veszely"] {{ background: {s['hiba_sotet']}; border-color: {s['hiba']}; color: white; }}
-    QPushButton[szerep="veszely"]:hover {{ background: {s['hiba']}; }}
-    QPushButton[szerep="nagy"] {{ padding: 14px 18px; font-size: 11.5pt; border-radius: 12px; }}
-    QPushButton[szerep="kerek"] {{ border-radius: 22px; padding: 0; min-width: 44px; min-height: 44px;
-                                   max-width: 44px; max-height: 44px; }}
-    QPushButton[szerep="kerek_fo"] {{ border-radius: 30px; padding: 0; min-width: 60px; min-height: 60px;
-                                      max-width: 60px; max-height: 60px; background: {s['kiemelt']};
+    QPushButton[szerep="adas"] {{ background: {s['kiemelt']}; color: {s['kiemelt_szoveg']};
+                                  border-color: {s['kiemelt']}; font-size: 11pt; }}
+    QPushButton[szerep="adas"]:hover {{ background: {s['kiemelt_sotet']}; border-color: {s['kiemelt_sotet']}; }}
+    QPushButton[szerep="veszely"] {{ background: transparent; border: 1px solid {s['hiba']}; color: #F2B8B2; }}
+    QPushButton[szerep="veszely"]:hover {{ background: {s['hiba_sotet']}; color: #FFFFFF; }}
+    QPushButton[szerep="veszely"][allapot="aktiv"] {{ background: {s['hiba']}; color: #FFFFFF; }}
+    QPushButton[szerep="nagy"] {{ padding: 12px 18px; font-size: 11.5pt; }}
+    QPushButton[szerep="kerek"] {{ border-radius: 20px; padding: 0; min-width: 40px; min-height: 40px;
+                                   max-width: 40px; max-height: 40px; }}
+    QPushButton[szerep="kerek_fo"] {{ border-radius: 26px; padding: 0; min-width: 52px; min-height: 52px;
+                                      max-width: 52px; max-height: 52px; background: {s['kiemelt']};
                                       border-color: {s['kiemelt']}; }}
     QPushButton[szerep="kerek_fo"]:hover {{ background: {s['kiemelt_sotet']}; }}
-    QPushButton[szerep="nav"] {{ background: transparent; border: none; border-radius: 10px; text-align: left;
-                                 padding: 11px 14px; color: {s['halvany']}; font-weight: 600; }}
+    QPushButton[szerep="nav"] {{ background: transparent; border: none; border-left: 3px solid transparent;
+                                 border-radius: 0; text-align: left; padding: 10px 14px 10px 17px;
+                                 color: {s['halvany']}; font-weight: 600; }}
     QPushButton[szerep="nav"]:hover {{ background: {s['felulet']}; color: {s['szoveg']}; }}
-    QPushButton[szerep="nav"]:checked {{ background: {s['felulet2']}; color: {s['szoveg']}; }}
+    QPushButton[szerep="nav"]:checked {{ background: {s['felulet']}; color: {s['szoveg']};
+                                         border-left-color: {s['kek']}; }}
+    QPushButton[szerep="sav"] {{ background: transparent; border: 1px solid {s['keret_eros']}; padding: 6px 10px;
+                                 color: {s['halvany']}; }}
+    QPushButton[szerep="sav"]:hover {{ color: {s['szoveg']}; background: {s['felulet']}; }}
     QLineEdit, QPlainTextEdit, QTextEdit, QSpinBox, QDoubleSpinBox, QTimeEdit, QDateEdit, QComboBox {{
-        background: {s['hatter']}; border: 1px solid {s['keret_eros']}; border-radius: 8px; padding: 6px 9px;
-        selection-background-color: {s['kiemelt']}; selection-color: {s['kiemelt_szoveg']}; }}
+        background: {s['hatter']}; border: 1px solid {s['keret_eros']}; border-radius: 4px; padding: 6px 9px;
+        selection-background-color: {s['kek']}; selection-color: #FFFFFF; }}
+    QLineEdit:hover, QSpinBox:hover, QDoubleSpinBox:hover, QTimeEdit:hover, QComboBox:hover {{
+        border-color: #4A5462; }}
     QLineEdit:focus, QPlainTextEdit:focus, QSpinBox:focus, QTimeEdit:focus, QDateEdit:focus, QComboBox:focus,
-    QDoubleSpinBox:focus {{ border-color: {s['kiemelt']}; }}
+    QDoubleSpinBox:focus {{ border-color: {s['kek']}; }}
+    QLineEdit:disabled, QSpinBox:disabled, QDoubleSpinBox:disabled, QTimeEdit:disabled, QComboBox:disabled {{
+        color: #5F6773; border-color: {s['keret']}; }}
     QComboBox::drop-down {{ border: none; width: 22px; }}
     QComboBox QAbstractItemView {{ background: {s['felulet2']}; border: 1px solid {s['keret_eros']};
-                                   selection-background-color: {s['keret_eros']}; outline: none; }}
+                                   selection-background-color: {s['kek_halvany']}; outline: none; }}
     QAbstractSpinBox {{ padding-left: 10px; }}
     QAbstractSpinBox::up-button, QAbstractSpinBox::down-button {{ width: 16px; border: none; }}
     QCheckBox {{ spacing: 10px; background: transparent; }}
-    QCheckBox::indicator {{ width: 40px; height: 22px; image: url({kepek}/kapcsolo_ki.svg); }}
+    QCheckBox::indicator {{ width: 36px; height: 20px; image: url({kepek}/kapcsolo_ki.svg); }}
     QCheckBox::indicator:checked {{ image: url({kepek}/kapcsolo_be.svg); }}
     QCheckBox::indicator:disabled {{ image: url({kepek}/kapcsolo_tiltott.svg); }}
+    QCheckBox:disabled {{ color: #5F6773; }}
     QRadioButton {{ background: transparent; spacing: 8px; }}
-    QSlider::groove:horizontal {{ height: 6px; background: {s['keret_eros']}; border-radius: 3px; }}
-    QSlider::sub-page:horizontal {{ background: {s['kiemelt']}; border-radius: 3px; }}
-    QSlider::handle:horizontal {{ background: {s['szoveg']}; width: 18px; height: 18px; margin: -6px 0;
-                                  border-radius: 9px; }}
-    QProgressBar {{ background: {s['keret']}; border: none; border-radius: 5px; height: 10px; }}
-    QProgressBar::chunk {{ background: {s['kiemelt']}; border-radius: 5px; }}
-    QListWidget, QTableWidget, QTreeWidget {{ background: {s['felulet']}; border: 1px solid {s['keret']};
-        border-radius: 10px; outline: none; alternate-background-color: {s['felulet2']}; }}
-    QListWidget::item {{ padding: 6px 10px; min-height: 26px; border-radius: 7px; }}
+    QSlider::groove:horizontal {{ height: 4px; background: {s['keret_eros']}; border-radius: 2px; }}
+    QSlider::sub-page:horizontal {{ background: {s['kek']}; border-radius: 2px; }}
+    QSlider::handle:horizontal {{ background: {s['szoveg']}; width: 14px; height: 14px; margin: -5px 0;
+                                  border-radius: 7px; }}
+    QProgressBar {{ background: {s['keret']}; border: none; border-radius: 2px; height: 4px; }}
+    QProgressBar::chunk {{ background: {s['kek']}; border-radius: 2px; }}
+    QListWidget, QTableWidget, QTreeWidget {{ background: {s['hatter']}; border: 1px solid {s['keret']};
+        border-radius: 4px; outline: none; alternate-background-color: {s['felulet']}; }}
+    QListWidget::item {{ padding: 6px 10px; min-height: 26px; border-radius: 0; }}
+    QListWidget::item:hover {{ background: {s['felulet2']}; }}
     QListWidget::item:selected, QTableWidget::item:selected, QTreeWidget::item:selected {{
-        background: {s['keret_eros']}; color: {s['szoveg']}; }}
-    QHeaderView::section {{ background: {s['felulet2']}; color: {s['halvany']}; border: none;
-        border-bottom: 1px solid {s['keret']}; padding: 7px; font-weight: 700; }}
-    QTableCornerButton::section {{ background: {s['felulet2']}; border: none; }}
+        background: {s['kek_halvany']}; color: {s['szoveg']}; }}
+    QTableWidget {{ gridline-color: {s['keret']}; }}
+    QHeaderView::section {{ background: {s['felulet']}; color: {s['halvany']}; border: none;
+        border-bottom: 1px solid {s['keret']}; padding: 7px; font-weight: 600; }}
+    QTableCornerButton::section {{ background: {s['felulet']}; border: none; }}
     QScrollArea {{ border: none; background: transparent; }}
     QScrollArea > QWidget > QWidget {{ background: transparent; }}
     QScrollBar:vertical {{ background: transparent; width: 10px; margin: 2px; }}
-    QScrollBar::handle:vertical {{ background: {s['keret_eros']}; border-radius: 4px; min-height: 30px; }}
+    QScrollBar::handle:vertical {{ background: {s['keret_eros']}; border-radius: 3px; min-height: 30px; }}
     QScrollBar::add-line, QScrollBar::sub-line {{ height: 0; width: 0; }}
     QScrollBar:horizontal {{ background: transparent; height: 10px; margin: 2px; }}
-    QScrollBar::handle:horizontal {{ background: {s['keret_eros']}; border-radius: 4px; min-width: 30px; }}
+    QScrollBar::handle:horizontal {{ background: {s['keret_eros']}; border-radius: 3px; min-width: 30px; }}
     QTabWidget::pane {{ border: none; }}
     QTabBar::tab {{ background: transparent; color: {s['halvany']}; padding: 9px 16px; font-weight: 600;
                     border-bottom: 2px solid transparent; }}
-    QTabBar::tab:selected {{ color: {s['szoveg']}; border-bottom-color: {s['kiemelt']}; }}
+    QTabBar::tab:selected {{ color: {s['szoveg']}; border-bottom-color: {s['kek']}; }}
     QCalendarWidget QWidget {{ alternate-background-color: {s['felulet2']}; }}
-    QCalendarWidget QToolButton {{ background: transparent; color: {s['szoveg']}; font-weight: 700;
-                                   padding: 6px; border-radius: 6px; }}
+    QCalendarWidget QToolButton {{ background: transparent; color: {s['szoveg']}; font-weight: 600;
+                                   padding: 6px; border-radius: 4px; }}
     QCalendarWidget QToolButton:hover {{ background: {s['felulet2']}; }}
-    QCalendarWidget QAbstractItemView {{ background: {s['felulet']}; selection-background-color: {s['kiemelt']};
-                                         selection-color: {s['kiemelt_szoveg']}; }}
-    QCalendarWidget #qt_calendar_navigationbar {{ background: {s['felulet2']}; border-radius: 8px; }}
-    QMenu {{ background: {s['felulet2']}; border: 1px solid {s['keret_eros']}; padding: 6px; border-radius: 8px; }}
-    QMenu::item {{ padding: 7px 18px; border-radius: 6px; }}
-    QMenu::item:selected {{ background: {s['keret_eros']}; }}
+    QCalendarWidget QAbstractItemView {{ background: {s['felulet']}; selection-background-color: {s['kek']};
+                                         selection-color: #FFFFFF; }}
+    QCalendarWidget #qt_calendar_navigationbar {{ background: {s['felulet2']}; border-radius: 4px; }}
+    QMenu {{ background: {s['felulet2']}; border: 1px solid {s['keret_eros']}; padding: 4px; border-radius: 4px; }}
+    QMenu::item {{ padding: 7px 18px; border-radius: 3px; }}
+    QMenu::item:selected {{ background: {s['kek_halvany']}; }}
+    QMenu::section {{ color: {s['halvany']}; padding: 6px 12px 2px; }}
+    QMenu::separator {{ height: 1px; background: {s['keret']}; margin: 4px 6px; }}
     QMessageBox, QDialog {{ background: {s['felulet']}; }}
     """

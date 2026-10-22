@@ -48,7 +48,7 @@ class Kijelzo(QWidget):
         self.kovetkezo = cimke()
         self.kovetkezo.setStyleSheet(f"font-size: 20pt; color: {SZIN['halvany']};")
         e.addLayout(sor(self.zene, None, self.kovetkezo))
-        v.zene.szam_valtozott.connect(lambda c, _f: self.zene.setText(f"♪  {c}"))
+        v.zene.szam_valtozott.connect(lambda c, _f: self.zene.setText(f"Most szól: {c}"))
 
     def _meretez(self) -> None:
         m = self.height() or 1080
@@ -87,7 +87,7 @@ class Kijelzo(QWidget):
         if not self.v.zene.szol:
             self.zene.setText("")
         elif not self.zene.text() and self.v.zene.most_cim:
-            self.zene.setText(f"♪  {self.v.zene.most_cim}")
+            self.zene.setText(f"Most szól: {self.v.zene.most_cim}")
         if a.kovetkezo and a.kovetkezo.ido.date() == most.date():
             self.kovetkezo.setText(f"Következő csengetés: {a.kovetkezo.ido:%H:%M}")
         else:

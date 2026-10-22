@@ -27,7 +27,8 @@ def cimke(szoveg: str = "", szerep: str = "", sortores: bool = False) -> QLabel:
 def gomb(szoveg: str, ikon_nev: str = "", szerep: str = "", tipp: str = "", szin: str | None = None) -> QPushButton:
     g = QPushButton(szoveg)
     if ikon_nev:
-        g.setIcon(ikon(ikon_nev, szin or (SZIN["kiemelt_szoveg"] if szerep == "fo" else SZIN["szoveg"])))
+        alap = {"fo": "#FFFFFF", "adas": SZIN["kiemelt_szoveg"], "veszely": "#F2B8B2"}.get(szerep, SZIN["szoveg"])
+        g.setIcon(ikon(ikon_nev, szin or alap))
         g.setIconSize(QSize(18, 18))
     if szerep:
         g.setProperty("szerep", szerep)
@@ -54,16 +55,19 @@ class Kartya(QFrame):
         super().__init__(parent)
         self.setProperty("szerep", "kartya")
         self.elrendezes = QVBoxLayout(self)
-        self.elrendezes.setContentsMargins(20, 18, 20, 18)
+        self.elrendezes.setContentsMargins(20, 16, 20, 18)
         self.elrendezes.setSpacing(12)
         if cim:
-            self.elrendezes.addWidget(cimke(cim.upper(), "szekcio"))
+            self.cim = cimke(cim, "szekcio")
+            self.elrendezes.addWidget(self.cim)
+        self.elrendezes.addStretch(1)
 
     def add(self, elem) -> None:
+        hely = self.elrendezes.count() - 1
         if isinstance(elem, QWidget):
-            self.elrendezes.addWidget(elem)
+            self.elrendezes.insertWidget(hely, elem)
         else:
-            self.elrendezes.addLayout(elem)
+            self.elrendezes.insertLayout(hely, elem)
 
 
 def sor(*elemek, terkoz: int = 10, nyujt: bool = False) -> QHBoxLayout:
@@ -121,9 +125,11 @@ class Oldal(QWidget):
         kulso.setContentsMargins(0, 0, 0, 0)
         belso = QWidget()
         self.elrendezes = QVBoxLayout(belso)
-        self.elrendezes.setContentsMargins(32, 28, 32, 28)
-        self.elrendezes.setSpacing(16)
-        self.elrendezes.addWidget(cimke(cim, "cim"))
+        self.elrendezes.setContentsMargins(28, 22, 28, 28)
+        self.elrendezes.setSpacing(14)
+        self.cim = cim
+        self.cim_cimke = cimke(cim, "cim")
+        self.elrendezes.addWidget(self.cim_cimke)
         if leiras:
             self.elrendezes.addWidget(cimke(leiras, "halvany", sortores=True))
         kulso.addWidget(gorgeto(belso))
@@ -160,7 +166,7 @@ class Ertesites(QFrame):
 
     def mutat(self, szoveg: str, szint: str = "info") -> None:
         szin = {"hiba": SZIN["hiba"], "siker": SZIN["szol"]}.get(szint, SZIN["info"])
-        self.setStyleSheet(f"QFrame#ertesites {{ background: {SZIN['felulet2']}; border-radius: 10px;"
+        self.setStyleSheet(f"QFrame#ertesites {{ background: {SZIN['felulet2']}; border-radius: 4px;"
                            f" border: 1px solid {SZIN['keret_eros']}; border-left: 4px solid {szin}; }}")
         self.szoveg.setText(szoveg)
         szulo = self.parentWidget()

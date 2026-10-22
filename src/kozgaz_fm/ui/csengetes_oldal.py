@@ -238,7 +238,7 @@ class CsengetesOldal(Oldal):
                 if szunet < 0:
                     szoveg, szin = "Hibás: átfedés a következő órával!", SZIN["hiba"]
                 else:
-                    szoveg += f"   ·   {szunet} perc szünet"
+                    szoveg += f",  utána {szunet} perc szünet"
             elem = QTableWidgetItem(szoveg)
             elem.setForeground(Qt.GlobalColor.red if szin == SZIN["hiba"] else Qt.GlobalColor.white)
             self.tabla.setItem(i, 3, elem)
