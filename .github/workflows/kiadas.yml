@@ -11,6 +11,7 @@ permissions:
 jobs:
   windows:
     runs-on: windows-2025
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -38,6 +39,7 @@ jobs:
 
   linux:
     runs-on: ubuntu-22.04
+    timeout-minutes: 40
     env:
       QT_QPA_PLATFORM: offscreen
     steps:
@@ -66,6 +68,7 @@ jobs:
 
   wheel:
     runs-on: ubuntu-24.04
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -78,6 +81,7 @@ jobs:
   pi-os:
     needs: wheel
     runs-on: ubuntu-24.04-arm
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -98,6 +102,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     needs: [windows, linux, wheel, pi-os]
     runs-on: ubuntu-24.04
+    timeout-minutes: 40
     steps:
       - uses: actions/download-artifact@v4
         with:
