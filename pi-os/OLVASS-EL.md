@@ -67,7 +67,7 @@ A csengetésnek akkor is mennie kell, ha valami elromlik – ezért a rendszer t
 | --- | --- |
 | A Közgáz FM összeomlik | 3 másodperc múlva magától újraindul |
 | A Közgáz FM lefagy (nem válaszol) | 2 perc után az őr (`kozgaz-fm-or`) leállítja, és újraindul |
-| Az egész rendszer megakad | A Pi hardveres watchdogja 15 másodperc után újraindítja a gépet |
+| Az egész rendszer megakad | A Pi hardveres watchdogja 14 másodperc után újraindítja a gépet |
 | Áramszünet mentés közben | A beállítások biztonságosan íródnak (ideiglenes fájl + `fsync` + `.bak` tartalék) |
 | Indulás pontos idő nélkül | A program legfeljebb 2 percig vár az internetes időszinkronra, hogy ne csengessen rossz időben |
 | Az óra hirtelen ugrik | A kimaradt csengetéseket nem pótolja (nincs csengetés-sorozat), csak újraszinkronizál |

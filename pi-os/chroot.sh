@@ -72,6 +72,10 @@ chown -R kozgazfm:kozgazfm /opt/kozgaz-fm /home/kozgazfm
 chown root:kozgazfm /etc/kozgaz-fm/wayvnc.config
 chmod 640 /etc/kozgaz-fm/wayvnc.config
 systemctl enable kozgaz-fm-elso-inditas.service
+for egyseg in wayvnc.service wayvnc-control.service; do
+    systemctl disable "$egyseg" 2>/dev/null || true
+    systemctl mask "$egyseg" 2>/dev/null || true
+done
 systemctl enable unattended-upgrades.service || true
 systemctl set-default multi-user.target
 
