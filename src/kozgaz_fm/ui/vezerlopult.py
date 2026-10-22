@@ -41,14 +41,12 @@ class Vezerlopult(Oldal):
         super().__init__("Vezérlőpult")
         self.v = v
         self.add(self._allapot_kartya())
-        racs = QGridLayout()
-        racs.setSpacing(14)
-        racs.addWidget(self._gyors_kartya(), 0, 0)
-        racs.addWidget(self._zene_kartya(), 0, 1)
-        racs.addWidget(self._mai_kartya(), 0, 2)
-        for oszlop in range(3):
-            racs.setColumnStretch(oszlop, 1)
-        self.add(racs)
+        self.racs = QGridLayout()
+        self.racs.setSpacing(14)
+        self._kartyak = [self._gyors_kartya(), self._zene_kartya(), self._mai_kartya()]
+        self._szeles: bool | None = None
+        self._elrendez(True)
+        self.add(self.racs)
         self.elrendezes.addStretch(1)
         v.frissult.connect(self.frissit)
         v.zene.szam_valtozott.connect(self._szam)
@@ -56,6 +54,28 @@ class Vezerlopult(Oldal):
         v.zene.lista_valtozott.connect(self._zene_gombok)
         v.riasztas_valtozott.connect(self._riasztas_valtozott)
         self.frissit()
+
+    def _elrendez(self, szeles: bool) -> None:
+        if szeles == self._szeles:
+            return
+        self._szeles = szeles
+        for k in self._kartyak:
+            self.racs.removeWidget(k)
+        gyors, zene, mai = self._kartyak
+        if szeles:
+            self.racs.addWidget(gyors, 0, 0)
+            self.racs.addWidget(zene, 0, 1)
+            self.racs.addWidget(mai, 0, 2)
+        else:
+            self.racs.addWidget(gyors, 0, 0)
+            self.racs.addWidget(zene, 0, 1)
+            self.racs.addWidget(mai, 1, 0, 1, 2)
+        for oszlop in range(3):
+            self.racs.setColumnStretch(oszlop, 1 if szeles or oszlop < 2 else 0)
+
+    def resizeEvent(self, esemeny) -> None:
+        super().resizeEvent(esemeny)
+        self._elrendez(self.width() >= 1080)
 
     def _allapot_kartya(self) -> Kartya:
         k = Kartya("A mai nap")
