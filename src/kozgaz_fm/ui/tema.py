@@ -3,7 +3,7 @@ __lazy_modules__ = ["functools", "PySide6.QtCore", "PySide6.QtGui", "PySide6.QtS
 from functools import cache
 
 from PySide6.QtCore import QByteArray, QRectF, Qt
-from PySide6.QtGui import QFont, QIcon, QImage, QPainter, QPixmap
+from PySide6.QtGui import QFont, QGuiApplication, QIcon, QImage, QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
 
 from kozgaz_fm.utvonalak import csomag_mappa
@@ -83,16 +83,34 @@ VILAGOS = {
 }
 
 TEMAK = {"vilagos": VILAGOS, "sotet": SOTET}
-TEMA_NEVEK = {"vilagos": "Világos", "sotet": "Sötét"}
+TEMA_NEVEK = {"vilagos": "Világos", "sotet": "Sötét", "auto": "Rendszer szerint"}
 SZIN = dict(VILAGOS)
+
+
+def rendszer_sotet() -> bool:
+    app = QGuiApplication.instance()
+    return app is not None and QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Dark
+
+
+def tenyleges(nev: str) -> str:
+    if nev == "auto":
+        return "sotet" if rendszer_sotet() else "vilagos"
+    return nev if nev in TEMAK else "vilagos"
+
+
+def sotet_aktiv() -> bool:
+    return SZIN.get("kapcsolo") == ""
 
 
 def alkalmaz(nev: str) -> None:
     SZIN.clear()
-    SZIN.update(TEMAK.get(nev, VILAGOS))
+    SZIN.update(TEMAK[tenyleges(nev)])
     ikon.cache_clear()
 
 IKONOK = {
+    "hold": '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+    "nap": ('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4'
+            'M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
     "lakat": '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
     "pult": '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/>'
             '<rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',

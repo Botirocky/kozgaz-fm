@@ -13,3 +13,15 @@ def test_alap_jelszo_jelzo(tmp_path) -> None:
     assert rendszer.alap_jelszo(tmp_path) is False
     (tmp_path / "alap-jelszo").touch()
     assert rendszer.alap_jelszo(tmp_path) is True
+
+
+def test_tema_feloldas() -> None:
+    from kozgaz_fm.ui import tema
+
+    assert tema.tenyleges("sotet") == "sotet"
+    assert tema.tenyleges("ismeretlen") == "vilagos"
+    assert tema.tenyleges("auto") in ("sotet", "vilagos")
+    tema.alkalmaz("sotet")
+    assert tema.sotet_aktiv()
+    tema.alkalmaz("vilagos")
+    assert not tema.sotet_aktiv()

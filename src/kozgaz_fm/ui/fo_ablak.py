@@ -120,6 +120,7 @@ class FoAblak(QMainWindow):
         self._masodperc.start()
         QShortcut(QKeySequence("F11"), self, activated=self._kijelzo_nyit)
         app = QApplication.instance()
+        app.styleHints().colorSchemeChanged.connect(lambda _s: self._rendszer_tema())
         self._figyelo = _Tevekenyseg(self._tevekenyseg, self)
         app.installEventFilter(self._figyelo)
         app.aboutToQuit.connect(lambda: app.removeEventFilter(self._figyelo))
@@ -144,6 +145,16 @@ class FoAblak(QMainWindow):
         self.ertesites = Ertesites(kozep)
         self._oldalak_epit(oldal)
         self.nav.button(oldal).setChecked(True)
+
+    def _tema_gyorsvaltas(self) -> None:
+        nev = "vilagos" if tema.sotet_aktiv() else "sotet"
+        self.v.b.tema = nev
+        self.v.mentes()
+        QTimer.singleShot(0, lambda: self.tema_valtas(nev))
+
+    def _rendszer_tema(self) -> None:
+        if self.v.b.tema == "auto" and tema.sotet_aktiv() != tema.rendszer_sotet():
+            self.tema_valtas("auto")
 
     def tema_valtas(self, nev: str) -> None:
         oldal = self.lapok.currentIndex()
@@ -181,6 +192,10 @@ class FoAblak(QMainWindow):
             e.addWidget(g)
         self.nav.idClicked.connect(self._lapozas)
         e.addStretch(1)
+        sotet = tema.sotet_aktiv()
+        self.tema_gomb = gomb("Világos mód" if sotet else "Sötét mód", "nap" if sotet else "hold", "sav",
+                              "Váltás világos és sötét megjelenés között")
+        self.tema_gomb.clicked.connect(self._tema_gyorsvaltas)
         self.zar_gomb = gomb("Beállítások zárolása", "lakat", "sav", "A PIN-kóddal védett oldalak azonnali zárolása")
         self.zar_gomb.clicked.connect(self.zarolas)
         kijelzo = gomb("Folyosói kijelző", "kijelzo", "sav", "Teljes képernyős óra kivetítőre vagy TV-re (F11)")
@@ -188,6 +203,7 @@ class FoAblak(QMainWindow):
         alja.setContentsMargins(16, 0, 16, 0)
         alja.setSpacing(8)
         alja.addWidget(self.zar_gomb)
+        alja.addWidget(self.tema_gomb)
         alja.addWidget(kijelzo)
         e.addLayout(alja)
         return sav
