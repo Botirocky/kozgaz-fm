@@ -80,6 +80,7 @@ class Beallitasok:
     zene_kesleltetes: int = 10
     zene_leall_elotte: int = 20
     elhalkitas: float = 3.0
+    atusztatas: float = 4.0
     reggeli_zene: bool = False
     reggeli_zene_tol: str = "07:30"
     forrasok: list[ZeneForras] = field(default_factory=list)

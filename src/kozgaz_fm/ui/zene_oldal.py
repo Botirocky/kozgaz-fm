@@ -116,6 +116,9 @@ class ZeneOldal(Oldal):
             ("A következő csengő előtt ennyivel áll le:", QSpinBox(minimum=0, maximum=600, suffix=" mp"),
              "zene_leall_elotte"),
             ("Elhalkítás hossza:", QDoubleSpinBox(minimum=0, maximum=15, singleStep=0.5, suffix=" mp"), "elhalkitas"),
+            ("Átúsztatás a számok között:", QDoubleSpinBox(minimum=0, maximum=12, singleStep=0.5, suffix=" mp",
+                                                          specialValueText="nincs (szünet nélkül egymás után)"),
+             "atusztatas"),
         ]
         for i, (felirat, mezo, nev) in enumerate(mezok):
             mezo.setValue(getattr(b, nev))

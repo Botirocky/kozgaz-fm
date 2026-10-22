@@ -100,6 +100,7 @@ class Vezerlo(QObject):
         self.zene.keveres = b.keveres
         self.zene.gyorsitotar = b.youtube_gyorsitotar
         self.zene.elhalkitas_mp = b.elhalkitas
+        self.zene.atusztatas_mp = b.atusztatas
         self.zene.hangero(b.zene_hangero)
         self.zene.spotify_eszkoz = b.spotify_eszkoz
         self.bemondo.beallit(b.tts_hang, b.csengo_hangero)

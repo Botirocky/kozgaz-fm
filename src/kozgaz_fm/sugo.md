@@ -64,6 +64,9 @@ magától csenget, a szünetekben zenét játszik (saját MP3-ak, YouTube vagy S
 
 - **Csak ennél hosszabb szünetben:** a rövid szünetekben nem indul zene.
 - **Kicsengetés után ennyivel indul:** hogy a csengő ne keveredjen a zenével.
+- **Átúsztatás a számok között:** a szám vége előtt ennyi másodperccel már indul a következő, és a kettő
+  egymásba úszik (mint a rádióban). 0 = a számok szünet nélkül, egymás után szólnak. Csengetésnél és bemondásnál
+  a kifutó szám azonnal elhallgat. YouTube-számoknál csak akkor úszik át, ha a következő már le van töltve.
 - **A következő csengő előtt ennyivel áll le:** a zene halkan elhallgat a jelző- vagy becsengő előtt.
 - **Elhalkítás hossza:** milyen lassan halkuljon el a zene.
 - **Reggeli zene:** az első óra előtt a megadott időponttól is szól zene.

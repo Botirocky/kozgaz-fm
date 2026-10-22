@@ -143,9 +143,18 @@ class ZeneLejatszo(QObject):
         self.kimenet = QAudioOutput(self)
         self.lejatszo = QMediaPlayer(self)
         self.lejatszo.setAudioOutput(self.kimenet)
-        self.lejatszo.mediaStatusChanged.connect(self._statusz)
-        self.lejatszo.errorOccurred.connect(self._lejatszasi_hiba)
-        self.lejatszo.playbackStateChanged.connect(self._lejatszas_allapot)
+        self._kifuto_kimenet = QAudioOutput(self)
+        self._kifuto = QMediaPlayer(self)
+        self._kifuto.setAudioOutput(self._kifuto_kimenet)
+        for lejatszo in (self.lejatszo, self._kifuto):
+            lejatszo.mediaStatusChanged.connect(self._statusz)
+            lejatszo.errorOccurred.connect(self._lejatszasi_hiba)
+            lejatszo.playbackStateChanged.connect(self._lejatszas_allapot)
+            lejatszo.positionChanged.connect(self._pozicio)
+        self._kifuto_animacio = QVariantAnimation(self)
+        self._kifuto_animacio.valueChanged.connect(lambda v: self._kifuto_kimenet.setVolume(_hangero(float(v))))
+        self._kifuto_animacio.finished.connect(lambda: self._kifuto.stop())
+        self.atusztatas_mp = 4.0
         self.forras: ZeneForras | None = None
         self.spotify: Spotify | None = None
         self.spotify_eszkoz = ""
@@ -181,7 +190,45 @@ class ZeneLejatszo(QObject):
         return self.forras is not None and self.forras.tipus == "spotify"
 
     def eszkoz(self, azonosito: str) -> None:
-        self.kimenet.setDevice(kimeneti_eszkoz(azonosito))
+        eszkoz = kimeneti_eszkoz(azonosito)
+        self.kimenet.setDevice(eszkoz)
+        self._kifuto_kimenet.setDevice(eszkoz)
+
+    def _fo_jelzes(self) -> bool:
+        kuldo = self.sender()
+        return not isinstance(kuldo, QMediaPlayer) or kuldo is self.lejatszo
+
+    def _kifuto_leallit(self) -> None:
+        self._kifuto_animacio.stop()
+        self._kifuto.stop()
+
+    def _pozicio(self, pozicio: int) -> None:
+        if not self._fo_jelzes() or not self._szol or self._halkitva or self.atusztatas_mp <= 0:
+            return
+        hossz = self.lejatszo.duration()
+        atusztatas = int(self.atusztatas_mp * 1000)
+        if hossz < atusztatas * 3 or hossz - pozicio > atusztatas or len(self.szamok) < 2:
+            return
+        if self._kifuto.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
+            return
+        kovetkezo = (self.index + 1) % len(self.szamok)
+        szam = self.szamok[kovetkezo]
+        if not szam.helyi and szam.yt:
+            szam.helyi = youtube.gyorsitott(szam.yt, self._yt_mappa())
+        if not szam.helyi:
+            return
+        self.lejatszo, self._kifuto = self._kifuto, self.lejatszo
+        self.kimenet, self._kifuto_kimenet = self._kifuto_kimenet, self.kimenet
+        self._kifuto_animacio.stop()
+        self._kifuto_animacio.setStartValue(float(self._cel_hangero()))
+        self._kifuto_animacio.setEndValue(0.0)
+        self._kifuto_animacio.setDuration(atusztatas)
+        self._kifuto_animacio.start()
+        self.index = kovetkezo
+        self.most_cim = szam.cim
+        self.szam_valtozott.emit(szam.cim, self.forras.nev if self.forras else "")
+        self._forrast_indit(QUrl.fromLocalFile(str(szam.helyi)), atusztatas)
+        self._elore_letolt()
 
     def forras_beallitas(self, forras: ZeneForras | None) -> None:
         if forras == self.forras and (self.szamok or self.spotify_mod or self._betoltes_alatt):
@@ -264,6 +311,7 @@ class ZeneLejatszo(QObject):
     def _jatszd(self, index: int) -> None:
         if not self.szamok:
             return
+        self._kifuto_leallit()
         self.index = index % len(self.szamok)
         szam = self.szamok[self.index]
         self.most_cim = szam.cim
@@ -289,9 +337,9 @@ class ZeneLejatszo(QObject):
                       lambda ut: self._letoltve(szam, ut),
                       lambda e: self._letoltes_hiba(szam, e))
 
-    def _forrast_indit(self, url: QUrl) -> None:
+    def _forrast_indit(self, url: QUrl, beuszas_ms: int | None = None) -> None:
         self.lejatszo.setSource(url)
-        self._beuszas()
+        self._beuszas(beuszas_ms)
         self.lejatszo.play()
 
     def _yt_mappa(self) -> Path:
@@ -327,13 +375,13 @@ class ZeneLejatszo(QObject):
         if self._var_ra(szam):
             self._lejatszasi_hiba(None, str(e))
 
-    def _beuszas(self) -> None:
+    def _beuszas(self, hossz_ms: int | None = None) -> None:
         self._animacio.stop()
         self._animacio_vege.clear()
         cel = self._cel_hangero()
         self._animacio.setStartValue(0.0)
         self._animacio.setEndValue(float(cel))
-        self._animacio.setDuration(int(min(self.elhalkitas_mp, 2.0) * 1000))
+        self._animacio.setDuration(hossz_ms or int(min(self.elhalkitas_mp, 2.0) * 1000))
         self._animacio.start()
 
     def _cel_hangero(self) -> float:
@@ -349,6 +397,7 @@ class ZeneLejatszo(QObject):
             return
         self._szol = False
         self.allapot_valtozott.emit(False)
+        self._kifuto_leallit()
         if self.spotify_mod:
             self._spotify_figyelo.stop()
             self._spotify_megallit(elhalkitas)
@@ -419,6 +468,8 @@ class ZeneLejatszo(QObject):
         if self._halkitva == halkitva:
             return
         self._halkitva = halkitva
+        if halkitva:
+            self._kifuto_leallit()
         if not self._szol:
             return
         if self.spotify_mod:
@@ -432,6 +483,8 @@ class ZeneLejatszo(QObject):
         self._animacio.start()
 
     def _statusz(self, statusz: QMediaPlayer.MediaStatus) -> None:
+        if not self._fo_jelzes():
+            return
         if statusz == QMediaPlayer.MediaStatus.EndOfMedia and self._szol:
             self._hibasorozat = 0
             self._jatszd(self.index + 1)
@@ -439,10 +492,14 @@ class ZeneLejatszo(QObject):
             self._hibasorozat = 0
 
     def _lejatszas_allapot(self, allapot: QMediaPlayer.PlaybackState) -> None:
+        if not self._fo_jelzes():
+            return
         if allapot == QMediaPlayer.PlaybackState.PlayingState:
             self._hibasorozat = 0
 
     def _lejatszasi_hiba(self, _hiba, szoveg: str) -> None:
+        if not self._fo_jelzes():
+            return
         naplo.warning("Lejátszási hiba (%s): %s", self.most_cim, szoveg)
         if not self._szol or not self.szamok:
             return
@@ -507,5 +564,6 @@ class ZeneLejatszo(QObject):
     def allj(self) -> None:
         self._generacio += 1
         self._animacio.stop()
+        self._kifuto_leallit()
         self.lejatszo.stop()
         self._spotify_figyelo.stop()
