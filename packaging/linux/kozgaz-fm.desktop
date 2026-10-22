@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Közgáz FM
+GenericName=Iskolai csengetőrendszer
+Comment=Csengetés a csengetési rend szerint, szünetzene MP3-ból, YouTube-ról és Spotifyról
+Exec=kozgaz-fm
+Icon=kozgaz-fm
+Terminal=false
+Categories=AudioVideo;Audio;Player;Education;
+Keywords=csengő;iskola;zene;rádió;szünet;bemondás;
+StartupWMClass=kozgaz-fm

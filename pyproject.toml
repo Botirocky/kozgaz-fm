@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "kozgaz-fm"
+dynamic = ["version"]
+description = "Iskolai csengetőrendszer és szünetzene-lejátszó: csengetési rend, MP3, YouTube és Spotify."
+readme = "README.md"
+license = "GPL-3.0-or-later"
+authors = [{ name = "Botirocky" }]
+requires-python = ">=3.12"
+dependencies = ["PySide6>=6.10", "yt-dlp>=2026.1"]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Environment :: X11 Applications :: Qt",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6", "pyinstaller>=6.11", "pillow>=10"]
+
+[project.gui-scripts]
+kozgaz-fm = "kozgaz_fm.__main__:main"
+
+[tool.hatch.version]
+path = "src/kozgaz_fm/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/kozgaz_fm"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["E741"]
