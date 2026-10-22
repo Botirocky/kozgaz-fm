@@ -103,7 +103,7 @@ def _idopontok(rend: Csengetesirend, nap: date) -> list[tuple[datetime, datetime
 
 
 def _jelzo_ido(b: Beallitasok, kezdet: datetime, elozo_vege: datetime | None) -> datetime | None:
-    if b.jelzo_perc <= 0:
+    if not b.jelzo or b.jelzo_perc <= 0:
         return None
     jelzo = kezdet - timedelta(minutes=b.jelzo_perc)
     if elozo_vege is not None and jelzo <= elozo_vege:

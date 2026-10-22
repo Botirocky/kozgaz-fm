@@ -66,14 +66,6 @@ def gyorsitott(azonosito: str, mappa: Path) -> Path | None:
     return None
 
 
-def stream(azonosito: str) -> str:
-    import yt_dlp
-
-    with yt_dlp.YoutubeDL(_opciok(format=HANG_FORMATUM)) as ydl:
-        info = ydl.extract_info(f"https://www.youtube.com/watch?v={azonosito}", download=False)
-    return info["url"]
-
-
 def letoltes(azonosito: str, mappa: Path) -> Path:
     import yt_dlp
 

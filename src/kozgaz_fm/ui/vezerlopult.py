@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QSlider,
 )
 
+from kozgaz_fm import sajat_hangok
 from kozgaz_fm.hang import FORRAS_TIPUSOK
 from kozgaz_fm.orarend import CSENGOK, Szakasz, Tipus, allapot
 from kozgaz_fm.ui.elemek import Kartya, Oldal, cimke, gomb, ikon_gomb, kapcsolo, sor
@@ -115,9 +116,7 @@ class Vezerlopult(Oldal):
         csengetes.setMinimumHeight(52)
         csengetes.clicked.connect(lambda: self.v.csengetes(self.v.b.hang_becsengo))
         menu = QMenu(self)
-        menu.addAction("Jelzőcsengő", lambda: self.v.csengetes(self.v.b.hang_jelzo, "Kézi jelzőcsengő"))
-        menu.addAction("Kicsengő", lambda: self.v.csengetes(self.v.b.hang_kicsengo, "Kézi kicsengő"))
-        menu.addAction("Gong", lambda: self.v.csengetes(self.v.b.hang_gong, "Kézi gong"))
+        menu.aboutToShow.connect(lambda: self._hang_menu(menu))
         tobb = gomb("Más hang…", "csengo")
         tobb.setMinimumHeight(52)
         tobb.setMenu(menu)
@@ -139,6 +138,18 @@ class Vezerlopult(Oldal):
         self.ma_rend.activated.connect(self._ma_rend_valasztva)
         k.add(sor(cimke("Mai csengetési rend:", "halvany"), self.ma_rend, nyujt=False))
         return k
+
+    def _hang_menu(self, menu: QMenu) -> None:
+        menu.clear()
+        menu.addAction("Jelzőcsengő", lambda: self.v.csengetes(self.v.b.hang_jelzo, "Kézi jelzőcsengő"))
+        menu.addAction("Kicsengő", lambda: self.v.csengetes(self.v.b.hang_kicsengo, "Kézi kicsengő"))
+        menu.addAction("Gong", lambda: self.v.csengetes(self.v.b.hang_gong, "Kézi gong"))
+        sajatok = sajat_hangok.lista()
+        if sajatok:
+            menu.addSection("Saját hangok")
+            zene = ikon("zene")
+            for h in sajatok:
+                menu.addAction(zene, h.nev, lambda h=h: self.v.csengetes(h.ertek, f"Saját hang: {h.nev}"))
 
     def _mai_kartya(self) -> Kartya:
         k = Kartya("Mai menetrend")

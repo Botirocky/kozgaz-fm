@@ -27,6 +27,10 @@ def beallitas_fajl() -> Path:
     return adat_mappa() / "beallitasok.json"
 
 
+def sajat_hangok_mappa() -> Path:
+    return adat_mappa() / "hangok"
+
+
 def naplo_fajl() -> Path:
     return adat_mappa() / "naplo.txt"
 

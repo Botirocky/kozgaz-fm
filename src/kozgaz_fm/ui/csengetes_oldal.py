@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
 from kozgaz_fm.beallitasok import NAPOK, Csengetesirend, Ora
 from kozgaz_fm.orarend import rend_generalas
 from kozgaz_fm.ui.elemek import Kartya, Oldal, cimke, gomb, ido_mezo, kapcsolo, sor
-from kozgaz_fm.ui.hangvalaszto import HangValaszto
+from kozgaz_fm.ui.hangvalaszto import HangValaszto, SajatHangokKartya
 from kozgaz_fm.ui.tema import SZIN
 from kozgaz_fm.vezerlo import Vezerlo
 
@@ -69,6 +69,7 @@ class CsengetesOldal(Oldal):
         alsor.setColumnStretch(0, 1)
         alsor.setColumnStretch(1, 1)
         self.add(alsor)
+        self.add(SajatHangokKartya(v))
         self.elrendezes.addStretch(1)
         self._rendek_frissit()
 
@@ -131,24 +132,33 @@ class CsengetesOldal(Oldal):
     def _hang_kartya(self) -> Kartya:
         b = self.v.b
         k = Kartya("Csengők")
-        self.jelzo = QSpinBox(minimum=0, maximum=15, suffix=" perccel előtte", specialValueText="nincs jelzőcsengő")
-        self.jelzo.setValue(b.jelzo_perc)
+        jelzo_be = b.jelzo and b.jelzo_perc > 0
+        self.jelzo = QSpinBox(minimum=1, maximum=15, suffix=" perccel a becsengő előtt")
+        self.jelzo.setValue(b.jelzo_perc if b.jelzo_perc > 0 else 2)
+        self.jelzo.setEnabled(jelzo_be)
         self.jelzo.valueChanged.connect(lambda e: self._allit("jelzo_perc", e))
+        jelzo = kapcsolo("Jelzőcsengő az óra előtt", jelzo_be,
+                         "Rövid figyelmeztető csengetés néhány perccel a becsengő előtt")
+        jelzo.toggled.connect(self._jelzo_kapcsolo)
         kicsengo = kapcsolo("Kicsengetés az óra végén", b.kicsengo)
         kicsengo.toggled.connect(lambda e: self._allit("kicsengo", e))
         racs = QGridLayout()
         racs.setVerticalSpacing(10)
-        racs.addWidget(cimke("Jelzőcsengő:"), 0, 0)
+        racs.addWidget(cimke("Jelzőcsengő ideje:"), 0, 0)
         racs.addWidget(self.jelzo, 0, 1)
         sorok = [("Becsengő hangja:", "hang_becsengo"), ("Kicsengő hangja:", "hang_kicsengo"),
                  ("Jelzőcsengő hangja:", "hang_jelzo"), ("Bemondás előtti gong:", "hang_gong"),
                  ("Riasztás hangja:", "hang_riasztas")]
         for i, (felirat, mezo) in enumerate(sorok, start=1):
-            valaszto = HangValaszto(self.v, getattr(b, mezo))
+            valaszto = HangValaszto(self.v, getattr(b, mezo), mezo)
             valaszto.valtozott.connect(lambda e, m=mezo: self._allit(m, e))
+            if mezo == "hang_jelzo":
+                self.jelzo_hang = valaszto
+                valaszto.setEnabled(jelzo_be)
             racs.addWidget(cimke(felirat), i, 0)
             racs.addWidget(valaszto, i, 1)
         racs.setColumnStretch(1, 1)
+        k.add(jelzo)
         k.add(kicsengo)
         k.add(racs)
         self.hangero = QSlider(Qt.Orientation.Horizontal)
@@ -158,6 +168,13 @@ class CsengetesOldal(Oldal):
         self.hangero.valueChanged.connect(lambda e: (hangero_cimke.setText(f"{e}%"), self._allit("csengo_hangero", e)))
         k.add(sor(cimke("Csengők hangereje:"), self.hangero, hangero_cimke))
         return k
+
+    def _jelzo_kapcsolo(self, be: bool) -> None:
+        self.jelzo.setEnabled(be)
+        self.jelzo_hang.setEnabled(be)
+        self.v.b.jelzo = be
+        self.v.b.jelzo_perc = self.jelzo.value()
+        self.v.mentes_kesobb()
 
     def _allit(self, mezo: str, ertek) -> None:
         setattr(self.v.b, mezo, ertek)

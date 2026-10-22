@@ -7,14 +7,14 @@ from pathlib import Path
 from PySide6.QtCore import QObject, QTimer, QUrl, QVariantAnimation, Signal
 from PySide6.QtMultimedia import QAudioDevice, QAudioOutput, QMediaDevices, QMediaPlayer
 
-from kozgaz_fm import hatter, youtube
+from kozgaz_fm import hatter, sajat_hangok, youtube
 from kozgaz_fm.beallitasok import BEEPITETT_HANGOK, ZeneForras
+from kozgaz_fm.sajat_hangok import HANGFAJLOK
 from kozgaz_fm.spotify import Spotify, SpotifyHiba, spotify_uri
 from kozgaz_fm.utvonalak import beepitett_hang, gyorsitotar_mappa
 
 naplo = logging.getLogger(__name__)
 
-HANGFAJLOK = (".mp3", ".m4a", ".aac", ".ogg", ".oga", ".opus", ".flac", ".wav", ".wma", ".webm")
 FORRAS_TIPUSOK = {"mappa": "Mappa", "fajlok": "Fájlok", "youtube": "YouTube", "spotify": "Spotify"}
 
 
@@ -22,6 +22,8 @@ def hang_ut(ertek: str) -> Path | None:
     if ertek.startswith("beepitett:"):
         nev = ertek.split(":", 1)[1]
         return beepitett_hang(nev) if nev in BEEPITETT_HANGOK else None
+    if sajat_hangok.sajat(ertek):
+        return sajat_hangok.ut(ertek)
     ut = Path(ertek)
     return ut if ut.is_file() else None
 
@@ -29,6 +31,8 @@ def hang_ut(ertek: str) -> Path | None:
 def hang_nev(ertek: str) -> str:
     if ertek.startswith("beepitett:"):
         return BEEPITETT_HANGOK.get(ertek.split(":", 1)[1], "Ismeretlen")
+    if sajat_hangok.sajat(ertek):
+        return sajat_hangok.nev(ertek)
     return Path(ertek).name
 
 
@@ -157,6 +161,7 @@ class ZeneLejatszo(QObject):
         self._indit_betoltes_utan = False
         self._hibasorozat = 0
         self._letoltes_alatt: set[str] = set()
+        self._varakozo: tuple[str, int, int] | None = None
         self._generacio = 0
         self._animacio = QVariantAnimation(self)
         self._animacio.valueChanged.connect(lambda v: self.kimenet.setVolume(_hangero(float(v))))
@@ -271,16 +276,18 @@ class ZeneLejatszo(QObject):
                 szam.helyi = meglevo
                 self._forrast_indit(QUrl.fromLocalFile(str(meglevo)))
             else:
-                generacio = self._generacio
-                kert = self.index
-                hatter.futtat(lambda: youtube.stream(szam.yt),
-                              lambda url: self._stream_kesz(url, generacio, kert),
-                              lambda e: self._lejatszasi_hiba(None, str(e)))
+                self.lejatszo.stop()
+                self._varakozo = (szam.yt, self._generacio, self.index)
+                self._letolt(szam)
         self._elore_letolt()
 
-    def _stream_kesz(self, url: str, generacio: int, index: int) -> None:
-        if generacio == self._generacio and index == self.index and self._szol:
-            self._forrast_indit(QUrl(url))
+    def _letolt(self, szam: Szam) -> None:
+        if szam.yt in self._letoltes_alatt:
+            return
+        self._letoltes_alatt.add(szam.yt)
+        hatter.futtat(lambda: youtube.letoltes(szam.yt, self._yt_mappa()),
+                      lambda ut: self._letoltve(szam, ut),
+                      lambda e: self._letoltes_hiba(szam, e))
 
     def _forrast_indit(self, url: QUrl) -> None:
         self.lejatszo.setSource(url)
@@ -299,15 +306,26 @@ class ZeneLejatszo(QObject):
                 continue
             if len(self._letoltes_alatt) >= 2:
                 return
-            self._letoltes_alatt.add(szam.yt)
-            hatter.futtat(lambda s=szam: youtube.letoltes(s.yt, self._yt_mappa()),
-                          lambda ut, s=szam: self._letoltve(s, ut),
-                          lambda e, s=szam: self._letoltes_alatt.discard(s.yt))
+            self._letolt(szam)
+
+    def _var_ra(self, szam: Szam) -> bool:
+        if self._varakozo is None or self._varakozo[0] != szam.yt:
+            return False
+        _, generacio, index = self._varakozo
+        self._varakozo = None
+        return generacio == self._generacio and index == self.index and self._szol
 
     def _letoltve(self, szam: Szam, ut: Path) -> None:
         self._letoltes_alatt.discard(szam.yt)
         szam.helyi = ut
+        if self._var_ra(szam):
+            self._forrast_indit(QUrl.fromLocalFile(str(ut)))
         self._elore_letolt()
+
+    def _letoltes_hiba(self, szam: Szam, e: Exception) -> None:
+        self._letoltes_alatt.discard(szam.yt)
+        if self._var_ra(szam):
+            self._lejatszasi_hiba(None, str(e))
 
     def _beuszas(self) -> None:
         self._animacio.stop()

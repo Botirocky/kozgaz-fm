@@ -1,12 +1,12 @@
 import logging
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QTimer, Signal
+from PySide6.QtCore import QObject, QTimer, QUrl, Signal
 
-from kozgaz_fm import __version__
+from kozgaz_fm import __version__, sajat_hangok
 from kozgaz_fm.beallitasok import Beallitasok, Bemondas
 from kozgaz_fm.bemondo import Bemondo
 from kozgaz_fm.frissito import Frissito
@@ -17,12 +17,15 @@ from kozgaz_fm.utvonalak import adat_mappa, naplo_fajl
 
 naplo = logging.getLogger(__name__)
 
+HANG_MEZOK = {f.name: f.default for f in fields(Beallitasok) if f.name.startswith("hang_")}
+
 
 @dataclass
 class _Feladat:
     tipus: str
     ertek: str = ""
     ismetles: bool = False
+    tartalek: str = ""
 
 
 class Vezerlo(QObject):
@@ -30,6 +33,7 @@ class Vezerlo(QObject):
     naplo_bejegyzes = Signal(str)
     uzenet = Signal(str, str)
     riasztas_valtozott = Signal(bool)
+    hangok_valtoztak = Signal()
 
     def __init__(self, beallitasok: Beallitasok, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -107,6 +111,45 @@ class Vezerlo(QObject):
         self.zene.forras_beallitas(self.aktiv_forras())
         self._nap = None
         self.frissult.emit()
+
+    def _tartalek(self, hang: str) -> str:
+        for mezo, alap in HANG_MEZOK.items():
+            if getattr(self.b, mezo) == hang:
+                return alap
+        return HANG_MEZOK["hang_becsengo"]
+
+    def sajat_hang_hozzaadas(self, forras: Path, nev: str | None = None) -> sajat_hangok.SajatHang:
+        hang = sajat_hangok.hozzaad(forras, nev)
+        self.log(f"Saját hang hozzáadva: {hang.nev}")
+        self.hangok_valtoztak.emit()
+        return hang
+
+    def _csengo_elenged(self) -> None:
+        if self.csengo.szol:
+            self.csengo.megallit()
+        self.csengo.lejatszo.setSource(QUrl())
+
+    def sajat_hang_atnevezes(self, ertek: str, nev: str) -> sajat_hangok.SajatHang:
+        self._csengo_elenged()
+        hang = sajat_hangok.atnevez(ertek, nev)
+        for mezo in HANG_MEZOK:
+            if getattr(self.b, mezo) == ertek:
+                setattr(self.b, mezo, hang.ertek)
+        self.mentes()
+        self.hangok_valtoztak.emit()
+        return hang
+
+    def sajat_hang_hasznalat(self, ertek: str) -> list[str]:
+        return [mezo for mezo in HANG_MEZOK if getattr(self.b, mezo) == ertek]
+
+    def sajat_hang_torles(self, ertek: str) -> None:
+        self._csengo_elenged()
+        sajat_hangok.torol(ertek)
+        for mezo in self.sajat_hang_hasznalat(ertek):
+            setattr(self.b, mezo, HANG_MEZOK[mezo])
+        self.log(f"Saját hang törölve: {sajat_hangok.nev(ertek)}")
+        self.mentes()
+        self.hangok_valtoztak.emit()
 
     def mentes_kesobb(self) -> None:
         self._mento.start()
@@ -206,7 +249,7 @@ class Vezerlo(QObject):
             self._jelez("Riasztás közben nincs csengetés.", "hiba")
             return
         self.log(f"Csengetés: {leiras}")
-        self._sor.appendleft(_Feladat("hang", hang))
+        self._sor.appendleft(_Feladat("hang", hang, tartalek=self._tartalek(hang)))
         if not self._foglalt():
             self._kovetkezo_feladat()
 
@@ -216,7 +259,7 @@ class Vezerlo(QObject):
             return
         self.log(f"Bemondás: {bem.nev}")
         if bem.gong:
-            self._sor.append(_Feladat("hang", self.b.hang_gong))
+            self._sor.append(_Feladat("hang", self.b.hang_gong, tartalek=HANG_MEZOK["hang_gong"]))
         self._sor.append(_Feladat("szoveg" if bem.tipus == "szoveg" else "fajl", bem.tartalom))
         if not self.csengo.szol and not self.bemondo.beszel:
             self._kovetkezo_feladat()
@@ -237,6 +280,10 @@ class Vezerlo(QObject):
             hangero = 100 if feladat.ismetles else self.b.csengo_hangero
             if self.csengo.lejatszas(forras, hangero, feladat.ismetles):
                 return
+            if feladat.tartalek and feladat.tartalek != feladat.ertek:
+                self._jelez("A beállított csengőhang nem található, a beépített hang szól helyette.", "hiba")
+                if self.csengo.lejatszas(feladat.tartalek, hangero, feladat.ismetles):
+                    return
             self._jelez(f"A hangfájl nem található: {feladat.ertek}", "hiba")
         if not self.riasztas:
             self.zene.halkit(False)
@@ -249,7 +296,8 @@ class Vezerlo(QObject):
         self.zene.megallit(elhalkitas=False)
         self.log("RIASZTÁS ELINDÍTVA")
         self._sor.clear()
-        self._sor.append(_Feladat("hang", self.b.hang_riasztas, ismetles=True))
+        self._sor.append(_Feladat("hang", self.b.hang_riasztas, ismetles=True,
+                                  tartalek=HANG_MEZOK["hang_riasztas"]))
         if not self._foglalt():
             self._kovetkezo_feladat()
         self.riasztas_valtozott.emit(True)

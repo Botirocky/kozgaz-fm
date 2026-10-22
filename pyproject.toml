@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "Iskolai csengetőrendszer és szünetzene-lejátszó: csengetési rend, MP3, YouTube és Spotify."
 readme = "README.md"
 license = "GPL-3.0-or-later"
-authors = [{ name = "Botirocky" }]
+authors = [{ name = "Botirocky" }, { name = "a Közgáz FM csapata" }]
 requires-python = ">=3.12"
 dependencies = ["PySide6>=6.10", "yt-dlp>=2026.1"]
 classifiers = [

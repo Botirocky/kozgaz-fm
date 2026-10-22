@@ -25,7 +25,8 @@ magától csenget, a szünetekben zenét játszik (saját MP3-ak, YouTube vagy S
 - **Szünetzene:** forrásválasztó, lejátszás / szünet, előző / következő szám, leállítás, hangerő.
   A *Ma legyen szünetzene* kapcsolóval csak a mai napra kapcsolható ki az automatikus zene.
 - **Gyors műveletek:**
-  - *Csengetés most* – azonnali csengetés (a *Más hang…* menüben jelzőcsengő, kicsengő, gong is).
+  - *Csengetés most* – azonnali csengetés (a *Más hang…* menüben jelzőcsengő, kicsengő, gong és a saját
+    hangok is).
   - *Bemondás* – beírt szöveg felolvasása gonggal.
   - *RIASZTÁS* – folyamatos riasztó hang a leállításig, a zene azonnal elhallgat. Megerősítést kér.
   - *Ma legyen csengetés* – kikapcsolva ma egyáltalán nincs csengetés (kirándulás, rendezvény).
@@ -38,10 +39,15 @@ magától csenget, a szünetekben zenét játszik (saját MP3-ak, YouTube vagy S
   hozhatsz létre.
 - Az időpontok közvetlenül a táblázatban szerkeszthetők. A program jelzi, ha egy óra vége a kezdete előtt van,
   vagy ha két óra átfedi egymást.
-- **Jelzőcsengő:** a becsengetés előtt ennyi perccel szól egy rövid figyelmeztető csengő (0 = nincs).
+- **Jelzőcsengő:** a becsengetés előtt néhány perccel szól egy rövid figyelmeztető csengő. A kapcsolóval
+  kikapcsolható; ilyenkor csak becsengő (és kicsengő) van.
 - **Kicsengetés:** kikapcsolható, ha az iskolában csak becsengetés van.
-- **Hangok:** minden csengőnek választható beépített hang vagy saját hangfájl (MP3, WAV stb.). A ▶ gombbal
-  meghallgatható.
+- **Hangok:** minden csengőnek választható beépített vagy saját hang. A ▶ gombbal meghallgatható.
+- **Saját hangok:** a *Hozzáadás…* gombbal (vagy a hanglisták *Saját hang hozzáadása…* sorával) saját
+  csengőhang, dallam vagy jingle tehető be (MP3, WAV, M4A, OGG, FLAC…, legfeljebb 30 MB). A program bemásolja a
+  saját adatmappájába (`hangok`), így az eredeti fájl áthelyezhető vagy törölhető. A betett hangok átnevezhetők
+  és törölhetők; ha egy használatban lévő hangot törölsz, helyette a beépített alaphang szól.
+- **Biztonság:** ha a beállított hangfájl valamiért hiányzik, a csengő nem marad néma – a beépített hang szól.
 
 ## Zene
 

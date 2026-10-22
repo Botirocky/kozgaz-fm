@@ -65,6 +65,7 @@ class Beallitasok:
     het: list[str] = field(default_factory=lambda: ["Normál"] * 5 + ["", ""])
     kivetelek: dict[str, str] = field(default_factory=dict)
     szunnapok: list[Szunnap] = field(default_factory=list)
+    jelzo: bool = True
     jelzo_perc: int = 2
     kicsengo: bool = True
     hang_becsengo: str = "beepitett:csengo"

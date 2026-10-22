@@ -3,11 +3,11 @@ VSVersionInfo(
                     fileType=0x1, subtype=0x0, date=(0, 0)),
   kids=[
     StringFileInfo([StringTable('040E04B0', [
-      StringStruct('CompanyName', 'Botirocky'),
+      StringStruct('CompanyName', 'Botirocky és a Közgáz FM csapata'),
       StringStruct('FileDescription', 'Közgáz FM – iskolai csengetőrendszer és szünetzene'),
       StringStruct('FileVersion', '0.2.0'),
       StringStruct('InternalName', 'KozgazFM'),
-      StringStruct('LegalCopyright', 'GPL-3.0-or-later, Botirocky'),
+      StringStruct('LegalCopyright', 'GPL-3.0-or-later, Botirocky és a Közgáz FM csapata'),
       StringStruct('OriginalFilename', 'KozgazFM.exe'),
       StringStruct('ProductName', 'Közgáz FM'),
       StringStruct('ProductVersion', '0.2.0')])]),

@@ -103,6 +103,13 @@ def test_jelzo_nem_esik_szunet_ele(b):
     assert len(jelzok) == 1
 
 
+def test_jelzo_kikapcsolhato(b):
+    b.jelzo = False
+    assert not [e for e in napi_esemenyek(b, HETFO) if e.tipus is Tipus.JELZO]
+    b.jelzo = True
+    assert [e for e in napi_esemenyek(b, HETFO) if e.tipus is Tipus.JELZO]
+
+
 def test_rend_generalas():
     orak = rend_generalas("08:00", 4, 45, 10, nagyszunet_utan=2, nagyszunet=20)
     assert orak == [("08:00", "08:45"), ("08:55", "09:40"), ("10:00", "10:45"), ("10:55", "11:40")]
