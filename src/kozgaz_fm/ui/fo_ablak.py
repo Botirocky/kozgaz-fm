@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from PySide6.QtCore import QSize, Qt, QTimer
+from PySide6.QtCore import QEvent, QObject, QSize, Qt, QTimer
 from PySide6.QtGui import QAction, QCloseEvent, QGuiApplication, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
@@ -26,11 +26,13 @@ from kozgaz_fm.ui.elemek import Ertesites, cimke, gomb
 from kozgaz_fm.ui.kijelzo import Kijelzo
 from kozgaz_fm.ui.naplo_oldal import NaploOldal
 from kozgaz_fm.ui.naptar_oldal import NaptarOldal
+from kozgaz_fm.ui.pin_ablak import FeloldoAblak
 from kozgaz_fm.ui.sugo_oldal import SugoOldal
 from kozgaz_fm.ui.tema import SZIN, ikon, logo_ikon, logo_pixmap, szam_betu
 from kozgaz_fm.ui.vezerlopult import Vezerlopult, idotartam
 from kozgaz_fm.ui.zene_oldal import ZeneOldal
 from kozgaz_fm.vezerlo import Vezerlo
+from kozgaz_fm.zar import Zar
 
 OLDALAK = [
     ("Vezérlőpult", "pult", Vezerlopult),
@@ -42,6 +44,19 @@ OLDALAK = [
     ("Beállítások", "beallitas", BeallitasOldal),
     ("Súgó", "nevjegy", SugoOldal),
 ]
+VEDETT = (CsengetesOldal, ZeneOldal, NaptarOldal, BemondasOldal, BeallitasOldal)
+TEVEKENYSEG = (QEvent.Type.KeyPress, QEvent.Type.MouseButtonPress, QEvent.Type.Wheel)
+
+
+class _Tevekenyseg(QObject):
+    def __init__(self, visszahivas, szulo: QObject) -> None:
+        super().__init__(szulo)
+        self._visszahivas = visszahivas
+
+    def eventFilter(self, _obj: QObject, esemeny: QEvent) -> bool:
+        if esemeny.type() in TEVEKENYSEG:
+            self._visszahivas()
+        return False
 
 
 class FoAblak(QMainWindow):
@@ -52,6 +67,11 @@ class FoAblak(QMainWindow):
         self._ido_ok: bool | None = None
         self._kilepes = False
         self.kijelzo: Kijelzo | None = None
+        self._zar = Zar()
+        self._feloldva = False
+        self._zar_idozito = QTimer(self)
+        self._zar_idozito.setSingleShot(True)
+        self._zar_idozito.timeout.connect(self.zarolas)
         self.setWindowTitle(APP_NEV)
         self.setWindowIcon(logo_ikon())
         self.resize(1320, 860)
@@ -80,6 +100,11 @@ class FoAblak(QMainWindow):
         self._masodperc.timeout.connect(self._tick)
         self._masodperc.start()
         QShortcut(QKeySequence("F11"), self, activated=self._kijelzo_nyit)
+        app = QApplication.instance()
+        self._figyelo = _Tevekenyseg(self._tevekenyseg, self)
+        app.installEventFilter(self._figyelo)
+        app.aboutToQuit.connect(lambda: app.removeEventFilter(self._figyelo))
+        self._zar_frissit()
         self._tick()
 
     def _oldalsav(self) -> QFrame:
@@ -102,13 +127,19 @@ class FoAblak(QMainWindow):
             g.setIconSize(QSize(18, 18))
             g.setCheckable(True)
             g.setChecked(i == 0)
+            if issubclass(_osztaly, VEDETT):
+                g.setToolTip("PIN-kóddal védhető oldal")
             self.nav.addButton(g, i)
             e.addWidget(g)
         self.nav.idClicked.connect(self._lapozas)
         e.addStretch(1)
+        self.zar_gomb = gomb("Beállítások zárolása", "lakat", "sav", "A PIN-kóddal védett oldalak azonnali zárolása")
+        self.zar_gomb.clicked.connect(self.zarolas)
         kijelzo = gomb("Folyosói kijelző", "kijelzo", "sav", "Teljes képernyős óra kivetítőre vagy TV-re (F11)")
-        alja = QHBoxLayout()
+        alja = QVBoxLayout()
         alja.setContentsMargins(16, 0, 16, 0)
+        alja.setSpacing(8)
+        alja.addWidget(self.zar_gomb)
         alja.addWidget(kijelzo)
         e.addLayout(alja)
         return sav
@@ -163,7 +194,8 @@ class FoAblak(QMainWindow):
         self.as_kimenet = cimke()
         self.as_ido = cimke()
         self.as_frissites = cimke()
-        for c in (self.as_automatika, self.as_kimenet, self.as_ido, self.as_frissites):
+        self.as_zar = cimke()
+        for c in (self.as_automatika, self.as_kimenet, self.as_ido, self.as_zar, self.as_frissites):
             e.addWidget(c)
         e.addStretch(1)
         e.addWidget(cimke(f"{APP_NEV} {__version__}"))
@@ -183,10 +215,63 @@ class FoAblak(QMainWindow):
         beall = next(o for o in self.oldalak if isinstance(o, BeallitasOldal))
         beall.kijelzo_kerelem.connect(self._kijelzo_nyit)
         beall.importalva.connect(lambda: QTimer.singleShot(0, self._oldalak_epit))
+        beall.zar_valtozott.connect(self._pin_valtozott)
         self.lapok.setCurrentIndex(aktualis)
         self.fej_cim.setText(OLDALAK[aktualis][0])
 
+    def _vedett(self, index: int) -> bool:
+        return issubclass(OLDALAK[index][2], VEDETT)
+
+    def _hozzaferes(self) -> bool:
+        if not self.v.b.admin_pin:
+            return True
+        if self._feloldva:
+            self._zar_idozito.start()
+            return True
+        if FeloldoAblak(self, self.v.b.admin_pin, self._zar).exec() != FeloldoAblak.DialogCode.Accepted:
+            return False
+        self._feloldva = True
+        self.v.log("Beállítások feloldva")
+        self._zar_frissit()
+        return True
+
+    def zarolas(self) -> None:
+        if not self._feloldva:
+            return
+        self._feloldva = False
+        self.v.log("Beállítások zárolva")
+        if self._vedett(self.lapok.currentIndex()):
+            self.nav.button(0).setChecked(True)
+            self._lapozas(0)
+        self._zar_frissit()
+
+    def _pin_valtozott(self) -> None:
+        self._feloldva = bool(self.v.b.admin_pin)
+        self._zar_frissit()
+
+    def _zar_frissit(self) -> None:
+        van = bool(self.v.b.admin_pin)
+        self._zar_idozito.setInterval(max(1, self.v.b.admin_zar_perc) * 60_000)
+        if van and self._feloldva:
+            self._zar_idozito.start()
+        else:
+            self._zar_idozito.stop()
+        self.zar_gomb.setVisible(van and self._feloldva)
+        if not van:
+            self.as_zar.setText("")
+        elif self._feloldva:
+            self.as_zar.setText(f"Beállítások feloldva (zárolás {self.v.b.admin_zar_perc} perc tétlenség után)")
+        else:
+            self.as_zar.setText("Beállítások zárolva")
+
+    def _tevekenyseg(self) -> None:
+        if self._feloldva and self._zar_idozito.isActive():
+            self._zar_idozito.start()
+
     def _lapozas(self, index: int) -> None:
+        if self._vedett(index) and not self._hozzaferes():
+            self.nav.button(self.lapok.currentIndex()).setChecked(True)
+            return
         self.lapok.setCurrentIndex(index)
         self.fej_cim.setText(OLDALAK[index][0])
         self.oldalak[index].frissit()
@@ -322,6 +407,7 @@ class FoAblak(QMainWindow):
         if not self._kilepes and self.v.b.talcara_zar and self.talca.isVisible():
             esemeny.ignore()
             self.hide()
+            self.zarolas()
             if not getattr(self, "_talca_jelezve", False):
                 self._talca_jelezve = True
                 self.talca.showMessage(APP_NEV, "A program a tálcán fut tovább, a csengetés működik.",

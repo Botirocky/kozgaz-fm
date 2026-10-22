@@ -18,6 +18,14 @@ def main() -> int:
 
         print(__version__)
         return 0
+    if "--pin-torles" in sys.argv:
+        from kozgaz_fm.beallitasok import Beallitasok
+
+        b = Beallitasok.betoltes()
+        b.admin_pin = ""
+        b.mentes()
+        print("A rendszergazda PIN törölve. Indítsd újra a Közgáz FM-et.")
+        return 0
     from PySide6.QtNetwork import QLocalServer, QLocalSocket
     from PySide6.QtWidgets import QApplication
 

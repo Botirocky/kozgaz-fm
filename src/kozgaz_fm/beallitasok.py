@@ -94,6 +94,8 @@ class Beallitasok:
     kimenet: str = ""
     talcara_zar: bool = True
     automatikus_inditas: bool = False
+    admin_pin: str = ""
+    admin_zar_perc: int = 5
     kijelzo_cim: str = "Közgáz FM"
     frissites_kereses: bool = True
     frissites_auto: bool = True

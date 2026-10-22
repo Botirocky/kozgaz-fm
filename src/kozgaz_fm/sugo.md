@@ -119,6 +119,21 @@ sarokban megjelenik: *↑ Új verzió*.
   újraindul a beállítások megtartásával.
 - A letöltött csomagot a program ellenőrzőösszeggel (SHA-256) ellenőrzi, sérült vagy hamis fájlt nem telepít.
 
+## Hozzáférés (PIN-kód)
+
+- *Beállítások → Hozzáférés → PIN beállítása…*: 4–8 számjegyű PIN. Ezután a **Csengetési rend**, **Zene**,
+  **Naptár**, **Bemondások** és **Beállítások** oldal csak a PIN megadása után nyílik meg.
+- A **Vezérlőpult** (csengetés most, bemondás, riasztás, zene, mai kapcsolók), a **Napló** és a **Súgó** PIN
+  nélkül is használható – a napi működéshez nem kell PIN.
+- Feloldás után a beállítások a megadott ideig (alapból 5 perc) tétlenség után maguktól újra zárolódnak; a bal
+  alsó *Beállítások zárolása* gombbal azonnal is zárolhatók. Ha a program a tálcára kerül, szintén zárol.
+- 5 hibás próbálkozás után 60 másodpercig nem lehet újra próbálni.
+- **Elfelejtett PIN:** zárd be a programot (tálca → *Kilépés*), és indítsd el egyszer `KozgazFM.exe --pin-torles`
+  paraméterrel (Linuxon / Pi-n: `kozgaz-fm --pin-torles`). Ez csak a PIN-t törli, a többi beállítás megmarad.
+- A PIN a véletlen vagy kéretlen átállítás ellen véd; aki a géphez rendszergazdaként hozzáfér, az a PIN-t
+  törölni tudja. A PIN-t a program csak titkosítva (sózott kivonatként) tárolja, és exportáláskor nem kerül a
+  fájlba.
+
 ## Napló és biztonsági mentés
 
 - A **Napló** oldalon minden csengetés, zene és bemondás visszakereshető.

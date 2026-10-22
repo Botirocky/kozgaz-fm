@@ -6,11 +6,13 @@ from PySide6.QtGui import QGuiApplication
 from PySide6.QtMultimedia import QMediaDevices
 from PySide6.QtWidgets import (
     QComboBox,
+    QDialog,
     QFileDialog,
     QGridLayout,
     QLineEdit,
     QMessageBox,
     QProgressBar,
+    QSpinBox,
     QTextBrowser,
 )
 
@@ -18,6 +20,7 @@ from kozgaz_fm import APP_NEV, KESZITO, __version__, rendszer
 from kozgaz_fm.beallitasok import Beallitasok, _ebbol
 from kozgaz_fm.hang import eszkoz_azonosito
 from kozgaz_fm.ui.elemek import Kartya, Oldal, cimke, gomb, kapcsolo, keskeny, sor
+from kozgaz_fm.ui.pin_ablak import UjPinAblak
 from kozgaz_fm.ui.tema import logo_pixmap
 from kozgaz_fm.utvonalak import adat_mappa
 from kozgaz_fm.vezerlo import Vezerlo
@@ -26,6 +29,7 @@ from kozgaz_fm.vezerlo import Vezerlo
 class BeallitasOldal(Oldal):
     kijelzo_kerelem = Signal(int)
     importalva = Signal()
+    zar_valtozott = Signal()
 
     def __init__(self, v: Vezerlo) -> None:
         super().__init__("Beállítások")
@@ -38,7 +42,8 @@ class BeallitasOldal(Oldal):
         racs.addWidget(self._mentes_kartya(), 1, 1)
         racs.addWidget(self._frissites_kartya(), 2, 0)
         racs.addWidget(self._rendszer_kartya(), 2, 1)
-        racs.addWidget(self._nevjegy_kartya(), 3, 0, 1, 2)
+        racs.addWidget(self._hozzaferes_kartya(), 3, 0, 1, 2)
+        racs.addWidget(self._nevjegy_kartya(), 4, 0, 1, 2)
         racs.setColumnStretch(0, 1)
         racs.setColumnStretch(1, 1)
         self.add(racs)
@@ -195,6 +200,60 @@ class BeallitasOldal(Oldal):
                                 ) == QMessageBox.StandardButton.Yes:
             f.telepites()
 
+    def _hozzaferes_kartya(self) -> Kartya:
+        k = Kartya("Hozzáférés")
+        k.add(cimke("PIN-kóddal védheted a beállító oldalakat (Csengetési rend, Zene, Naptár, Bemondások, "
+                    "Beállítások), hogy a hangosító gépnél ne lehessen véletlenül vagy kéretlenül átírni a "
+                    "csengetést. A Vezérlőpult PIN nélkül is használható marad.", "halvany", sortores=True))
+        self.pin_allapot = cimke()
+        self.pin_beallit = gomb("PIN beállítása…", "pipa", "fo")
+        self.pin_beallit.clicked.connect(self._pin_beallit)
+        self.pin_ki = gomb("PIN kikapcsolása", "kuka")
+        self.pin_ki.clicked.connect(self._pin_ki)
+        self.zar_perc = QSpinBox(minimum=1, maximum=60, suffix=" perc tétlenség után")
+        self.zar_perc.setValue(self.v.b.admin_zar_perc)
+        self.zar_perc.setMaximumWidth(230)
+        self.zar_perc.valueChanged.connect(self._zar_perc)
+        k.add(self.pin_allapot)
+        k.add(sor(self.pin_beallit, self.pin_ki, None, cimke("Automatikus zárolás:"), self.zar_perc))
+        k.add(cimke("Elfelejtett PIN: zárd be a programot, és indítsd el egyszer így: <b>kozgaz-fm --pin-torles</b> "
+                    "(Windows-on: <b>KozgazFM.exe --pin-torles</b>).", "halvany", sortores=True))
+        self._pin_frissit()
+        return k
+
+    def _pin_frissit(self) -> None:
+        van = bool(self.v.b.admin_pin)
+        self.pin_allapot.setText("A beállítások PIN-kóddal védettek." if van else
+                                 "Nincs PIN-kód: a beállításokat bárki módosíthatja.")
+        self.pin_beallit.setText("PIN módosítása…" if van else "PIN beállítása…")
+        self.pin_ki.setEnabled(van)
+        self.zar_perc.setEnabled(van)
+
+    def _pin_beallit(self) -> None:
+        ablak = UjPinAblak(self)
+        if ablak.exec() != QDialog.DialogCode.Accepted:
+            return
+        self.v.b.admin_pin = ablak.tarolt
+        self.v.mentes()
+        self.v.log("Rendszergazda PIN beállítva")
+        self._pin_frissit()
+        self.zar_valtozott.emit()
+
+    def _pin_ki(self) -> None:
+        if QMessageBox.question(self, "PIN kikapcsolása", "Kikapcsolod a PIN-védelmet? Utána bárki "
+                                "módosíthatja a beállításokat.") != QMessageBox.StandardButton.Yes:
+            return
+        self.v.b.admin_pin = ""
+        self.v.mentes()
+        self.v.log("Rendszergazda PIN kikapcsolva")
+        self._pin_frissit()
+        self.zar_valtozott.emit()
+
+    def _zar_perc(self, perc: int) -> None:
+        self.v.b.admin_zar_perc = perc
+        self.v.mentes_kesobb()
+        self.zar_valtozott.emit()
+
     def _nevjegy_kartya(self) -> Kartya:
         k = Kartya("Névjegy")
         logo = cimke()
@@ -233,8 +292,10 @@ class BeallitasOldal(Oldal):
         ut, _ = QFileDialog.getSaveFileName(self, "Beállítások exportálása", "kozgaz-fm-beallitasok.json",
                                             "JSON (*.json)")
         if ut:
+            adat = asdict(self.v.b)
+            adat.pop("admin_pin", None)
             with open(ut, "w", encoding="utf-8") as f:
-                json.dump(asdict(self.v.b), f, ensure_ascii=False, indent=2)
+                json.dump(adat, f, ensure_ascii=False, indent=2)
 
     def _import(self) -> None:
         ut, _ = QFileDialog.getOpenFileName(self, "Beállítások importálása", "", "JSON (*.json)")
@@ -249,6 +310,7 @@ class BeallitasOldal(Oldal):
         if QMessageBox.question(self, "Importálás", "Felülírod a jelenlegi beállításokat?"
                                 ) != QMessageBox.StandardButton.Yes:
             return
+        uj.admin_pin = self.v.b.admin_pin
         self.v.b.__dict__.update(uj.__dict__)
         self.v.mentes()
         self.importalva.emit()
