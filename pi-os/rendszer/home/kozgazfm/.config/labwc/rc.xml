@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<labwc_config>
+  <core>
+    <decoration>server</decoration>
+  </core>
+  <theme>
+    <name></name>
+  </theme>
+  <keyboard>
+    <keybind key="W-F12">
+      <action name="None"/>
+    </keybind>
+  </keyboard>
+  <windowRules>
+    <windowRule identifier="*" serverDecoration="no"/>
+  </windowRules>
+</labwc_config>

@@ -1,6 +1,7 @@
 from PySide6.QtCore import QSize, Qt, QTime, QTimer, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -107,6 +108,12 @@ def gorgeto(belso: QWidget) -> QScrollArea:
     return g
 
 
+def keskeny(lista: QComboBox, karakter: int = 14) -> QComboBox:
+    lista.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+    lista.setMinimumContentsLength(karakter)
+    return lista
+
+
 class Oldal(QWidget):
     def __init__(self, cim: str, leiras: str = "") -> None:
         super().__init__()
@@ -129,6 +136,8 @@ class Oldal(QWidget):
 
     def showEvent(self, esemeny) -> None:
         super().showEvent(esemeny)
+        for kombo in self.findChildren(QComboBox):
+            keskeny(kombo)
         for lista in self.findChildren(QListView):
             lista.doItemsLayout()
 

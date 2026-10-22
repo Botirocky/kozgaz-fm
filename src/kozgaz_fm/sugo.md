@@ -99,6 +99,17 @@ A bal alsó *Kijelző mód* gomb (vagy F11) teljes képernyős órát nyit: aktu
 haladásjelző, épp szóló szám. Több monitor esetén a *Beállítások → Folyosói kijelző* részben választható a
 képernyő. Kilépés: **Esc** vagy dupla kattintás.
 
+## Frissítések
+
+A program magától keresi az új verziókat a GitHubon (indítás után és 6 óránként). Ha talál, a bal alsó
+sarokban megjelenik: *↑ Új verzió*.
+
+- **Automatikus telepítés tanítási időn kívül:** csak akkor frissít, ha nincs óra, nem szól zene, nincs
+  riasztás, és a következő csengetésig legalább 45 perc van hátra (pl. délután vagy szünnapon).
+- **Kézzel:** *Beállítások → Frissítések → Telepítés most*. A program pár másodpercre leáll, majd magától
+  újraindul a beállítások megtartásával.
+- A letöltött csomagot a program ellenőrzőösszeggel (SHA-256) ellenőrzi, sérült vagy hamis fájlt nem telepít.
+
 ## Napló és biztonsági mentés
 
 - A **Napló** oldalon minden csengetés, zene és bemondás visszakereshető.
@@ -117,6 +128,9 @@ eszközlistát.
 
 **A YouTube nem játszik le.** Van-e internet? Ha előre letöltött számok vannak, azok net nélkül is szólnak.
 A YouTube időnként változtat a rendszerén – ilyenkor a program frissítése segít.
+
+**Raspberry Pi-n (Közgáz FM OS) fut a program.** A Pi-t a hangosító Windows-gépről is kezelheted
+távoli asztallal (VNC): `kozgaz-fm.local:5900`. Részletek: a Pi-hez mellékelt *Közgáz FM OS* leírásban.
 
 **Bezártam az ablakot, és nem találom.** A program a tálcán fut tovább (az óra melletti ikonok között).
 A Start menüből újraindítva is előjön az ablak.

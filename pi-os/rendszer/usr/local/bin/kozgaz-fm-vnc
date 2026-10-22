@@ -1,0 +1,12 @@
+#!/bin/bash
+BEALLITAS=/etc/kozgaz-fm/wayvnc.config
+[ -r "$BEALLITAS" ] || exit 0
+command -v wayvnc >/dev/null || exit 0
+for _ in $(seq 1 30); do
+    [ -r /etc/kozgaz-fm/vnc_rsa.pem ] && break
+    sleep 2
+done
+while true; do
+    wayvnc --config "$BEALLITAS" 0.0.0.0 5900
+    sleep 5
+done

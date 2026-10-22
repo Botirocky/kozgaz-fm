@@ -1,0 +1,12 @@
+[Unit]
+Description=Közgáz FM – Spotify Connect lejátszó (librespot)
+ConditionPathExists=/usr/bin/librespot
+After=pipewire-pulse.service
+
+[Service]
+ExecStart=/usr/bin/librespot --name "Közgáz FM" --backend pulseaudio --bitrate 320 --initial-volume 60 --enable-volume-normalisation --cache %h/.cache/librespot --system-cache %h/.local/share/librespot
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target

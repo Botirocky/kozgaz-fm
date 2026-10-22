@@ -1,0 +1,7 @@
+#!/bin/bash
+export QT_QPA_PLATFORM=wayland
+export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+while true; do
+    /opt/kozgaz-fm/venv/bin/kozgaz-fm --kioszk
+    sleep 3
+done

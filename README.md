@@ -21,12 +21,17 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
 - **Mai kapcsolók:** ma nincs csengetés / ma nincs zene / mai rend (pl. rövidített órák).
 - **Folyosói kijelző:** teljes képernyős óra, visszaszámláló, épp szóló szám (F11).
 - **Működés:** tálcán fut, automatikus indítás, egyetlen példány, hangkimenet-választás, napló,
-  beállítás-export/import, beépített súgó.
+  beállítás-export/import, beépített súgó, óraszinkron-figyelés.
+- **Automatikus frissítés a GitHubról:** csak tanítási időn kívül, SHA-256-tal ellenőrzött csomagból
+  (Windows-telepítő, Linux-csomag és a Pi is).
+- **Közgáz FM OS:** saját Raspberry Pi rendszer – bekapcsolás után kioszk módban indul, VNC-n távolról
+  kezelhető, Spotify Connect hangszóró. Leírás: [pi-os/OLVASS-EL.md](pi-os/OLVASS-EL.md).
 
 ## Telepítés
 
 - **Windows:** `KozgazFM-<verzió>-telepito.exe` a Releases oldalról (rendszergazdai jog nem kell).
 - **Linux:** `tar xzf KozgazFM-<verzió>-linux-x86_64.tar.gz && ./KozgazFM-*/telepites.sh`
+- **Raspberry Pi:** `KozgazFM-OS-<verzió>-arm64.img.xz` Raspberry Pi Imagerrel SD-kártyára.
 
 ## Fejlesztés
 
@@ -38,7 +43,7 @@ uv venv -p 3.14 && uv pip install -e ".[dev]"
 ```
 
 A beépített csengőhangokat az `eszkozok/hangok.py` generálja, a felület képernyőképeit az
-`eszkozok/kepernyokep.py` készíti. A kiadást a `v*` tag indítja (GitHub Actions: Windows-telepítő +
-Linux-csomag).
+`eszkozok/kepernyokep.py` készíti. A kiadást a `v*` tag indítja (GitHub Actions: Windows-telepítő,
+Linux-csomag, wheel és Pi-lemezkép). A Pi-kép helyben: `pi-os/epit.sh`.
 
 Használati útmutató: [src/kozgaz_fm/sugo.md](src/kozgaz_fm/sugo.md) (a programban a *Súgó* oldalon is).

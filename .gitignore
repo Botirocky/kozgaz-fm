@@ -8,3 +8,4 @@ htmlcov/
 build/
 dist/
 *.spec.bak
+pi-os/munka/

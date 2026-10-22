@@ -1,4 +1,5 @@
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 APP_NEV = "Közgáz FM"
 APP_ID = "kozgaz-fm"
 KESZITO = "Botirocky"
+FRISSITES_REPO = "Botirocky/kozgaz-fm"

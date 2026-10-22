@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from kozgaz_fm import APP_NEV, __version__
+from kozgaz_fm import APP_NEV, __version__, rendszer
 from kozgaz_fm.orarend import allapot
 from kozgaz_fm.ui.beallitas_oldal import BeallitasOldal
 from kozgaz_fm.ui.bemondas_oldal import BemondasOldal
@@ -44,9 +44,11 @@ OLDALAK = [
 
 
 class FoAblak(QMainWindow):
-    def __init__(self, v: Vezerlo) -> None:
+    def __init__(self, v: Vezerlo, kioszk: bool = False) -> None:
         super().__init__()
         self.v = v
+        self.kioszk = kioszk
+        self._ido_ok: bool | None = None
         self._kilepes = False
         self.kijelzo: Kijelzo | None = None
         self.setWindowTitle(APP_NEV)
@@ -143,7 +145,7 @@ class FoAblak(QMainWindow):
         self.talca.setContextMenu(menu)
         self.talca.activated.connect(self._talca_kattintas)
         self.talca.setToolTip(APP_NEV)
-        if QSystemTrayIcon.isSystemTrayAvailable():
+        if QSystemTrayIcon.isSystemTrayAvailable() and not self.kioszk:
             self.talca.show()
 
     def _talca_kattintas(self, ok: QSystemTrayIcon.ActivationReason) -> None:
@@ -154,6 +156,9 @@ class FoAblak(QMainWindow):
                 self.elohoz()
 
     def elohoz(self) -> None:
+        if self.kioszk:
+            self.showFullScreen()
+            return
         self.showNormal()
         self.raise_()
         self.activateWindow()
@@ -164,8 +169,15 @@ class FoAblak(QMainWindow):
         hatra = a.hatralevo(most)
         szoveg = a.cim + (f" · még {idotartam(hatra)}" if hatra is not None else "")
         zene = "\n♪ zene szól" if self.v.zene.szol else ""
-        self.sav_allapot.setText(f"<span style='color:{SZIN['szol']}'>●</span> Automatika fut<br>{szoveg}"
-                                 + ("<br>♪ zene szól" if zene else ""))
+        if most.second == 0 and most.minute % 5 == 0 or not hasattr(self, "_ido_nezve"):
+            self._ido_nezve = True
+            self._ido_ok = rendszer.ido_szinkronban()
+        extra = "<br>♪ zene szól" if zene else ""
+        if self._ido_ok is False:
+            extra += f"<br><span style='color:{SZIN['figyelem']}'>⚠ Az óra nincs szinkronban</span>"
+        if self.v.frissito.kiadas is not None:
+            extra += f"<br><span style='color:{SZIN['kiemelt']}'>↑ Új verzió: {self.v.frissito.kiadas.verzio}</span>"
+        self.sav_allapot.setText(f"<span style='color:{SZIN['szol']}'>●</span> Automatika fut<br>{szoveg}{extra}")
         self.talca.setToolTip(f"{APP_NEV}\n{szoveg}{zene}")
         aktualis = self.lapok.currentWidget()
         if isinstance(aktualis, Vezerlopult):
@@ -194,6 +206,9 @@ class FoAblak(QMainWindow):
         self.kijelzo.showFullScreen()
 
     def closeEvent(self, esemeny: QCloseEvent) -> None:
+        if self.kioszk and not self._kilepes:
+            esemeny.ignore()
+            return
         if not self._kilepes and self.v.b.talcara_zar and self.talca.isVisible():
             esemeny.ignore()
             self.hide()

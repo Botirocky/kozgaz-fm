@@ -55,8 +55,9 @@ def main() -> int:
     beallitasok = Beallitasok.betoltes()
     if elso_inditas:
         beallitasok.mentes()
+    kioszk = "--kioszk" in sys.argv
     vezerlo = Vezerlo(beallitasok)
-    ablak = FoAblak(vezerlo)
+    ablak = FoAblak(vezerlo, kioszk)
 
     QLocalServer.removeServer(APP_ID)
     szerver = QLocalServer()
@@ -64,7 +65,9 @@ def main() -> int:
     szerver.newConnection.connect(lambda: (szerver.nextPendingConnection(), ablak.elohoz()))
 
     vezerlo.indit()
-    if "--talcan" not in sys.argv:
+    if kioszk:
+        ablak.showFullScreen()
+    elif "--talcan" not in sys.argv:
         ablak.show()
     kod = app.exec()
     hatter.leallit()

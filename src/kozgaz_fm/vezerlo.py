@@ -6,8 +6,10 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, QTimer, Signal
 
+from kozgaz_fm import __version__
 from kozgaz_fm.beallitasok import Beallitasok, Bemondas
 from kozgaz_fm.bemondo import Bemondo
+from kozgaz_fm.frissito import Frissito
 from kozgaz_fm.hang import CsengoLejatszo, ZeneLejatszo
 from kozgaz_fm.orarend import Esemeny, Tipus, napi_esemenyek, zene_ablakban
 from kozgaz_fm.spotify import Spotify
@@ -55,11 +57,13 @@ class Vezerlo(QObject):
         self._mento.setSingleShot(True)
         self._mento.setInterval(600)
         self._mento.timeout.connect(self.mentes)
+        self.frissito = Frissito(self, self)
         self.beallitasok_alkalmazasa()
 
     def indit(self) -> None:
-        self.log("Közgáz FM elindult")
+        self.log(f"Közgáz FM {__version__} elindult")
         self._ora.start()
+        self.frissito.indit()
         QTimer.singleShot(1500, self._szinkron)
 
     def leallit(self) -> None:

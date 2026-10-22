@@ -1,0 +1,26 @@
+#!/bin/bash
+set -euo pipefail
+KULCS=/etc/kozgaz-fm/vnc_rsa.pem
+VNC=/etc/kozgaz-fm/wayvnc.config
+FAJL=/boot/firmware/kozgazfm.txt
+if [ ! -s "$KULCS" ]; then
+    openssl genrsa -traditional -out "$KULCS" 2048 2>/dev/null
+    chown root:kozgazfm "$KULCS"
+    chmod 640 "$KULCS"
+fi
+[ -f "$FAJL" ] || exit 0
+ertek() { sed -n "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*//p" "$FAJL" | tr -d '\r' | head -n1; }
+ADMIN="$(ertek ADMIN_JELSZO)"
+VNC_UJ="$(ertek VNC_JELSZO)"
+GEPNEV="$(ertek GEPNEV)"
+if [ -n "$ADMIN" ] && id admin >/dev/null 2>&1; then
+    printf 'admin:%s\n' "$ADMIN" | chpasswd
+fi
+if [ -n "$VNC_UJ" ]; then
+    sed -i "s|^password=.*|password=$VNC_UJ|" "$VNC"
+fi
+if [ -n "$GEPNEV" ] && [[ "$GEPNEV" =~ ^[a-z0-9-]{1,63}$ ]]; then
+    hostnamectl set-hostname "$GEPNEV" 2>/dev/null || echo "$GEPNEV" > /etc/hostname
+    sed -i "s/^127\.0\.1\.1.*/127.0.1.1\t$GEPNEV/" /etc/hosts
+fi
+rm -f "$FAJL"

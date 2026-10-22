@@ -64,9 +64,39 @@ jobs:
           name: linux
           path: dist/*.tar.gz
 
+  wheel:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv build --wheel -o dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel
+          path: dist/*.whl
+
+  pi-os:
+    needs: wheel
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheel
+          path: dist
+      - name: Lemezkép építése
+        env:
+          ADMIN_JELSZO: kozgazfm
+        run: sudo -E pi-os/belso.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pi-os
+          path: dist/KozgazFM-OS-*.img.xz
+          compression-level: 0
+
   kiadas:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [windows, linux]
+    needs: [windows, linux, wheel, pi-os]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/download-artifact@v4

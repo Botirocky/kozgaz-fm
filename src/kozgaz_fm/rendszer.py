@@ -1,5 +1,7 @@
 import contextlib
 import os
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -55,3 +57,23 @@ def automatikus_inditas_beallit(be: bool) -> None:
         )
     else:
         ut.unlink(missing_ok=True)
+
+
+def ido_szinkronban() -> bool | None:
+    if WINDOWS or not shutil.which("timedatectl"):
+        return None
+    try:
+        kimenet = subprocess.run(["timedatectl", "show", "-p", "NTPSynchronized", "--value"], capture_output=True,
+                                 text=True, timeout=5)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    ertek = kimenet.stdout.strip()
+    return None if not ertek else ertek == "yes"
+
+
+def gep_ujrainditas() -> None:
+    subprocess.Popen(["shutdown", "/r", "/t", "5"] if WINDOWS else ["systemctl", "reboot"])
+
+
+def gep_leallitas() -> None:
+    subprocess.Popen(["shutdown", "/s", "/t", "5"] if WINDOWS else ["systemctl", "poweroff"])

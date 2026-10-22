@@ -93,6 +93,8 @@ class Beallitasok:
     talcara_zar: bool = True
     automatikus_inditas: bool = False
     kijelzo_cim: str = "Közgáz FM"
+    frissites_kereses: bool = True
+    frissites_auto: bool = True
     ma_nincs_csengetes: str = ""
     ma_nincs_zene: str = ""
 

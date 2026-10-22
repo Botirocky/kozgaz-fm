@@ -1,0 +1,11 @@
+[Unit]
+Description=Közgáz FM OS – indításkori beállítások (VNC-kulcs, kozgazfm.txt)
+After=local-fs.target userconfig.service
+Before=getty@tty1.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/kozgaz-fm-elso-inditas
+
+[Install]
+WantedBy=multi-user.target

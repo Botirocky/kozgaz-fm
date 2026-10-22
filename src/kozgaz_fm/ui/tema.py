@@ -162,6 +162,8 @@ def stilus() -> str:
     QPushButton[szerep="fo"] {{ background: {s['kiemelt']}; color: {s['kiemelt_szoveg']};
                                 border-color: {s['kiemelt']}; }}
     QPushButton[szerep="fo"]:hover {{ background: {s['kiemelt_sotet']}; }}
+    QPushButton[szerep="fo"]:disabled {{ background: {s['felulet2']}; color: {s['halvany']};
+                                         border-color: {s['keret']}; }}
     QPushButton[szerep="veszely"] {{ background: {s['hiba_sotet']}; border-color: {s['hiba']}; color: white; }}
     QPushButton[szerep="veszely"]:hover {{ background: {s['hiba']}; }}
     QPushButton[szerep="nagy"] {{ padding: 14px 18px; font-size: 11.5pt; border-radius: 12px; }}
