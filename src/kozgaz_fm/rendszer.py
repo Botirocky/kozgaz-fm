@@ -1,8 +1,9 @@
-__lazy_modules__ = ["contextlib", "os", "shutil", "subprocess", "sys", "pathlib", "kozgaz_fm"]
+__lazy_modules__ = ["contextlib", "os", "shutil", "socket", "subprocess", "sys", "pathlib", "kozgaz_fm"]
 
 import contextlib
 import os
 import shutil
+import socket
 import subprocess
 import sys
 from pathlib import Path
@@ -11,6 +12,28 @@ from kozgaz_fm import APP_ID, APP_NEV
 
 FUTTATAS_KULCS = r"Software\Microsoft\Windows\CurrentVersion\Run"
 WINDOWS = sys.platform.startswith("win")
+OS_MAPPA = Path("/etc/kozgaz-fm")
+
+
+def kozgazfm_os(mappa: Path = OS_MAPPA) -> dict[str, str] | None:
+    try:
+        sorok = (mappa / "os-verzio").read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return None
+    return dict(s.split("=", 1) for s in sorok if "=" in s)
+
+
+def alap_jelszo(mappa: Path = OS_MAPPA) -> bool:
+    return (mappa / "alap-jelszo").exists()
+
+
+def ip_cim() -> str:
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("192.0.2.1", 9))
+            return s.getsockname()[0]
+    except OSError:
+        return ""
 
 
 def inditasi_parancs() -> str:

@@ -111,6 +111,9 @@ username=kozgaz
 password=$VNC_JELSZO
 rsa_private_key_file=/etc/kozgaz-fm/vnc_rsa.pem
 EOF
+if [ "$ADMIN_JELSZO" = "kozgazfm" ] || [ "$VNC_JELSZO" = "kozgazfm" ]; then
+    touch "$CEL/etc/kozgaz-fm/alap-jelszo"
+fi
 cat > "$CEL/etc/kozgaz-fm/os-verzio" <<EOF
 KOZGAZFM_OS_VERZIO=$VERZIO
 EPITVE=$(date -u +%Y-%m-%dT%H:%MZ)

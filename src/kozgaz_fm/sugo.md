@@ -139,6 +139,17 @@ sarokban megjelenik: *↑ Új verzió*.
 - A **Napló** oldalon minden csengetés, zene és bemondás visszakereshető.
 - **Beállítások → Exportálás:** minden beállítás egy fájlba menthető, és másik gépre importálható.
 
+## Közgáz FM OS (Raspberry Pi)
+
+- A Pi-n a Közgáz FM bekapcsolás után magától, teljes képernyőn indul. Távolról VNC-vel kezelhető
+  (például TigerVNC Viewer): a cím a *Beállítások → Rendszer* panelen látszik (`IP-cím:5900`), felhasználó `kozgaz`.
+- **Alapértelmezett jelszavak:** rendszergazda `admin` / `kozgazfm`, VNC `kozgaz` / `kozgazfm`. Amíg ezek vannak
+  beállítva, az állapotsor pirosan figyelmeztet. Megváltoztatás: az SD-kártya *bootfs* meghajtóján hozz létre egy
+  `kozgazfm.txt` fájlt `ADMIN_JELSZO=…` és `VNC_JELSZO=…` sorokkal, és indítsd újra a Pi-t – a rendszer beállítja,
+  majd törli a fájlt.
+- Ha a program lefagy, 2 perc múlva magától újraindul; ha az egész gép megakad, a hardveres watchdog újraindítja.
+- Indításkor a program legfeljebb 2 percig vár a pontos időre (internetes időszinkron). Kábeles hálózat ajánlott.
+
 ## Gyakori kérdések
 
 **Nem szól a csengő.** Ellenőrizd a hangkimenetet (*Beállítások → Próbahang*), a csengők hangerejét

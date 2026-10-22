@@ -1,0 +1,6 @@
+[Unit]
+Description=Közgáz FM – lefagyás-figyelő (életjel)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/kozgaz-fm-or

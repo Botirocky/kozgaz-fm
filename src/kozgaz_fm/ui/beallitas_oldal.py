@@ -175,6 +175,11 @@ class BeallitasOldal(Oldal):
         k.add(cimke("A pontos csengetéshez a gép órájának pontosnak kell lennie (internetes időszinkron).",
                     "halvany", sortores=True))
         k.add(self.ido_cimke)
+        os_adat = rendszer.kozgazfm_os()
+        if os_adat is not None:
+            ip = rendszer.ip_cim() or "nincs hálózat"
+            k.add(cimke(f"Közgáz FM OS {os_adat.get('KOZGAZFM_OS_VERZIO', '?')}, IP-cím: <b>{ip}</b> "
+                        f"(távoli asztal: {ip}:5900)", sortores=True))
         k.add(sor(ujra, le, None))
         self._ido_frissit()
         return k

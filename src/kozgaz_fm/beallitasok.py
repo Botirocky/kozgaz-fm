@@ -1,7 +1,8 @@
-__lazy_modules__ = ["json", "logging", "types", "typing", "dataclasses", "pathlib", "kozgaz_fm.utvonalak"]
+__lazy_modules__ = ["json", "logging", "os", "types", "typing", "dataclasses", "pathlib", "kozgaz_fm.utvonalak"]
 
 import json
 import logging
+import os
 import types
 import typing
 from dataclasses import MISSING, asdict, dataclass, field, fields
@@ -110,7 +111,10 @@ class Beallitasok:
     def mentes(self, ut: Path | None = None) -> None:
         ut = ut or beallitas_fajl()
         ideiglenes = ut.with_suffix(".tmp")
-        ideiglenes.write_text(json.dumps(asdict(self), ensure_ascii=False, indent=2), encoding="utf-8")
+        with ideiglenes.open("w", encoding="utf-8") as f:
+            f.write(json.dumps(asdict(self), ensure_ascii=False, indent=2))
+            f.flush()
+            os.fsync(f.fileno())
         if ut.exists():
             ut.replace(ut.with_suffix(".bak"))
         ideiglenes.replace(ut)

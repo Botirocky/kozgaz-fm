@@ -1,5 +1,8 @@
 __lazy_modules__ = [
+    "contextlib",
+    "os",
     "datetime",
+    "pathlib",
     "PySide6.QtCore",
     "PySide6.QtGui",
     "PySide6.QtWidgets",
@@ -22,7 +25,10 @@ __lazy_modules__ = [
     "kozgaz_fm.zar",
 ]
 
+import contextlib
+import os
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from PySide6.QtCore import QEvent, QObject, QSize, Qt, QTimer
 from PySide6.QtGui import QAction, QCloseEvent, QGuiApplication, QKeySequence, QShortcut
@@ -69,6 +75,7 @@ OLDALAK = [
     ("Súgó", "nevjegy", SugoOldal),
 ]
 VEDETT = (CsengetesOldal, ZeneOldal, NaptarOldal, BemondasOldal, BeallitasOldal)
+ELETJEL = os.environ.get("KOZGAZ_FM_ELETJEL", "")
 TEVEKENYSEG = (QEvent.Type.KeyPress, QEvent.Type.MouseButtonPress, QEvent.Type.Wheel)
 
 
@@ -345,6 +352,10 @@ class FoAblak(QMainWindow):
             self._ido_nezve = True
             self._ido_ok = rendszer.ido_szinkronban()
         self._fejlec_frissit(most, a, hatra)
+        if ELETJEL and (most.second % 10 == 0 or not getattr(self, "_eletjel_irva", False)):
+            self._eletjel_irva = True
+            with contextlib.suppress(OSError):
+                Path(ELETJEL).write_text(f"{os.getpid()} {most.timestamp():.0f}\n", encoding="ascii")
         self._allapotsor_frissit()
         self.talca.setToolTip(f"{APP_NEV}\n{szoveg}{zene}")
         aktualis = self.lapok.currentWidget()
@@ -400,6 +411,9 @@ class FoAblak(QMainWindow):
                                 "az internetes időszerverrel</span>")
         else:
             self.as_ido.setText("Pontos idő: szinkronban" if self._ido_ok else "")
+        if rendszer.alap_jelszo():
+            self.as_ido.setText(f"<span style='color:{SZIN['hiba']}'>Alapértelmezett rendszerjelszó van a gépen, "
+                                "változtasd meg (Súgó: Közgáz FM OS)</span>")
         kiadas = self.v.frissito.kiadas
         self.as_frissites.setText(f"<span style='color:{SZIN['kek']}'>Új verzió érhető el: {kiadas.verzio}</span>"
                                   if kiadas is not None else "")

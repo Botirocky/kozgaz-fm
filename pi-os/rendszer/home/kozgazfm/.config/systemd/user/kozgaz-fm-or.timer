@@ -1,0 +1,10 @@
+[Unit]
+Description=Közgáz FM – lefagyás-figyelő 30 másodpercenként
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=30s
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target

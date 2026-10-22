@@ -19,6 +19,9 @@ fi
 if [ -n "$VNC_UJ" ]; then
     sed -i "s|^password=.*|password=$VNC_UJ|" "$VNC"
 fi
+if [ -n "$ADMIN" ] && [ -n "$VNC_UJ" ] && [ "$ADMIN" != "kozgazfm" ] && [ "$VNC_UJ" != "kozgazfm" ]; then
+    rm -f /etc/kozgaz-fm/alap-jelszo
+fi
 if [ -n "$GEPNEV" ] && [[ "$GEPNEV" =~ ^[a-z0-9-]{1,63}$ ]]; then
     hostnamectl set-hostname "$GEPNEV" 2>/dev/null || echo "$GEPNEV" > /etc/hostname
     sed -i "s/^127\.0\.1\.1.*/127.0.1.1\t$GEPNEV/" /etc/hosts

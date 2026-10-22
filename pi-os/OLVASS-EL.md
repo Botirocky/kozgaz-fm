@@ -37,7 +37,9 @@ biztonsági frissítések.
 5. Tedd be a kártyát, kösd a Pi hangkimenetét az erősítőre, és kapcsold be. Az első indítás 1–2 perc.
 
 Alapértelmezett jelszavak (ha nincs `kozgazfm.txt`): rendszergazda `admin` / `kozgazfm`, VNC `kozgaz` /
-`kozgazfm`. **Ezeket változtasd meg!**
+`kozgazfm`. **Ezeket változtasd meg!** Amíg alapjelszó van a gépen, a Közgáz FM állapotsora pirosan figyelmeztet.
+A figyelmeztetés eltűnik, ha a `kozgazfm.txt`-ben mindkét jelszót megadod. Ha kézzel (SSH-n, `passwd`) változtattál,
+töröld a jelzőt: `sudo rm /etc/kozgaz-fm/alap-jelszo`.
 
 ## Távoli kezelés a Windows-gépről (VNC)
 
@@ -56,6 +58,24 @@ VNC-hez monitor kell a Pi-n, vagy egy olcsó HDMI-„dummy” dugó.
   telefonos/asztali Spotify appból (ugyanazon a hálózaton) válaszd ki egyszer, utána a Közgáz FM *Zene →
   Spotify* részében a *Lejátszó eszköz* listában is szerepel.
 - **Újraindítás, leállítás:** *Beállítások → Rendszer*.
+
+## Megbízhatóság
+
+A csengetésnek akkor is mennie kell, ha valami elromlik – ezért a rendszer több szinten védekezik:
+
+| Mi történik | Mit csinál a rendszer |
+| --- | --- |
+| A Közgáz FM összeomlik | 3 másodperc múlva magától újraindul |
+| A Közgáz FM lefagy (nem válaszol) | 2 perc után az őr (`kozgaz-fm-or`) leállítja, és újraindul |
+| Az egész rendszer megakad | A Pi hardveres watchdogja 15 másodperc után újraindítja a gépet |
+| Áramszünet mentés közben | A beállítások biztonságosan íródnak (ideiglenes fájl + `fsync` + `.bak` tartalék) |
+| Indulás pontos idő nélkül | A program legfeljebb 2 percig vár az internetes időszinkronra, hogy ne csengessen rossz időben |
+| Az óra hirtelen ugrik | A kimaradt csengetéseket nem pótolja (nincs csengetés-sorozat), csak újraszinkronizál |
+
+A rendszernapló legfeljebb 64 MB-ot foglal, hogy kímélje az SD-kártyát. Indításkor nincs szivárványos kép és
+kernelszöveg, egyből a Közgáz FM jelenik meg.
+
+Az őr és az újraindítások nyoma: `journalctl -t kozgaz-fm-or -t kozgaz-fm-kioszk`.
 
 ## Frissítés
 

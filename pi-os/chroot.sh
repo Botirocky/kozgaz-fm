@@ -58,6 +58,16 @@ set -e
 
 mkdir -p /home/kozgazfm/.config/systemd/user/default.target.wants
 ln -sf ../kozgaz-fm-spotify.service /home/kozgazfm/.config/systemd/user/default.target.wants/kozgaz-fm-spotify.service
+mkdir -p /home/kozgazfm/.config/systemd/user/timers.target.wants
+ln -sf ../kozgaz-fm-or.timer /home/kozgazfm/.config/systemd/user/timers.target.wants/kozgaz-fm-or.timer
+CMDLINE=/boot/firmware/cmdline.txt
+if [ -f "$CMDLINE" ] && ! grep -q 'logo.nologo' "$CMDLINE"; then
+    sed -i '1 s/$/ quiet loglevel=3 logo.nologo consoleblank=0 vt.global_cursor_default=0/' "$CMDLINE"
+fi
+CONFIG=/boot/firmware/config.txt
+if [ -f "$CONFIG" ] && ! grep -q '^disable_splash=1' "$CONFIG"; then
+    printf '\n[all]\ndisable_splash=1\n' >> "$CONFIG"
+fi
 chown -R kozgazfm:kozgazfm /opt/kozgaz-fm /home/kozgazfm
 chown root:kozgazfm /etc/kozgaz-fm/wayvnc.config
 chmod 640 /etc/kozgaz-fm/wayvnc.config

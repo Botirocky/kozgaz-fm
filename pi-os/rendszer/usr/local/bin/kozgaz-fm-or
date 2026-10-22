@@ -1,0 +1,23 @@
+#!/bin/bash
+ELETJEL="${XDG_RUNTIME_DIR:-/tmp}/kozgaz-fm.eletjel"
+TURES="${KOZGAZ_FM_OR_TURES:-120}"
+[ -f "$ELETJEL" ] || exit 0
+kor=$(( $(date +%s) - $(stat -c %Y "$ELETJEL") ))
+[ "$kor" -gt "$TURES" ] || exit 0
+read -r pid _ < "$ELETJEL" || exit 0
+[[ "$pid" =~ ^[0-9]+$ ]] || exit 0
+[ -r "/proc/$pid/cmdline" ] || exit 0
+[ "$(stat -c %u "/proc/$pid")" = "$(id -u)" ] || exit 0
+parancs="$(tr '\0' ' ' < "/proc/$pid/cmdline")"
+case "$parancs" in
+    *kozgaz-fm*--kioszk*|*kozgaz_fm*--kioszk*) ;;
+    *) exit 0 ;;
+esac
+logger -t kozgaz-fm-or -p user.warning "A Közgáz FM ${kor} mp óta nem válaszol, újraindítás (PID $pid)"
+rm -f "$ELETJEL"
+kill -TERM "$pid"
+for _ in $(seq 1 10); do
+    kill -0 "$pid" 2>/dev/null || exit 0
+    sleep 1
+done
+kill -KILL "$pid"

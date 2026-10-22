@@ -1,7 +1,14 @@
 #!/bin/bash
 export QT_QPA_PLATFORM=wayland
 export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+export KOZGAZ_FM_ELETJEL="${XDG_RUNTIME_DIR:-/tmp}/kozgaz-fm.eletjel"
+for _ in $(seq 1 60); do
+    [ "$(timedatectl show -p NTPSynchronized --value 2>/dev/null)" = "yes" ] && break
+    sleep 2
+done
 while true; do
+    rm -f "$KOZGAZ_FM_ELETJEL"
     /opt/kozgaz-fm/venv/bin/kozgaz-fm --kioszk
+    logger -t kozgaz-fm-kioszk "A Közgáz FM kilépett (kód: $?), újraindítás 3 mp múlva"
     sleep 3
 done
