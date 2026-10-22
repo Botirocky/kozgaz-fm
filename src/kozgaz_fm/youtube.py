@@ -1,3 +1,5 @@
+__lazy_modules__ = ["logging", "dataclasses", "pathlib"]
+
 import logging
 from dataclasses import dataclass
 from pathlib import Path

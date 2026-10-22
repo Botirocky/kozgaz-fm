@@ -1,3 +1,17 @@
+__lazy_modules__ = [
+    "datetime",
+    "PySide6.QtCore",
+    "PySide6.QtGui",
+    "PySide6.QtWidgets",
+    "kozgaz_fm",
+    "kozgaz_fm.hang",
+    "kozgaz_fm.orarend",
+    "kozgaz_fm.ui.elemek",
+    "kozgaz_fm.ui.idovonal",
+    "kozgaz_fm.ui.tema",
+    "kozgaz_fm.vezerlo",
+]
+
 from datetime import datetime, timedelta
 
 from PySide6.QtCore import Qt

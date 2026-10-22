@@ -1,3 +1,20 @@
+__lazy_modules__ = [
+    "logging",
+    "collections",
+    "dataclasses",
+    "datetime",
+    "pathlib",
+    "PySide6.QtCore",
+    "kozgaz_fm",
+    "kozgaz_fm.beallitasok",
+    "kozgaz_fm.bemondo",
+    "kozgaz_fm.frissito",
+    "kozgaz_fm.hang",
+    "kozgaz_fm.orarend",
+    "kozgaz_fm.spotify",
+    "kozgaz_fm.utvonalak",
+]
+
 import logging
 from collections import deque
 from dataclasses import dataclass, fields

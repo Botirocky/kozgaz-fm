@@ -1,3 +1,5 @@
+__lazy_modules__ = ["pytest", "kozgaz_fm.spotify", "kozgaz_fm.youtube"]
+
 import pytest
 
 from kozgaz_fm.spotify import spotify_uri

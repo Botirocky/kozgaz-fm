@@ -1,3 +1,18 @@
+__lazy_modules__ = [
+    "os",
+    "sys",
+    "tempfile",
+    "time",
+    "pathlib",
+    "PySide6.QtWidgets",
+    "kozgaz_fm",
+    "kozgaz_fm.beallitasok",
+    "kozgaz_fm.ui.fo_ablak",
+    "kozgaz_fm.ui.tema",
+    "kozgaz_fm.utvonalak",
+    "kozgaz_fm.vezerlo",
+]
+
 import os
 import sys
 import tempfile

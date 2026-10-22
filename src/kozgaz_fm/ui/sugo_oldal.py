@@ -1,3 +1,5 @@
+__lazy_modules__ = ["PySide6.QtWidgets", "kozgaz_fm.ui.tema", "kozgaz_fm.utvonalak", "kozgaz_fm.vezerlo"]
+
 from PySide6.QtWidgets import QTextBrowser, QVBoxLayout, QWidget
 
 from kozgaz_fm.ui.tema import SZIN

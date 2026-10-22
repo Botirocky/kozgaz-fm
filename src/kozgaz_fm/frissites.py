@@ -1,3 +1,22 @@
+__lazy_modules__ = [
+    "hashlib",
+    "json",
+    "os",
+    "re",
+    "shutil",
+    "subprocess",
+    "sys",
+    "tarfile",
+    "tempfile",
+    "urllib.error",
+    "urllib.request",
+    "dataclasses",
+    "datetime",
+    "pathlib",
+    "kozgaz_fm",
+    "kozgaz_fm.utvonalak",
+]
+
 import hashlib
 import json
 import os

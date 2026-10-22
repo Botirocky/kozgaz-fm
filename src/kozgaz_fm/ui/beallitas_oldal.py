@@ -1,3 +1,20 @@
+__lazy_modules__ = [
+    "json",
+    "dataclasses",
+    "PySide6.QtCore",
+    "PySide6.QtGui",
+    "PySide6.QtMultimedia",
+    "PySide6.QtWidgets",
+    "kozgaz_fm",
+    "kozgaz_fm.beallitasok",
+    "kozgaz_fm.hang",
+    "kozgaz_fm.ui.elemek",
+    "kozgaz_fm.ui.pin_ablak",
+    "kozgaz_fm.ui.tema",
+    "kozgaz_fm.utvonalak",
+    "kozgaz_fm.vezerlo",
+]
+
 import json
 from dataclasses import asdict
 

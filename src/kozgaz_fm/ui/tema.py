@@ -1,3 +1,5 @@
+__lazy_modules__ = ["functools", "PySide6.QtCore", "PySide6.QtGui", "PySide6.QtSvg", "kozgaz_fm.utvonalak"]
+
 from functools import cache
 
 from PySide6.QtCore import QByteArray, QRectF, Qt

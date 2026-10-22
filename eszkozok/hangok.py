@@ -1,3 +1,5 @@
+__lazy_modules__ = ["math", "sys", "wave", "array", "pathlib"]
+
 import math
 import sys
 import wave

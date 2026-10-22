@@ -1,3 +1,12 @@
+__lazy_modules__ = [
+    "PySide6.QtCore",
+    "PySide6.QtGui",
+    "PySide6.QtWidgets",
+    "kozgaz_fm.ui.elemek",
+    "kozgaz_fm.utvonalak",
+    "kozgaz_fm.vezerlo",
+]
+
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QDesktopServices, QFont, QTextCursor
 from PySide6.QtWidgets import QFileDialog, QPlainTextEdit

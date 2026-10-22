@@ -1,3 +1,14 @@
+__lazy_modules__ = [
+    "pathlib",
+    "PySide6.QtCore",
+    "PySide6.QtWidgets",
+    "kozgaz_fm.beallitasok",
+    "kozgaz_fm.hang",
+    "kozgaz_fm.ui.elemek",
+    "kozgaz_fm.ui.tema",
+    "kozgaz_fm.vezerlo",
+]
+
 from pathlib import Path
 
 from PySide6.QtCore import QDate, Qt

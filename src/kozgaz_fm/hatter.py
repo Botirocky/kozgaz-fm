@@ -1,3 +1,5 @@
+__lazy_modules__ = ["logging", "collections.abc", "concurrent.futures", "typing", "PySide6.QtCore"]
+
 import logging
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor

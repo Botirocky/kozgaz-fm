@@ -1,3 +1,5 @@
+__lazy_modules__ = ["hashlib", "hmac", "math", "secrets", "time", "collections.abc"]
+
 import hashlib
 import hmac
 import math

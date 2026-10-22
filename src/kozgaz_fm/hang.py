@@ -1,3 +1,18 @@
+__lazy_modules__ = [
+    "contextlib",
+    "logging",
+    "random",
+    "dataclasses",
+    "pathlib",
+    "PySide6.QtCore",
+    "PySide6.QtMultimedia",
+    "kozgaz_fm",
+    "kozgaz_fm.beallitasok",
+    "kozgaz_fm.sajat_hangok",
+    "kozgaz_fm.spotify",
+    "kozgaz_fm.utvonalak",
+]
+
 import contextlib
 import logging
 import random

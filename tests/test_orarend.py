@@ -1,3 +1,5 @@
+__lazy_modules__ = ["datetime", "pytest", "kozgaz_fm.beallitasok", "kozgaz_fm.orarend", "kozgaz_fm.unnepek"]
+
 from datetime import date, datetime
 
 import pytest

@@ -1,3 +1,5 @@
+__lazy_modules__ = ["PySide6.QtCore", "PySide6.QtWidgets", "kozgaz_fm.ui.tema"]
+
 from PySide6.QtCore import QSize, Qt, QTime, QTimer, Signal
 from PySide6.QtWidgets import (
     QCheckBox,

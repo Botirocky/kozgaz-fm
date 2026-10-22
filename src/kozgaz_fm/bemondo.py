@@ -1,3 +1,5 @@
+__lazy_modules__ = ["logging", "PySide6.QtCore"]
+
 import logging
 
 from PySide6.QtCore import QLocale, QObject, Signal

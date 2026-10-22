@@ -1,3 +1,5 @@
+__lazy_modules__ = ["re", "shutil", "unicodedata", "dataclasses", "pathlib", "kozgaz_fm.utvonalak"]
+
 import re
 import shutil
 import unicodedata

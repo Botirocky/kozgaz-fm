@@ -1,3 +1,5 @@
+__lazy_modules__ = ["hashlib", "io", "datetime", "pytest", "kozgaz_fm", "kozgaz_fm.frissites"]
+
 import hashlib
 import io
 from datetime import datetime, timedelta

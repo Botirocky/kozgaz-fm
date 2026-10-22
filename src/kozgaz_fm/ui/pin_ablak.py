@@ -1,3 +1,13 @@
+__lazy_modules__ = [
+    "PySide6.QtCore",
+    "PySide6.QtGui",
+    "PySide6.QtWidgets",
+    "kozgaz_fm",
+    "kozgaz_fm.ui.elemek",
+    "kozgaz_fm.ui.tema",
+    "kozgaz_fm.zar",
+]
+
 from PySide6.QtCore import QRegularExpression, Qt
 from PySide6.QtGui import QRegularExpressionValidator
 from PySide6.QtWidgets import QDialog, QDialogButtonBox, QLineEdit, QVBoxLayout, QWidget

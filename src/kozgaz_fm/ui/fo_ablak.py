@@ -1,3 +1,27 @@
+__lazy_modules__ = [
+    "datetime",
+    "PySide6.QtCore",
+    "PySide6.QtGui",
+    "PySide6.QtWidgets",
+    "kozgaz_fm",
+    "kozgaz_fm.hang",
+    "kozgaz_fm.orarend",
+    "kozgaz_fm.ui.beallitas_oldal",
+    "kozgaz_fm.ui.bemondas_oldal",
+    "kozgaz_fm.ui.csengetes_oldal",
+    "kozgaz_fm.ui.elemek",
+    "kozgaz_fm.ui.kijelzo",
+    "kozgaz_fm.ui.naplo_oldal",
+    "kozgaz_fm.ui.naptar_oldal",
+    "kozgaz_fm.ui.pin_ablak",
+    "kozgaz_fm.ui.sugo_oldal",
+    "kozgaz_fm.ui.tema",
+    "kozgaz_fm.ui.vezerlopult",
+    "kozgaz_fm.ui.zene_oldal",
+    "kozgaz_fm.vezerlo",
+    "kozgaz_fm.zar",
+]
+
 from datetime import datetime, timedelta
 
 from PySide6.QtCore import QEvent, QObject, QSize, Qt, QTimer

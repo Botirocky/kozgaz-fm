@@ -1,3 +1,5 @@
+__lazy_modules__ = ["os", "sys", "pathlib"]
+
 import os
 import sys
 from pathlib import Path

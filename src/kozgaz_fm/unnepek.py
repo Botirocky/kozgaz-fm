@@ -1,3 +1,5 @@
+__lazy_modules__ = ["datetime"]
+
 from datetime import date, timedelta
 
 

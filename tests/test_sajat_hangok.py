@@ -1,3 +1,5 @@
+__lazy_modules__ = ["pathlib", "pytest", "kozgaz_fm", "kozgaz_fm.sajat_hangok"]
+
 from pathlib import Path
 
 import pytest

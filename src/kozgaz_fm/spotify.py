@@ -1,3 +1,20 @@
+__lazy_modules__ = [
+    "base64",
+    "contextlib",
+    "hashlib",
+    "json",
+    "re",
+    "secrets",
+    "threading",
+    "time",
+    "urllib.error",
+    "urllib.parse",
+    "urllib.request",
+    "webbrowser",
+    "http.server",
+    "pathlib",
+]
+
 import base64
 import contextlib
 import hashlib

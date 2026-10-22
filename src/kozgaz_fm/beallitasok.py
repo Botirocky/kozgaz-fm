@@ -1,3 +1,5 @@
+__lazy_modules__ = ["json", "logging", "types", "typing", "dataclasses", "pathlib", "kozgaz_fm.utvonalak"]
+
 import json
 import logging
 import types

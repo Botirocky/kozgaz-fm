@@ -1,3 +1,5 @@
+__lazy_modules__ = ["contextlib", "os", "shutil", "subprocess", "sys", "pathlib", "kozgaz_fm"]
+
 import contextlib
 import os
 import shutil

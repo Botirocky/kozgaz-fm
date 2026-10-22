@@ -1,3 +1,5 @@
+__lazy_modules__ = ["pytest", "kozgaz_fm", "kozgaz_fm.zar"]
+
 import pytest
 
 from kozgaz_fm import zar

@@ -1,3 +1,13 @@
+__lazy_modules__ = [
+    "logging",
+    "datetime",
+    "PySide6.QtCore",
+    "PySide6.QtWidgets",
+    "kozgaz_fm",
+    "kozgaz_fm.frissites",
+    "kozgaz_fm.orarend",
+]
+
 import logging
 from datetime import datetime
 

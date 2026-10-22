@@ -1,3 +1,5 @@
+__lazy_modules__ = ["logging", "sys", "logging.handlers"]
+
 import logging
 import sys
 from logging.handlers import RotatingFileHandler

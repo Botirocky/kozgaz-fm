@@ -1,3 +1,5 @@
+__lazy_modules__ = ["dataclasses", "datetime", "enum", "kozgaz_fm.beallitasok"]
+
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
 from enum import StrEnum

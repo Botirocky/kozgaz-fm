@@ -1,3 +1,5 @@
+__lazy_modules__ = ["wave", "kozgaz_fm.beallitasok", "kozgaz_fm.hang"]
+
 import wave
 
 from kozgaz_fm.beallitasok import BEEPITETT_HANGOK
