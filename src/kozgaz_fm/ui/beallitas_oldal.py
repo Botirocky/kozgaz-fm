@@ -36,10 +36,12 @@ from kozgaz_fm import APP_NEV, KESZITO, __version__, rendszer
 from kozgaz_fm.beallitasok import Beallitasok, _ebbol
 from kozgaz_fm.hang import eszkoz_azonosito
 from kozgaz_fm.ui.elemek import Kartya, Oldal, cimke, gomb, kapcsolo, keskeny, sor
-from kozgaz_fm.ui.pin_ablak import UjPinAblak
-from kozgaz_fm.ui.tema import TEMA_NEVEK, logo_pixmap
+from kozgaz_fm.ui.pin_ablak import UjJelszoAblak, UjPinAblak
+from kozgaz_fm.ui.tema import SZIN, TEMA_NEVEK, logo_pixmap
 from kozgaz_fm.utvonalak import adat_mappa
 from kozgaz_fm.vezerlo import Vezerlo
+
+HELYI_MEZOK = ("admin_pin", "web_panel", "web_port", "web_jelszo")
 
 
 class BeallitasOldal(Oldal):
@@ -61,7 +63,8 @@ class BeallitasOldal(Oldal):
         racs.addWidget(self._frissites_kartya(), 2, 0)
         racs.addWidget(self._rendszer_kartya(), 2, 1)
         racs.addWidget(self._hozzaferes_kartya(), 3, 0, 1, 2)
-        racs.addWidget(self._nevjegy_kartya(), 4, 0, 1, 2)
+        racs.addWidget(self._web_kartya(), 4, 0, 1, 2)
+        racs.addWidget(self._nevjegy_kartya(), 5, 0, 1, 2)
         racs.setColumnStretch(0, 1)
         racs.setColumnStretch(1, 1)
         self.add(racs)
@@ -78,7 +81,7 @@ class BeallitasOldal(Oldal):
         self.kimenet = keskeny(QComboBox(), 18)
         self.kimenet.activated.connect(self._kimenet_valasztva)
         proba = gomb("Próbahang", "lejatszas")
-        proba.clicked.connect(lambda: self.v.csengo.lejatszas(self.v.b.hang_gong, self.v.b.csengo_hangero))
+        proba.clicked.connect(lambda: self.v.hang_proba(self.v.b.hang_gong))
         k.add(sor(self.kimenet, proba))
         return k
 
@@ -231,8 +234,9 @@ class BeallitasOldal(Oldal):
         self.zar_perc.valueChanged.connect(self._zar_perc)
         k.add(self.pin_allapot)
         k.add(sor(self.pin_beallit, self.pin_ki, None, cimke("Automatikus zárolás:"), self.zar_perc))
-        k.add(cimke("Elfelejtett PIN: zárd be a programot, és indítsd el egyszer így: <b>kozgaz-fm --pin-torles</b> "
-                    "(Windows-on: <b>KozgazFM.exe --pin-torles</b>).", "halvany", sortores=True))
+        k.add(cimke("Elfelejtett PIN: futtasd egyszer így: <b>kozgaz-fm --pin-torles</b> (Windows-on: "
+                    "<b>KozgazFM.exe --pin-torles</b>) – a futó program is azonnal megkapja.", "halvany",
+                    sortores=True))
         self._pin_frissit()
         return k
 
@@ -268,6 +272,81 @@ class BeallitasOldal(Oldal):
         self.v.b.admin_zar_perc = perc
         self.v.mentes_kesobb()
         self.zar_valtozott.emit()
+
+    def _web_kartya(self) -> Kartya:
+        k = Kartya("Webes vezérlés")
+        k.add(cimke("Telefonról vagy a tanári gépéről, böngészőben is lehet csengetni, zenét indítani, bemondani "
+                    "és riasztani – az iskolai hálózaton belül, jelszóval. A beállító oldalak csak itt, a programban "
+                    "módosíthatók. Minden webes művelet bekerül a naplóba.", "halvany", sortores=True))
+        self.web_be = kapcsolo("Webpanel bekapcsolása", self.v.b.web_panel)
+        self.web_be.toggled.connect(self._web_kapcsolo)
+        self.web_port = QSpinBox(minimum=1024, maximum=65535, prefix="Port: ")
+        self.web_port.setValue(self.v.b.web_port)
+        self.web_port.setMaximumWidth(160)
+        self.web_port.editingFinished.connect(self._web_port)
+        self.web_jelszo = gomb("Jelszó beállítása…", "lakat")
+        self.web_jelszo.clicked.connect(self._web_jelszo_beallit)
+        self.web_masol = gomb("Cím másolása", "masol")
+        self.web_masol.clicked.connect(self._web_cim_masol)
+        self.web_allapot = cimke(sortores=True)
+        self.web_allapot.setTextFormat(Qt.TextFormat.RichText)
+        self.web_allapot.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        k.add(sor(self.web_be, None, self.web_port, self.web_jelszo, self.web_masol))
+        k.add(self.web_allapot)
+        k.add(cimke("Windows-on az első bekapcsoláskor a tűzfal rákérdez: engedélyezd a <b>magánhálózaton</b>. "
+                    "A jelszót csak annak add meg, aki csengethet; jelszócserekor mindenki kilép.", "halvany",
+                    sortores=True))
+        self.v.frissult.connect(self._web_frissit)
+        self._web_frissit()
+        return k
+
+    def _web_frissit(self) -> None:
+        b, web = self.v.b, self.v.web
+        self.web_jelszo.setText("Jelszó módosítása…" if b.web_jelszo else "Jelszó beállítása…")
+        cimek = web.cimek()
+        self.web_masol.setEnabled(bool(cimek))
+        if web.hiba:
+            szoveg = f"<span style='color:{SZIN['hiba']}'>{web.hiba} Válassz másik portot.</span>"
+        elif cimek:
+            linkek = " vagy ".join(f"<b>{c}</b>" for c in cimek)
+            szoveg = f"<span style='color:{SZIN['szol']}'>&#9679;</span>&nbsp; Elérhető: {linkek}"
+        elif b.web_panel and not b.web_jelszo:
+            szoveg = "Állíts be jelszót, utána indul el a webpanel."
+        else:
+            szoveg = "A webpanel ki van kapcsolva."
+        if self.web_allapot.text() != szoveg:
+            self.web_allapot.setText(szoveg)
+
+    def _web_kapcsolo(self, be: bool) -> None:
+        if be and not self.v.b.web_jelszo and not self._web_jelszo_beallit():
+            self.web_be.blockSignals(True)
+            self.web_be.setChecked(False)
+            self.web_be.blockSignals(False)
+            return
+        self.v.b.web_panel = be
+        self.v.mentes()
+        self._web_frissit()
+
+    def _web_port(self) -> None:
+        if self.web_port.value() != self.v.b.web_port:
+            self.v.b.web_port = self.web_port.value()
+            self.v.mentes()
+            self._web_frissit()
+
+    def _web_jelszo_beallit(self) -> bool:
+        ablak = UjJelszoAblak(self)
+        if ablak.exec() != QDialog.DialogCode.Accepted:
+            return False
+        self.v.b.web_jelszo = ablak.tarolt
+        self.v.mentes()
+        self.v.log("Webpanel jelszava beállítva")
+        self._web_frissit()
+        return True
+
+    def _web_cim_masol(self) -> None:
+        cimek = self.v.web.cimek()
+        if cimek:
+            QGuiApplication.clipboard().setText(cimek[0])
 
     def _nevjegy_kartya(self) -> Kartya:
         k = Kartya("Névjegy")
@@ -308,7 +387,8 @@ class BeallitasOldal(Oldal):
                                             "JSON (*.json)")
         if ut:
             adat = asdict(self.v.b)
-            adat.pop("admin_pin", None)
+            for mezo in HELYI_MEZOK:
+                adat.pop(mezo, None)
             with open(ut, "w", encoding="utf-8") as f:
                 json.dump(adat, f, ensure_ascii=False, indent=2)
 
@@ -325,7 +405,8 @@ class BeallitasOldal(Oldal):
         if QMessageBox.question(self, "Importálás", "Felülírod a jelenlegi beállításokat?"
                                 ) != QMessageBox.StandardButton.Yes:
             return
-        uj.admin_pin = self.v.b.admin_pin
+        for mezo in HELYI_MEZOK:
+            setattr(uj, mezo, getattr(self.v.b, mezo))
         self.v.b.__dict__.update(uj.__dict__)
         self.v.mentes()
         self.importalva.emit()

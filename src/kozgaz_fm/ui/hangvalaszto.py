@@ -121,10 +121,7 @@ class HangValaszto(QWidget):
         self._feltolt()
 
     def _proba(self) -> None:
-        if self.v.csengo.szol:
-            self.v.csengo.megallit()
-            return
-        if not self.v.csengo.lejatszas(self._ertek, self.v.b.csengo_hangero):
+        if not self.v.hang_proba(self._ertek):
             QMessageBox.warning(self, "Meghallgatás", "Ez a hangfájl nem található.")
 
 
@@ -194,10 +191,7 @@ class SajatHangokKartya(Kartya):
         ertek = self._kivalasztott()
         if ertek is None:
             return
-        if self.v.csengo.szol:
-            self.v.csengo.megallit()
-            return
-        self.v.csengo.lejatszas(ertek, self.v.b.csengo_hangero)
+        self.v.hang_proba(ertek)
 
     def _atnevez(self) -> None:
         ertek = self._kivalasztott()

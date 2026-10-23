@@ -61,7 +61,10 @@ class Kijelzo(QWidget):
         self.kovetkezo = cimke()
         self.kovetkezo.setStyleSheet(f"font-size: 20pt; color: {SZIN['halvany']};")
         e.addLayout(sor(self.zene, None, self.kovetkezo))
-        v.zene.szam_valtozott.connect(lambda c, _f: self.zene.setText(f"Most szól: {c}"))
+        v.zene.szam_valtozott.connect(self._szam)
+
+    def _szam(self, cim: str, _forras: str = "") -> None:
+        self.zene.setText(f"Most szól: {cim}")
 
     def _meretez(self) -> None:
         m = self.height() or 1080

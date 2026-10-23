@@ -218,8 +218,7 @@ class BemondasOldal(Oldal):
             self.v.gyors_bemondas(szoveg, self.gong.isChecked())
 
     def _stop(self) -> None:
-        self.v.bemondo.megallit()
-        self.v.csengo.megallit()
+        self.v.bemondas_leallit()
 
     def _lista_frissit(self) -> None:
         self.lista.blockSignals(True)

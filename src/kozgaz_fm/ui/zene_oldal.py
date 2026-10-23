@@ -63,7 +63,7 @@ class ZeneOldal(Oldal):
         self.add(also)
         self.elrendezes.addStretch(1)
         v.zene.lista_valtozott.connect(self._lista_frissit)
-        v.zene.szam_valtozott.connect(lambda *_: self._lista_kijeloles())
+        v.zene.szam_valtozott.connect(self._lista_kijeloles)
         self._forrasok_frissit()
         self._lista_frissit()
         self._spotify_allapot()
@@ -329,7 +329,7 @@ class ZeneOldal(Oldal):
         self._lista_kijeloles()
         self._forrasok_frissit(self._kijelolt() if self._kijelolt() >= 0 else None)
 
-    def _lista_kijeloles(self) -> None:
+    def _lista_kijeloles(self, *_) -> None:
         z = self.v.zene
         if z.szamok and 0 <= z.index < self.lista.count():
             self.lista.setCurrentRow(z.index)

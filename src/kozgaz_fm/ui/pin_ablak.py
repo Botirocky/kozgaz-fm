@@ -114,3 +114,39 @@ class UjPinAblak(_PinAlap):
             return
         self.tarolt = zar.pin_hash(self.pin.text())
         self.accept()
+
+
+class UjJelszoAblak(_PinAlap):
+    def __init__(self, szulo: QWidget | None) -> None:
+        super().__init__(szulo, "Webpanel jelszava", f"Legalább {zar.JELSZO_MIN} karakter. Ezzel lehet belépni a "
+                         "webpanelre telefonról vagy másik gépről – csak annak add meg, aki csengethet.", "Mentés")
+        self.jelszo = self._mezo()
+        self.ujra = self._mezo()
+        self.elrendezes.addWidget(cimke("Új jelszó:"))
+        self.elrendezes.addWidget(self.jelszo)
+        self.elrendezes.addWidget(cimke("Még egyszer:"))
+        self.elrendezes.addWidget(self.ujra)
+        self._vege()
+        self.tarolt = ""
+        self.jelszo.setFocus()
+
+    @staticmethod
+    def _mezo() -> QLineEdit:
+        mezo = QLineEdit()
+        mezo.setEchoMode(QLineEdit.EchoMode.Password)
+        mezo.setMaxLength(zar.JELSZO_MAX)
+        mezo.setMinimumWidth(240)
+        return mezo
+
+    def _ok(self) -> None:
+        if not zar.jelszo_ervenyes(self.jelszo.text()):
+            self._hibat_mutat(f"A jelszó legalább {zar.JELSZO_MIN} karakter legyen, szóköz nélkül az elején és "
+                              "a végén.")
+            return
+        if self.jelszo.text() != self.ujra.text():
+            self._hibat_mutat("A két jelszó nem egyezik.")
+            self.ujra.clear()
+            self.ujra.setFocus()
+            return
+        self.tarolt = zar.jelszo_hash(self.jelszo.text())
+        self.accept()

@@ -1,0 +1,326 @@
+"use strict";
+
+const API = "/api/v1";
+const FRISSITES_MS = 2000;
+const $ = (id) => document.getElementById(id);
+
+let allapot = null;
+let allapotIdeje = 0;
+let idozito = null;
+let hangeroKuldes = null;
+let uzenetIdozito = null;
+
+class BelepesKell extends Error {}
+
+async function keres(metodus, ut, adat) {
+  const opciok = { method: metodus, headers: { "X-Kozgaz-FM": "1" }, credentials: "same-origin", cache: "no-store" };
+  if (adat !== undefined) {
+    opciok.headers["Content-Type"] = "application/json";
+    opciok.body = JSON.stringify(adat);
+  }
+  const valasz = await fetch(API + ut, opciok);
+  if (valasz.status === 204) return null;
+  let tartalom = null;
+  try {
+    tartalom = await valasz.json();
+  } catch {
+    tartalom = null;
+  }
+  if (valasz.ok) return tartalom ? tartalom.data : null;
+  const uzenet = tartalom && tartalom.error ? tartalom.error.message : `Hiba (${valasz.status})`;
+  if (valasz.status === 401 && ut !== "/munkamenet") throw new BelepesKell(uzenet);
+  throw new Error(uzenet);
+}
+
+function uzenet(szoveg, hibas = false) {
+  const doboz = $("uzenet");
+  doboz.textContent = szoveg;
+  doboz.classList.toggle("hibas", hibas);
+  doboz.classList.add("latszik");
+  clearTimeout(uzenetIdozito);
+  uzenetIdozito = setTimeout(() => doboz.classList.remove("latszik"), hibas ? 5000 : 2600);
+}
+
+function belepesMutat() {
+  clearInterval(idozito);
+  idozito = null;
+  $("panel").hidden = true;
+  $("belepes").hidden = false;
+  $("jelszo").focus();
+}
+
+function panelMutat() {
+  $("belepes").hidden = true;
+  $("panel").hidden = false;
+  frissit();
+  if (!idozito) idozito = setInterval(frissit, FRISSITES_MS);
+}
+
+async function frissit() {
+  try {
+    megjelenit(await keres("GET", "/allapot"));
+    $("kapcsolat").classList.remove("nincs");
+    $("kapcsolat").title = "Kapcsolódva a hangosító géphez";
+  } catch (e) {
+    if (e instanceof BelepesKell) {
+      belepesMutat();
+      return;
+    }
+    $("kapcsolat").classList.add("nincs");
+    $("kapcsolat").title = "Nincs kapcsolat a hangosító géppel";
+  }
+}
+
+async function muvelet(metodus, ut, adat, siker) {
+  try {
+    const uj = await keres(metodus, ut, adat);
+    if (uj) megjelenit(uj);
+    if (siker) uzenet(siker);
+    return true;
+  } catch (e) {
+    if (e instanceof BelepesKell) belepesMutat();
+    else uzenet(e.message, true);
+    return false;
+  }
+}
+
+function idoszoveg(mp) {
+  mp = Math.max(0, Math.round(mp));
+  const ora = Math.floor(mp / 3600);
+  const perc = Math.floor((mp % 3600) / 60);
+  const masodperc = String(mp % 60).padStart(2, "0");
+  return ora ? `${ora}:${String(perc).padStart(2, "0")}:${masodperc}` : `${perc}:${masodperc}`;
+}
+
+function ketjegyu(n) {
+  return String(n).padStart(2, "0");
+}
+
+function orat() {
+  const most = new Date();
+  $("ora").textContent = `${ketjegyu(most.getHours())}:${ketjegyu(most.getMinutes())}`;
+  if (!allapot) return;
+  if (allapot.hatra_mp === null) {
+    $("hatra").textContent = "–";
+    $("halad").style.width = "0";
+    return;
+  }
+  const hatra = allapot.hatra_mp - (Date.now() - allapotIdeje) / 1000;
+  $("hatra").textContent = idoszoveg(hatra);
+  if (allapot.hossz_mp) {
+    const arany = 1 - Math.max(0, hatra) / allapot.hossz_mp;
+    $("halad").style.width = `${Math.min(100, Math.max(0, arany * 100)).toFixed(1)}%`;
+  }
+}
+
+function opciok(select, elemek, kivalasztott) {
+  const kulcs = JSON.stringify(elemek);
+  if (select.dataset.kulcs !== kulcs) {
+    select.replaceChildren(...elemek.map(([ertek, szoveg]) => new Option(szoveg, ertek)));
+    select.dataset.kulcs = kulcs;
+  }
+  if (document.activeElement !== select) select.value = kivalasztott;
+}
+
+function megjelenit(a) {
+  allapot = a;
+  allapotIdeje = Date.now();
+  document.title = a.riasztas ? "RIASZTÁS – Közgáz FM" : `${a.szakasz} – Közgáz FM`;
+  $("cim").textContent = a.cim || "Közgáz FM";
+  $("verzio").textContent = `Közgáz FM ${a.verzio}`;
+  $("szakasz").textContent = a.szakasz;
+  $("mire").textContent = a.hatra_mire;
+  $("kovetkezo").textContent = a.kovetkezo
+    ? `Következő: ${a.kovetkezo.nap} ${a.kovetkezo.ido}, ${a.kovetkezo.leiras}`
+    : "A következő két hétben nincs csengetés";
+  $("riasztas-sav").hidden = !a.riasztas;
+  const riasztoGomb = $("riasztas-gomb");
+  riasztoGomb.dataset.muvelet = a.riasztas ? "riasztas-le" : "riasztas";
+  riasztoGomb.textContent = a.riasztas ? "Riasztás leállítása" : "Riasztás indítása";
+
+  const elo = $("elo");
+  const eloSzoveg = a.riasztas ? "" : a.bemondas_szol ? "Bemondás szól" : a.csengo_szol ? "Csengő szól" : "";
+  elo.hidden = !eloSzoveg;
+  elo.textContent = eloSzoveg;
+
+  const hangok = $("hangok");
+  const hangKulcs = JSON.stringify(a.hangok);
+  if (hangok.dataset.kulcs !== hangKulcs) {
+    hangok.dataset.kulcs = hangKulcs;
+    hangok.replaceChildren(...a.hangok.filter((h) => h.azonosito !== "becsengo").map((h) => {
+      const g = document.createElement("button");
+      g.type = "button";
+      g.className = "gomb";
+      g.dataset.muvelet = "csengetes";
+      g.dataset.hang = h.azonosito;
+      g.textContent = h.nev;
+      return g;
+    }));
+  }
+
+  const z = a.zene;
+  const szam = $("zene-szam");
+  szam.textContent = z.szol ? z.cim || "Szünetzene szól" : "Nem szól zene";
+  szam.classList.toggle("csend", !z.szol);
+  $("zene-gomb").textContent = z.szol ? "Zene leállítása" : "Zene indítása";
+  $("kovetkezo-gomb").disabled = !z.szol;
+  const forrasok = z.forrasok.map((f) => [String(f.index), f.nev]);
+  if (!forrasok.length) forrasok.push(["", "Nincs zeneforrás beállítva"]);
+  opciok($("forras"), forrasok, z.forras === null ? "" : String(z.forras));
+  if (document.activeElement !== $("hangero") && hangeroKuldes === null) {
+    $("hangero").value = z.hangero;
+    $("hangero-ertek").textContent = `${z.hangero}%`;
+  }
+
+  $("bemondas-stop").hidden = !a.bemondas_szol;
+  $("ma-csengetes").checked = a.ma.csengetes;
+  $("ma-zene").checked = a.ma.zene;
+  opciok($("ma-rend"), [["", "Szokásos (heti beosztás)"], ...a.ma.rendek.map((r) => [r, r])], a.ma.rend);
+
+  menetrend(a.menetrend);
+  orat();
+}
+
+function menetrend(esemenyek) {
+  const lista = $("menetrend");
+  const kulcs = JSON.stringify(esemenyek);
+  if (lista.dataset.kulcs === kulcs) return;
+  lista.dataset.kulcs = kulcs;
+  if (!esemenyek.length) {
+    const li = document.createElement("li");
+    li.className = "ures";
+    li.textContent = "Ma nincs csengetés.";
+    lista.replaceChildren(li);
+    return;
+  }
+  let kovetkezoVolt = false;
+  let kovetkezoElem = null;
+  lista.replaceChildren(...esemenyek.map((e) => {
+    const li = document.createElement("li");
+    li.classList.add(e.tipus);
+    if (e.mult) li.classList.add("mult");
+    else if (!kovetkezoVolt) {
+      kovetkezoVolt = true;
+      li.classList.add("kovetkezo-sor");
+      kovetkezoElem = li;
+    }
+    const ido = document.createElement("time");
+    ido.textContent = e.ido;
+    const leiras = document.createElement("span");
+    leiras.textContent = e.leiras;
+    li.append(ido, leiras);
+    return li;
+  }));
+  if (kovetkezoElem) {
+    const elotte = kovetkezoElem.previousElementSibling?.previousElementSibling || lista.firstElementChild;
+    lista.scrollTop = elotte.offsetTop;
+  }
+  lista.classList.toggle("gorgetett", lista.scrollTop > 2);
+}
+
+function riasztasKerdes() {
+  const ablak = $("megerosites");
+  ablak.returnValue = "";
+  ablak.showModal();
+  ablak.addEventListener("close", () => {
+    if (ablak.returnValue === "igen") muvelet("POST", "/riasztas", undefined, "Riasztás elindítva");
+  }, { once: true });
+}
+
+document.addEventListener("click", (esemeny) => {
+  const gomb = esemeny.target.closest("[data-muvelet]");
+  if (!gomb) return;
+  switch (gomb.dataset.muvelet) {
+    case "csengetes":
+      muvelet("POST", "/csengetes", { hang: gomb.dataset.hang }, `${gomb.textContent === "Csengetés most" ? "Csengetés" : gomb.textContent} elküldve`);
+      break;
+    case "zene":
+      if (allapot && allapot.zene.szol) muvelet("POST", "/zene/leallitas", undefined, "Zene leállítva");
+      else muvelet("POST", "/zene/inditas", undefined, "Zene indul");
+      break;
+    case "kovetkezo":
+      muvelet("POST", "/zene/kovetkezo", undefined, "Következő szám");
+      break;
+    case "bemondas-le":
+      muvelet("DELETE", "/bemondas", undefined, "Bemondás leállítva");
+      break;
+    case "riasztas":
+      riasztasKerdes();
+      break;
+    case "riasztas-le":
+      muvelet("DELETE", "/riasztas", undefined, "Riasztás leállítva");
+      break;
+    case "kilepes":
+      keres("DELETE", "/munkamenet").catch(() => {}).finally(belepesMutat);
+      break;
+  }
+});
+
+$("belepes-urlap").addEventListener("submit", async (esemeny) => {
+  esemeny.preventDefault();
+  const hiba = $("belepes-hiba");
+  hiba.textContent = "";
+  const gomb = esemeny.submitter || esemeny.target.querySelector("button");
+  gomb.disabled = true;
+  try {
+    await keres("POST", "/munkamenet", { jelszo: $("jelszo").value });
+    $("jelszo").value = "";
+    panelMutat();
+  } catch (e) {
+    hiba.textContent = e.message;
+    $("jelszo").select();
+  } finally {
+    gomb.disabled = false;
+  }
+});
+
+$("bemondas-urlap").addEventListener("submit", async (esemeny) => {
+  esemeny.preventDefault();
+  const mezo = $("bemondas-szoveg");
+  const szoveg = mezo.value.trim();
+  if (!szoveg) {
+    uzenet("Írd be, mit olvasson fel a rendszer.", true);
+    mezo.focus();
+    return;
+  }
+  if (await muvelet("POST", "/bemondas", { szoveg, gong: $("gong").checked }, "Bemondás elküldve")) mezo.value = "";
+});
+
+$("menetrend").addEventListener("scroll", (e) => {
+  e.target.classList.toggle("gorgetett", e.target.scrollTop > 2);
+}, { passive: true });
+
+$("forras").addEventListener("change", (e) => {
+  if (e.target.value !== "") muvelet("PATCH", "/zene", { forras: Number(e.target.value) }, "Zeneforrás átállítva");
+});
+
+$("hangero").addEventListener("input", (e) => {
+  $("hangero-ertek").textContent = `${e.target.value}%`;
+  clearTimeout(hangeroKuldes);
+  hangeroKuldes = setTimeout(() => {
+    hangeroKuldes = null;
+    muvelet("PATCH", "/zene", { hangero: Number(e.target.value) });
+  }, 250);
+});
+
+$("ma-csengetes").addEventListener("change", (e) => {
+  muvelet("PATCH", "/ma", { csengetes: e.target.checked }, e.target.checked ? "Ma lesz csengetés" : "Ma nincs csengetés");
+});
+
+$("ma-zene").addEventListener("change", (e) => {
+  muvelet("PATCH", "/ma", { zene: e.target.checked }, e.target.checked ? "Ma lesz szünetzene" : "Ma nincs szünetzene");
+});
+
+$("ma-rend").addEventListener("change", (e) => {
+  muvelet("PATCH", "/ma", { rend: e.target.value }, "Mai csengetési rend átállítva");
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && !$("panel").hidden) frissit();
+});
+
+setInterval(orat, 1000);
+
+keres("GET", "/munkamenet")
+  .then((adat) => (adat && adat.belepve ? panelMutat() : belepesMutat()))
+  .catch(belepesMutat);

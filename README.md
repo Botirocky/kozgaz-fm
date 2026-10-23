@@ -26,11 +26,14 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
   beépített szól.
 - **Átúsztatás:** a szünetzene számai egymásba úsznak (állítható, csengőnél azonnal elhallgat).
 - **PIN-kód:** a beállító oldalak rendszergazda-PIN-nel zárhatók, a Vezérlőpult szabadon használható marad.
+- **Webes vezérlés telefonról:** csengetés, zene, bemondás, mai kapcsolók és riasztás böngészőből az iskolai
+  hálózaton, jelszóval; minden webes művelet naplózva.
 - **Világos és sötét téma**, a mai nap idővonala a Vezérlőpulton.
 - **Automatikus frissítés a GitHubról:** saját frissítő ablak változáslistával; csak tanítási időn kívül
   települ magától, SHA-256-tal ellenőrzött csomagból (Windows-telepítő, Linux-csomag és a Pi is).
 
 ![Frissítés](docs/frissites.png)
+![Webes vezérlés](docs/webpanel.png)
 - **Közgáz FM OS:** saját Raspberry Pi rendszer – bekapcsolás után kioszk módban indul, VNC-n távolról
   kezelhető, Spotify Connect hangszóró, hardveres watchdog és lefagyás-figyelő. Leírás: [pi-os/OLVASS-EL.md](pi-os/OLVASS-EL.md).
 

@@ -111,7 +111,7 @@ class Frissito(QObject):
             self.v.leallit()
             if self.mod == "windows":
                 frissites.telepit(eredmeny, self.mod)
-                QApplication.quit()
+                QApplication.exit(0)
                 return
             hatter.leallit()
             frissites.ujraindit(eredmeny)

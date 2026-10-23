@@ -100,6 +100,9 @@ class Beallitasok:
     admin_pin: str = ""
     tema: str = "vilagos"
     admin_zar_perc: int = 5
+    web_panel: bool = False
+    web_port: int = 8080
+    web_jelszo: str = ""
     kijelzo_cim: str = "Közgáz FM"
     frissites_kereses: bool = True
     frissites_auto: bool = True

@@ -13,6 +13,8 @@ MIN_HOSSZ = 4
 MAX_HOSSZ = 8
 MAX_HIBA = 5
 TILTAS_MP = 60
+JELSZO_MIN = 8
+JELSZO_MAX = 128
 
 
 class PinHiba(Exception):
@@ -27,12 +29,26 @@ def van_pin(tarolt: str) -> bool:
     return bool(tarolt)
 
 
+def jelszo_ervenyes(jelszo: str) -> bool:
+    return JELSZO_MIN <= len(jelszo) <= JELSZO_MAX and jelszo == jelszo.strip()
+
+
+def _kivonat(titok: str, kor: int) -> str:
+    so = secrets.token_bytes(16)
+    kivonat = hashlib.pbkdf2_hmac("sha256", titok.encode(), so, kor)
+    return f"{ALGORITMUS}${kor}${so.hex()}${kivonat.hex()}"
+
+
 def pin_hash(pin: str, kor: int = KOROK) -> str:
     if not pin_ervenyes(pin):
         raise PinHiba(f"A PIN {MIN_HOSSZ}–{MAX_HOSSZ} számjegyből álljon.")
-    so = secrets.token_bytes(16)
-    kivonat = hashlib.pbkdf2_hmac("sha256", pin.encode(), so, kor)
-    return f"{ALGORITMUS}${kor}${so.hex()}${kivonat.hex()}"
+    return _kivonat(pin, kor)
+
+
+def jelszo_hash(jelszo: str, kor: int = KOROK) -> str:
+    if not jelszo_ervenyes(jelszo):
+        raise PinHiba(f"A jelszó legalább {JELSZO_MIN} karakter legyen, szóköz nélkül az elején és a végén.")
+    return _kivonat(jelszo, kor)
 
 
 def pin_ellenoriz(pin: str, tarolt: str) -> bool:
@@ -42,7 +58,7 @@ def pin_ellenoriz(pin: str, tarolt: str) -> bool:
             return False
         vart = bytes.fromhex(kivonat)
         szamolt = hashlib.pbkdf2_hmac("sha256", pin.encode(), bytes.fromhex(so), int(kor))
-    except ValueError:
+    except (ValueError, UnicodeEncodeError):
         return False
     return hmac.compare_digest(szamolt, vart)
 

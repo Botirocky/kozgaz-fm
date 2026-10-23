@@ -1,6 +1,7 @@
 __lazy_modules__ = [
     "datetime",
     "PySide6.QtCore",
+    "PySide6.QtGui",
     "PySide6.QtWidgets",
     "kozgaz_fm.beallitasok",
     "kozgaz_fm.orarend",
@@ -13,6 +14,7 @@ __lazy_modules__ = [
 from datetime import datetime
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
@@ -252,7 +254,7 @@ class CsengetesOldal(Oldal):
                 else:
                     szoveg += f",  utána {szunet} perc szünet"
             elem = QTableWidgetItem(szoveg)
-            elem.setForeground(Qt.GlobalColor.red if szin == SZIN["hiba"] else Qt.GlobalColor.white)
+            elem.setForeground(QColor(szin))
             self.tabla.setItem(i, 3, elem)
 
     def _ido_valtozott(self, index: int, mezo: str, szerk: QTimeEdit) -> None:

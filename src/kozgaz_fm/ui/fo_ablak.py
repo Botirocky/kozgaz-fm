@@ -122,8 +122,8 @@ class FoAblak(QMainWindow):
         app = QApplication.instance()
         app.styleHints().colorSchemeChanged.connect(lambda _s: self._rendszer_tema())
         self._figyelo = _Tevekenyseg(self._tevekenyseg, self)
-        app.installEventFilter(self._figyelo)
-        app.aboutToQuit.connect(lambda: app.removeEventFilter(self._figyelo))
+        self._figyel = False
+        app.aboutToQuit.connect(lambda: self._figyeles(False))
         self._zar_frissit()
         self._tick()
 
@@ -178,7 +178,7 @@ class FoAblak(QMainWindow):
         logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         e.addWidget(logo)
         e.addSpacing(22)
-        self.nav = QButtonGroup(self)
+        self.nav = QButtonGroup(sav)
         self.nav.setExclusive(True)
         for i, (nev, ikon_nev, _osztaly) in enumerate(OLDALAK):
             g = gomb(nev, szerep="nav")
@@ -263,7 +263,9 @@ class FoAblak(QMainWindow):
         self.as_ido = cimke()
         self.as_frissites = cimke()
         self.as_zar = cimke()
-        for c in (self.as_automatika, self.as_kimenet, self.as_ido, self.as_zar, self.as_frissites):
+        self.as_jelszo = cimke()
+        for c in (self.as_automatika, self.as_kimenet, self.as_ido, self.as_jelszo, self.as_zar,
+                  self.as_frissites):
             e.addWidget(c)
         e.addStretch(1)
         e.addWidget(cimke(f"{APP_NEV} {__version__}"))
@@ -301,7 +303,9 @@ class FoAblak(QMainWindow):
                                  "változott.", "info")
 
     def frissites_ablak(self) -> None:
-        FrissitesAblak(self, self.v, self._hozzaferes).exec()
+        ablak = FrissitesAblak(self, self.v, self._hozzaferes)
+        ablak.exec()
+        ablak.deleteLater()
 
     def _vedett(self, index: int) -> bool:
         return issubclass(OLDALAK[index][2], VEDETT)
@@ -329,6 +333,11 @@ class FoAblak(QMainWindow):
             self._lapozas(0)
         self._zar_frissit()
 
+    def pin_torolve(self) -> None:
+        self._feloldva = False
+        self._zar_frissit()
+        self.ertesites.mutat("A rendszergazda PIN-t parancssorból törölték.", "info")
+
     def _pin_valtozott(self) -> None:
         self._feloldva = bool(self.v.b.admin_pin)
         self._zar_frissit()
@@ -341,12 +350,23 @@ class FoAblak(QMainWindow):
         else:
             self._zar_idozito.stop()
         self.zar_gomb.setVisible(van and self._feloldva)
+        self._figyeles(van and self._feloldva)
         if not van:
             self.as_zar.setText("")
         elif self._feloldva:
             self.as_zar.setText(f"Beállítások feloldva (zárolás {self.v.b.admin_zar_perc} perc tétlenség után)")
         else:
             self.as_zar.setText("Beállítások zárolva")
+
+    def _figyeles(self, be: bool) -> None:
+        if be == self._figyel:
+            return
+        self._figyel = be
+        app = QApplication.instance()
+        if be:
+            app.installEventFilter(self._figyelo)
+        else:
+            app.removeEventFilter(self._figyelo)
 
     def _tevekenyseg(self) -> None:
         if self._feloldva and self._zar_idozito.isActive():
@@ -465,9 +485,11 @@ class FoAblak(QMainWindow):
                                 "az internetes időszerverrel</span>")
         else:
             self.as_ido.setText("Pontos idő: szinkronban" if self._ido_ok else "")
-        if rendszer.alap_jelszo():
-            self.as_ido.setText(f"<span style='color:{SZIN['hiba']}'>Alapértelmezett rendszerjelszó van a gépen, "
-                                "változtasd meg (Súgó: Közgáz FM OS)</span>")
+        self._jelszo_szamlalo = (getattr(self, "_jelszo_szamlalo", 0) + 1) % 30
+        if self._jelszo_szamlalo == 1 or not hasattr(self, "_alap_jelszo"):
+            self._alap_jelszo = rendszer.alap_jelszo()
+        self.as_jelszo.setText(f"<span style='color:{SZIN['hiba']}'>Alapértelmezett rendszerjelszó van a gépen, "
+                               "változtasd meg (Súgó: Közgáz FM OS)</span>" if self._alap_jelszo else "")
         kiadas = self.v.frissito.kiadas
         self.as_frissites.setText(f"<span style='color:{SZIN['kek']}'>Új verzió érhető el: {kiadas.verzio}</span>"
                                   if kiadas is not None else "")

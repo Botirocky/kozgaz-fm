@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#2F6CA6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101317" media="(prefers-color-scheme: dark)">
+<title>Közgáz FM</title>
+<link rel="icon" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
+<link rel="stylesheet" href="panel.css">
+<script src="panel.js" defer></script>
+</head>
+<body>
+<section id="belepes" class="belepes" hidden>
+  <form id="belepes-urlap" class="belepes-doboz">
+    <img src="logo.png" alt="" width="96" height="96">
+    <h1>Közgáz FM</h1>
+    <p>Csengetés, szünetzene és bemondás az iskolai hálózatról.</p>
+    <label for="jelszo">Jelszó</label>
+    <input id="jelszo" name="jelszo" type="password" autocomplete="current-password" required>
+    <p id="belepes-hiba" class="hiba" role="alert"></p>
+    <button type="submit" class="gomb fo">Belépés</button>
+  </form>
+</section>
+
+<div id="panel" hidden>
+  <div id="riasztas-sav" class="riasztas-sav" hidden>
+    <strong>Riasztás szól</strong>
+    <button type="button" class="gomb feher" data-muvelet="riasztas-le">Riasztás leállítása</button>
+  </div>
+
+  <header class="fejlec">
+    <img src="logo.png" alt="" width="36" height="36">
+    <span id="cim" class="fejlec-cim">Közgáz FM</span>
+    <span id="kapcsolat" class="kapcsolat" title="Kapcsolat a hangosító géppel"></span>
+    <time id="ora" class="fejlec-ora"></time>
+  </header>
+
+  <main class="racs">
+    <div class="oszlop">
+    <section class="most" aria-labelledby="szakasz">
+      <h2 id="szakasz" class="szakasz">–</h2>
+      <p class="visszaszamlalo"><span id="hatra" class="hatra">–</span> <span id="mire" class="mire"></span></p>
+      <div class="halad" aria-hidden="true"><div id="halad"></div></div>
+      <p id="kovetkezo" class="kovetkezo"></p>
+      <p id="elo" class="elo" hidden></p>
+      <button type="button" class="gomb csengo" data-muvelet="csengetes" data-hang="becsengo">Csengetés most</button>
+      <div class="hangok" role="group" aria-label="Más csengőhang">
+        <span class="hangok-cim">Más hang:</span>
+        <div id="hangok" class="hangok-lista"></div>
+      </div>
+    </section>
+
+    <section class="blokk bemondas" aria-labelledby="bemondas-cim">
+      <h2 id="bemondas-cim">Bemondás</h2>
+      <form id="bemondas-urlap">
+        <label for="bemondas-szoveg" class="rejtett">A felolvasandó szöveg</label>
+        <textarea id="bemondas-szoveg" rows="3" maxlength="500" placeholder="Mit olvasson fel a rendszer?"></textarea>
+        <div class="sor">
+          <label class="pipa"><input type="checkbox" id="gong" checked> Gong előtte</label>
+          <button type="submit" class="gomb fo">Felolvasás</button>
+        </div>
+        <button type="button" id="bemondas-stop" class="gomb" data-muvelet="bemondas-le" hidden>Bemondás leállítása</button>
+      </form>
+    </section>
+
+    <section class="blokk veszely" aria-labelledby="riasztas-cim">
+      <h2 id="riasztas-cim">Riasztás</h2>
+      <p>Folyamatos riasztó hang, a zene leáll. A leállításig szól.</p>
+      <button type="button" id="riasztas-gomb" class="gomb veszely-gomb" data-muvelet="riasztas">Riasztás indítása</button>
+    </section>
+    </div>
+
+    <div class="oszlop">
+    <section class="blokk zene" aria-labelledby="zene-cim">
+      <h2 id="zene-cim">Szünetzene</h2>
+      <p id="zene-szam" class="zene-szam">Nem szól zene</p>
+      <div class="sor">
+        <button type="button" id="zene-gomb" class="gomb fo" data-muvelet="zene">Zene indítása</button>
+        <button type="button" class="gomb" data-muvelet="kovetkezo" id="kovetkezo-gomb">Következő szám</button>
+      </div>
+      <label for="forras">Zeneforrás</label>
+      <select id="forras"></select>
+      <label for="hangero">Hangerő <output id="hangero-ertek" for="hangero"></output></label>
+      <input id="hangero" type="range" min="0" max="100" step="1">
+    </section>
+
+    <section class="blokk ma" aria-labelledby="ma-cim">
+      <h2 id="ma-cim">Ma</h2>
+      <label class="kapcsolo"><input type="checkbox" id="ma-csengetes" role="switch"> <span>Ma legyen csengetés</span></label>
+      <label class="kapcsolo"><input type="checkbox" id="ma-zene" role="switch"> <span>Ma legyen szünetzene</span></label>
+      <label for="ma-rend">Mai csengetési rend (éjfélkor visszaáll)</label>
+      <select id="ma-rend"></select>
+    </section>
+
+    <section class="blokk menetrend" aria-labelledby="menetrend-cim">
+      <h2 id="menetrend-cim">Mai menetrend</h2>
+      <ol id="menetrend"></ol>
+    </section>
+
+    </div>
+  </main>
+
+  <footer class="lab">
+    <span id="verzio"></span>
+    <button type="button" class="link" data-muvelet="kilepes">Kilépés</button>
+  </footer>
+</div>
+
+<dialog id="megerosites">
+  <form method="dialog">
+    <h2>Biztosan elindítod a riasztást?</h2>
+    <p>A riasztó hang az összes hangszóróban szól, amíg valaki le nem állítja.</p>
+    <div class="sor jobbra">
+      <button value="megse" class="gomb">Mégse</button>
+      <button value="igen" class="gomb veszely-gomb">Riasztás indítása</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="uzenet" class="uzenet" role="status" aria-live="polite"></div>
+</body>
+</html>

@@ -64,7 +64,7 @@ class Vezerlopult(Oldal):
         self.elrendezes.addStretch(1)
         v.frissult.connect(self.frissit)
         v.zene.szam_valtozott.connect(self._szam)
-        v.zene.allapot_valtozott.connect(lambda _: self._zene_gombok())
+        v.zene.allapot_valtozott.connect(self._zene_gombok)
         v.zene.lista_valtozott.connect(self._zene_gombok)
         v.riasztas_valtozott.connect(self._riasztas_valtozott)
         self.frissit()
@@ -227,6 +227,11 @@ class Vezerlopult(Oldal):
         self.zene_kapcsolo.blockSignals(True)
         self.zene_kapcsolo.setChecked(b.ma_nincs_zene != _ma())
         self.zene_kapcsolo.blockSignals(False)
+        if not self.hangero.isSliderDown() and self.hangero.value() != b.zene_hangero:
+            self.hangero.blockSignals(True)
+            self.hangero.setValue(b.zene_hangero)
+            self.hangero.blockSignals(False)
+            self.hangero_cimke.setText(f"{b.zene_hangero}%")
         self._zene_gombok()
 
     def _forrasok(self) -> None:
@@ -299,7 +304,7 @@ class Vezerlopult(Oldal):
         self._lista_kulcs = None
         self.frissit()
 
-    def _zene_gombok(self) -> None:
+    def _zene_gombok(self, *_) -> None:
         szol = self.v.zene.szol
         self.lejatszas_gomb.setIcon(ikon("szunet" if szol else "lejatszas", SZIN["kiemelt_szoveg"]))
         if not szol:

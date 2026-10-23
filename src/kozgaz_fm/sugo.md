@@ -128,11 +128,27 @@ sarokban megjelenik: *↑ Új verzió*.
 - Feloldás után a beállítások a megadott ideig (alapból 5 perc) tétlenség után maguktól újra zárolódnak; a bal
   alsó *Beállítások zárolása* gombbal azonnal is zárolhatók. Ha a program a tálcára kerül, szintén zárol.
 - 5 hibás próbálkozás után 60 másodpercig nem lehet újra próbálni.
-- **Elfelejtett PIN:** zárd be a programot (tálca → *Kilépés*), és indítsd el egyszer `KozgazFM.exe --pin-torles`
-  paraméterrel (Linuxon / Pi-n: `kozgaz-fm --pin-torles`). Ez csak a PIN-t törli, a többi beállítás megmarad.
+- **Elfelejtett PIN:** futtasd egyszer a `KozgazFM.exe --pin-torles` parancsot (Linuxon / Pi-n:
+  `kozgaz-fm --pin-torles`). Ha a program közben fut, azonnal megkapja; a többi beállítás megmarad.
 - A PIN a véletlen vagy kéretlen átállítás ellen véd; aki a géphez rendszergazdaként hozzáfér, az a PIN-t
   törölni tudja. A PIN-t a program csak titkosítva (sózott kivonatként) tárolja, és exportáláskor nem kerül a
-  fájlba.
+  fájlba (a webpanel jelszava és bekapcsolása sem).
+
+## Webes vezérlés (telefonról)
+
+A Vezérlőpult legfontosabb gombjai böngészőből is elérhetők, az iskolai hálózaton bármelyik telefonról vagy gépről:
+csengetés most (más hanggal is), szünetzene indítása / leállítása / következő szám, zeneforrás és hangerő,
+bemondás felolvasása, mai kapcsolók és mai csengetési rend, riasztás – és látszik a visszaszámláló meg a mai menetrend.
+
+- **Bekapcsolás:** *Beállítások → Webes vezérlés → Webpanel bekapcsolása*. Első bekapcsoláskor jelszót kér
+  (legalább 8 karakter). Alatta megjelenik a cím, például `http://192.168.1.50:8080` – ezt kell a telefon
+  böngészőjébe beírni (a *Cím másolása* gombbal vágólapra tehető). Érdemes a telefonon kezdőképernyőre tenni.
+- **Windows:** az első bekapcsoláskor a Windows tűzfal rákérdez – engedélyezd a **magánhálózaton**.
+- **Biztonság:** csak jelszóval lehet belépni; 5 hibás próbálkozás után 60 másodpercig senki nem próbálkozhat.
+  A belépés 12 óra tétlenség után lejár, jelszócserekor mindenki kilép. A beállító oldalak (csengetési rend, zene
+  forrásai, naptár stb.) a weben **nem** módosíthatók. Minden webes művelet a gép IP-címével bekerül a **Napló**ba.
+- A kapcsolat nem titkosított (HTTP), ezért csak az iskolai belső hálózaton használd, ne tedd ki az internetre.
+- A port (alapból 8080) a beállításoknál módosítható, ha azt már más program használja.
 
 ## Napló és biztonsági mentés
 
@@ -166,6 +182,10 @@ A YouTube időnként változtat a rendszerén – ilyenkor a program frissítés
 
 **Raspberry Pi-n (Közgáz FM OS) fut a program.** A Pi-t a hangosító Windows-gépről is kezelheted
 távoli asztallal (VNC): `kozgaz-fm.local:5900`. Részletek: a Pi-hez mellékelt *Közgáz FM OS* leírásban.
+
+**A telefon nem éri el a webpanelt.** Ugyanazon a hálózaton van-e a telefon, mint a hangosító gép (nem mobilneten)?
+A *Beállítások → Webes vezérlés* alatt zöld-e az állapot? Windows-on a tűzfalban engedélyezve van-e a Közgáz FM
+a magánhálózaton? Egyes vendég-wifik elszigetelik a készülékeket egymástól – ilyenkor a tanári hálózatot használd.
 
 **Bezártam az ablakot, és nem találom.** A program a tálcán fut tovább (az óra melletti ikonok között).
 A Start menüből újraindítva is előjön az ablak.

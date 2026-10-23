@@ -14,6 +14,45 @@ def _naplozas() -> None:
     logging.basicConfig(level=logging.INFO, handlers=[kezelo, logging.StreamHandler()])
 
 
+def _uzen(uzenet: bytes) -> bool:
+    from PySide6.QtCore import QCoreApplication
+    from PySide6.QtNetwork import QLocalSocket
+
+    from kozgaz_fm import APP_ID
+
+    _app = QCoreApplication.instance() or QCoreApplication(sys.argv[:1])
+    csatlakozo = QLocalSocket()
+    csatlakozo.connectToServer(APP_ID)
+    if not csatlakozo.waitForConnected(500):
+        return False
+    csatlakozo.write(uzenet)
+    csatlakozo.flush()
+    csatlakozo.waitForBytesWritten(500)
+    csatlakozo.disconnectFromServer()
+    return True
+
+
+def _uzenet_jott(szerver, vezerlo, ablak) -> None:
+    kapcsolat = szerver.nextPendingConnection()
+    if kapcsolat is None:
+        return
+
+    def olvas() -> None:
+        uzenet = bytes(kapcsolat.readAll().data()).strip()
+        if uzenet == b"pin-torles":
+            vezerlo.b.admin_pin = ""
+            vezerlo.mentes()
+            vezerlo.log("A rendszergazda PIN törölve (parancssorból)")
+            ablak.pin_torolve()
+        elif uzenet:
+            ablak.elohoz()
+
+    kapcsolat.readyRead.connect(olvas)
+    kapcsolat.disconnected.connect(kapcsolat.deleteLater)
+    if kapcsolat.bytesAvailable():
+        olvas()
+
+
 def main() -> int:
     if "--version" in sys.argv:
         from kozgaz_fm import __version__
@@ -26,7 +65,10 @@ def main() -> int:
         b = Beallitasok.betoltes()
         b.admin_pin = ""
         b.mentes()
-        print("A rendszergazda PIN törölve. Indítsd újra a Közgáz FM-et.")
+        if _uzen(b"pin-torles"):
+            print("A rendszergazda PIN törölve, a futó Közgáz FM is megkapta.")
+        else:
+            print("A rendszergazda PIN törölve.")
         return 0
     from PySide6.QtNetwork import QLocalServer, QLocalSocket
     from PySide6.QtWidgets import QApplication
@@ -71,8 +113,9 @@ def main() -> int:
 
     QLocalServer.removeServer(APP_ID)
     szerver = QLocalServer()
+    szerver.setSocketOptions(QLocalServer.SocketOption.UserAccessOption)
     szerver.listen(APP_ID)
-    szerver.newConnection.connect(lambda: (szerver.nextPendingConnection(), ablak.elohoz()))
+    szerver.newConnection.connect(lambda: _uzenet_jott(szerver, vezerlo, ablak))
 
     vezerlo.indit()
     if kioszk:

@@ -13,6 +13,7 @@ __lazy_modules__ = [
     "kozgaz_fm.orarend",
     "kozgaz_fm.spotify",
     "kozgaz_fm.utvonalak",
+    "kozgaz_fm.webpanel",
 ]
 
 import logging
@@ -31,6 +32,7 @@ from kozgaz_fm.hang import CsengoLejatszo, ZeneLejatszo
 from kozgaz_fm.orarend import Esemeny, Tipus, napi_esemenyek, zene_ablakban
 from kozgaz_fm.spotify import Spotify
 from kozgaz_fm.utvonalak import adat_mappa, naplo_fajl
+from kozgaz_fm.webpanel import WebPanel
 
 naplo = logging.getLogger(__name__)
 
@@ -56,6 +58,7 @@ class Vezerlo(QObject):
         super().__init__(parent)
         self.b = beallitasok
         self.csengo = CsengoLejatszo(self)
+        self.proba = CsengoLejatszo(self)
         self.zene = ZeneLejatszo(self)
         self.bemondo = Bemondo(self)
         self.spotify: Spotify | None = None
@@ -79,20 +82,26 @@ class Vezerlo(QObject):
         self._mento.setInterval(600)
         self._mento.timeout.connect(self.mentes)
         self.frissito = Frissito(self, self)
+        self._web_indult = False
+        self.web = WebPanel(self)
         self.beallitasok_alkalmazasa()
 
     def indit(self) -> None:
         self.log(f"Közgáz FM {__version__} elindult")
         self._ora.start()
         self.frissito.indit()
+        self._web_indult = True
+        self.web.alkalmaz()
         QTimer.singleShot(1500, self._szinkron)
 
     def leallit(self) -> None:
         if self._mento.isActive():
             self.mentes()
         self._ora.stop()
+        self.web.leallit()
         self.zene.allj()
         self.csengo.megallit()
+        self.proba.megallit()
         self.bemondo.megallit()
 
     def log(self, szoveg: str) -> None:
@@ -113,6 +122,7 @@ class Vezerlo(QObject):
     def beallitasok_alkalmazasa(self) -> None:
         b = self.b
         self.csengo.eszkoz(b.kimenet)
+        self.proba.eszkoz(b.kimenet)
         self.zene.eszkoz(b.kimenet)
         self.zene.keveres = b.keveres
         self.zene.gyorsitotar = b.youtube_gyorsitotar
@@ -127,6 +137,8 @@ class Vezerlo(QObject):
             self.spotify = None
         self.zene.spotify = self.spotify
         self.zene.forras_beallitas(self.aktiv_forras())
+        if self._web_indult:
+            self.web.alkalmaz()
         self._nap = None
         self.frissult.emit()
 
@@ -142,13 +154,25 @@ class Vezerlo(QObject):
         self.hangok_valtoztak.emit()
         return hang
 
-    def _csengo_elenged(self) -> None:
-        if self.csengo.szol:
-            self.csengo.megallit()
-        self.csengo.lejatszo.setSource(QUrl())
+    def _csengo_elenged(self, ertek: str) -> None:
+        self.proba.elenged()
+        if not self.csengo.szol:
+            self.csengo.elenged()
+            return
+        if self.csengo.lejatszo.source() == QUrl.fromLocalFile(str(sajat_hangok.ut(ertek))):
+            raise sajat_hangok.SajatHangHiba("Ez a hang most szól. Várd meg, amíg elhallgat, és próbáld újra.")
+
+    def hang_proba(self, ertek: str) -> bool:
+        if self.proba.szol:
+            self.proba.megallit()
+            return True
+        if self.riasztas or self.csengo.szol:
+            self._jelez("Csengetés vagy riasztás közben nincs meghallgatás.", "hiba")
+            return True
+        return self.proba.lejatszas(ertek, self.b.csengo_hangero)
 
     def sajat_hang_atnevezes(self, ertek: str, nev: str) -> sajat_hangok.SajatHang:
-        self._csengo_elenged()
+        self._csengo_elenged(ertek)
         hang = sajat_hangok.atnevez(ertek, nev)
         for mezo in HANG_MEZOK:
             if getattr(self.b, mezo) == ertek:
@@ -161,7 +185,7 @@ class Vezerlo(QObject):
         return [mezo for mezo in HANG_MEZOK if getattr(self.b, mezo) == ertek]
 
     def sajat_hang_torles(self, ertek: str) -> None:
-        self._csengo_elenged()
+        self._csengo_elenged(ertek)
         sajat_hangok.torol(ertek)
         for mezo in self.sajat_hang_hasznalat(ertek):
             setattr(self.b, mezo, HANG_MEZOK[mezo])
@@ -285,7 +309,15 @@ class Vezerlo(QObject):
     def gyors_bemondas(self, szoveg: str, gong: bool = True) -> None:
         self.bemondas(Bemondas("Gyors bemondás", "00:00", tipus="szoveg", tartalom=szoveg, gong=gong))
 
+    def bemondas_leallit(self) -> None:
+        self._sor = deque(f for f in self._sor if f.tipus == "hang" and f.ertek != self.b.hang_gong)
+        if self.bemondo.beszel:
+            self.bemondo.megallit()
+        elif self.csengo.szol and not self.riasztas:
+            self.csengo.megallit()
+
     def _kovetkezo_feladat(self) -> None:
+        self.proba.megallit()
         while self._sor:
             feladat = self._sor.popleft()
             self.zene.halkit(True)

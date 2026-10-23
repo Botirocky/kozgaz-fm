@@ -23,6 +23,7 @@ KIHAGYOTT = [
 adatok = [
     (str(CSOMAG / "hangok"), "kozgaz_fm/hangok"),
     (str(CSOMAG / "kepek"), "kozgaz_fm/kepek"),
+    (str(CSOMAG / "web"), "kozgaz_fm/web"),
     (str(CSOMAG / "sugo.md"), "kozgaz_fm"),
 ]
 adatok += collect_data_files("yt_dlp_ejs")
