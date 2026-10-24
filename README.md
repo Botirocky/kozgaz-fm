@@ -19,29 +19,61 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
   lehalkul.
 - **Riasztás:** folyamatos riasztó hang egy gombbal, megerősítéssel.
 - **Mai kapcsolók:** ma nincs csengetés / ma nincs zene / mai rend (pl. rövidített órák).
-- **Folyosói kijelző:** teljes képernyős óra, visszaszámláló, épp szóló szám (F11).
+- **Folyosói kijelző:** teljes képernyős óra, visszaszámláló, épp szóló szám, a zenekérés QR-kódja (F11).
 - **Működés:** tálcán fut, automatikus indítás, egyetlen példány, hangkimenet-választás, napló,
   beállítás-export/import, beépített súgó, óraszinkron-figyelés.
 - **Saját hangok:** saját csengőhang, dallam, jingle bemásolva a program mappájába; hiányzó hang helyett a
   beépített szól.
 - **Átúsztatás:** a szünetzene számai egymásba úsznak (állítható, csengőnél azonnal elhallgat).
 - **PIN-kód:** a beállító oldalak rendszergazda-PIN-nel zárhatók, a Vezérlőpult szabadon használható marad.
-- **Webes vezérlés telefonról:** csengetés, zene, bemondás, mai kapcsolók és riasztás böngészőből az iskolai
-  hálózaton, jelszóval; minden webes művelet naplózva.
+- **Rendkívüli események:** előre beállított tűzriadó-gyakorlat (magától indul és leáll), rendkívüli
+  csengetés (pl. ünnepség kezdete) és csendes időszak (érettségi, mérés: nincs zene és bemondás, a csengő
+  néma vagy halk).
+- **Webes vezérlés telefonról:** csengetés, zene (a következő számok listájával, ugrással), bemondás
+  szerkeszthető sablonokkal, mai kapcsolók, csendes időszak egy gombbal és riasztás böngészőből az iskolai
+  hálózaton, jelszóval; a telefon kezdőképernyőjére is kitehető. Minden webes művelet naplózva.
+- **Zenekérés diákoktól:** QR-kód a folyosói kijelzőn → a diák telefonról kér számot (cím vagy
+  YouTube-link), a rendszergazda jóváhagyja, és a szám a szünetzene következő helyére kerül. Napi korlát
+  telefononként, hosszkorlát, tiltólista, duplikátum-szűrés.
+- **Tartalékgép:** két gép (pl. a hangosító Windows-gép és egy Pi) figyeli egymást; ha a fő gép kiesik, a
+  tartalék kb. 15 másodpercen belül átveszi a csengetést, és visszaadja, amint a fő gép újra működik. A
+  csengetési rendet és a naptárt a tartalék magától átveszi.
 - **Világos és sötét téma**, a mai nap idővonala a Vezérlőpulton.
 - **Automatikus frissítés a GitHubról:** saját frissítő ablak változáslistával; csak tanítási időn kívül
   települ magától, SHA-256-tal ellenőrzött csomagból (Windows-telepítő, Linux-csomag és a Pi is).
-
-![Frissítés](docs/frissites.png)
-![Webes vezérlés](docs/webpanel.png)
 - **Közgáz FM OS:** saját Raspberry Pi rendszer – bekapcsolás után kioszk módban indul, VNC-n távolról
   kezelhető, Spotify Connect hangszóró, hardveres watchdog és lefagyás-figyelő. Leírás: [pi-os/OLVASS-EL.md](pi-os/OLVASS-EL.md).
+
+### Webes vezérlés és zenekérés
+
+<p>
+  <img src="docs/webpanel.png" width="560" alt="Webes vezérlés: csengetés, szünetzene a következő számokkal, zenekérések jóváhagyása, mai kapcsolók és menetrend">
+  <img src="docs/zenekeres.png" width="220" alt="A diákok kérés-oldala telefonon">
+</p>
+
+### Tartalékgép
+
+![Tartalékgép beállítása](docs/tartalek.png)
+
+### Frissítés
+
+![Frissítés](docs/frissites.png)
+
+## Újdonságok a 0.6.0-ban
+
+- Rendkívüli események a Naptárban: tűzriadó-gyakorlat, rendkívüli csengetés, csendes időszak.
+- Zenekérés diákoktól QR-kóddal, jóváhagyással.
+- Tartalékgép: automatikus átvétel és visszaadás, beállítás-szinkron.
+- Webpanel: zenesor és ugrás, bemondás-sablonok (a programmal közösek), csendes időszak telefonról, telepíthető ikon.
+- A dalcímek mindenhol sima szövegként jelennek meg; a kért számok keresése csak a YouTube-on fut.
 
 ## Telepítés
 
 - **Windows:** `KozgazFM-<verzió>-telepito.exe` a Releases oldalról (rendszergazdai jog nem kell).
 - **Linux:** `tar xzf KozgazFM-<verzió>-linux-x86_64.tar.gz && ./KozgazFM-*/telepites.sh`
 - **Raspberry Pi:** `KozgazFM-OS-<verzió>-arm64.img.xz` Raspberry Pi Imagerrel SD-kártyára.
+
+A már telepített példányok az önfrissítővel maguktól megkapják az új verziót (tanítási időn kívül).
 
 ## Fejlesztés
 

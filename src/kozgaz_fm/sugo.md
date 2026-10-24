@@ -73,6 +73,29 @@ magától csenget, a szünetekben zenét játszik (saját MP3-ak, YouTube vagy S
 - **YouTube-számok előre letöltése:** a következő számokat a program előre letölti, így nem akad és rövid
   internetkimaradásnál is szól. A letöltött fájlok a *Gyorsítótár ürítése* gombbal törölhetők.
 
+### Zenekérés diákoktól
+
+A diákok telefonról kérhetnek számot a szünetekre; a kérés csak jóváhagyás után szól.
+
+1. Kapcsold be a webes vezérlést (*Beállítások → Webes vezérlés*), mert a telefonok ezen keresztül érik el a gépet.
+2. *Zene → Zenekérés diákoktól → Zenekérés bekapcsolása.* Megjelenik a kérés-oldal címe (pl.
+   `http://192.168.1.50:8080/keres`) és a QR-kódja. A QR-kód a folyosói kijelzőn is látszik, és a
+   *QR-kód mentése* gombbal nagy felbontásban kinyomtatható plakátnak.
+3. A diák beírja az előadót és a címet (vagy bemásolja a YouTube-linket), a program megkeresi a YouTube-on.
+4. A kérés a *Jóváhagyásra váró kérések* listájába kerül (a programban és a webpanelen is), a talált címmel és
+   hosszal. *Elfogadás* után a szám a szünetzene következő helyére kerül; a diák a telefonján látja, hogy
+   elfogadták, majd hogy szól.
+
+Szabályok, amelyeket a program magától betart:
+
+- **Napi korlát** telefononként (alapból 3 szám), és óránként legfeljebb 20 kérés egy hálózati címről.
+- **Hosszkorlát** (alapból 7 perc); élő adás és lejátszási lista nem kérhető.
+- **Tiltólista:** soronként egy szó vagy előadó; ha a kérésben vagy a talált címben szerepel, a kérés nem megy át.
+- Ugyanazt a számot nem lehet kétszer kérni, amíg az előző vár vagy szólni fog.
+- Csak YouTube-ról keres; más weboldal linkjét nem fogadja el. Spotify forrás mellett a kért szám nem
+  játszható le (mappa, MP3 vagy YouTube forrás kell).
+- A kérések a program újraindításáig maradnak meg.
+
 ### Spotify összekapcsolása (egyszer kell)
 
 1. Nyisd meg a [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard) oldalt, és lépj be
@@ -90,13 +113,29 @@ A Spotify a saját alkalmazásában beállított hangkimenetet használja – az
 - **Szünnap:** nincs csengetés és szünetzene (ünnepek, tanítási szünetek, igazgatói napok).
 - **Kivételnap:** egy adott napon más rend érvényes (pl. rövidített órák), vagy szünnapon / hétvégén is
   legyen csengetés (pl. szombati tanítási nap).
-- A naptárban pirossal a szünnapok, sárgával a kivételnapok látszanak; egy napra kattintva kiírja, milyen
-  rend lesz aznap.
+- A naptárban pirossal a szünnapok, sárgával a kivételnapok, kékkel aláhúzva a rendkívüli események látszanak;
+  egy napra kattintva kiírja, milyen rend lesz aznap.
+
+### Rendkívüli események
+
+Egyszeri, előre beállított események a *Naptár → Rendkívüli események* részben (*Hozzáadás*). A pipával
+ideiglenesen kikapcsolhatók, törlés nélkül.
+
+- **Tűzriadó-gyakorlat:** a megadott időpontban magától elindul a riasztás, és a beállított idő (pl. 3 perc)
+  után leáll; 0 perc = kézi leállításig. A folyosói kijelző előre nem mutatja, a gyakorlat meglepetés maradhat.
+  Ha közben valaki kézzel indít riasztást, azt a gyakorlat vége nem állítja le.
+- **Rendkívüli csengetés:** a megadott időpontban egyszer megszólal a kiválasztott hang (pl. ünnepség kezdete,
+  fogadóóra vége). Szünnapon és „ma nincs csengetés” mellett is szól.
+- **Csendes időszak:** kezdettől végig nincs szünetzene és ütemezett bemondás; a csengő néma, vagy ha kéred,
+  halk (pl. 25%). Érettségire, mérésre, ünnepségre. A Vezérlőpulton kiírja, hogy épp csendes időszak van.
+  A webpanelről egy gombbal is indítható „most, N percre”, és ott be is fejezhető.
 
 ## Bemondások
 
 - **Azonnali bemondás:** írd be a szöveget (vagy válassz sablont), és nyomd meg a *Bemondás most* gombot.
   Előtte gong szól, a zene közben lehalkul.
+- **Sablonok:** a sablonlista melletti **+** gomb a beírt szöveget sablonként elmenti, a kuka a kiválasztott
+  sablont törli. A sablonok a webpanelen is megjelennek (egy koppintással beilleszthetők), és ott is menthetők.
 - **Ütemezett bemondás:** adott időpontban, a hét kiválasztott napjain vagy egyetlen napon. Lehet
   felolvasott szöveg vagy hangfájl (pl. Himnusz hétfő reggel, előre felvett üzenet).
 - A felolvasáshoz a gépen kell magyar beszédhang. Windows-on: *Gépház → Idő és nyelv → Beszéd → Hangok
@@ -105,7 +144,7 @@ A Spotify a saját alkalmazásában beállított hangkimenetet használja – az
 ## Folyosói kijelző
 
 A bal alsó *Kijelző mód* gomb (vagy F11) teljes képernyős órát nyit: aktuális óra/szünet, visszaszámlálás,
-haladásjelző, épp szóló szám. Több monitor esetén a *Beállítások → Folyosói kijelző* részben választható a
+haladásjelző, épp szóló szám, és ha a zenekérés be van kapcsolva, a kérés-oldal QR-kódja. Több monitor esetén a *Beállítások → Folyosói kijelző* részben választható a
 képernyő. Kilépés: **Esc** vagy dupla kattintás.
 
 ## Frissítések
@@ -149,6 +188,36 @@ bemondás felolvasása, mai kapcsolók és mai csengetési rend, riasztás – �
   forrásai, naptár stb.) a weben **nem** módosíthatók. Minden webes művelet a gép IP-címével bekerül a **Napló**ba.
 - A kapcsolat nem titkosított (HTTP), ezért csak az iskolai belső hálózaton használd, ne tedd ki az internetre.
 - A port (alapból 8080) a beállításoknál módosítható, ha azt már más program használja.
+- **Szünetzene:** a *Következik* lista a következő számokat mutatja; egy számra koppintva azonnal az szól.
+- **Csendes időszak most:** a *Ma* részben választható hossz (15 perc – 3 óra), opcionálisan halk csengővel.
+  Amíg tart, felül kék sáv jelzi, és a *Vége most* gombbal befejezhető.
+- **A telefon kezdőképernyőjére** a böngésző menüjéből (*Hozzáadás a kezdőképernyőhöz*) tehető ki ikonként.
+
+## Tartalékgép (két gép)
+
+Ha két gép is be van kötve a hangosításba (például a hangosító Windows-gép és egy Közgáz FM OS-es Raspberry Pi,
+keverőn át), a kettő figyelheti egymást: a **tartalék** csak akkor csenget, ha a **fő gép** kiesett.
+
+1. A fő gépen: *Beállítások → Tartalékgép → Ennek a gépnek a szerepe: Ez a fő gép.* A program generál egy közös
+   kulcsot; a másoló gombbal vágólapra teheted. A *Másik gép címe* mezőbe a tartalék gép címe kerül (pl.
+   `192.168.1.60:8080`); ez nem kötelező, de így a fő gép állapotsora is mutatja, hogy a tartalék él-e.
+2. A tartalék gépen: szerep *Ez a tartalék gép*, cím a fő gép címe (pl. `192.168.1.50:8080`), kulcsnak a fő gépről
+   másolt kulcs.
+3. Az állapot alul látszik: *A fő gép működik, ez a gép készenlétben vár.*
+
+Működés:
+
+- A tartalék 5 másodpercenként jelet kér a fő géptől. Ha háromszor egymás után nem kap választ (a gép leállt,
+  lefagyott, elment az áram vagy a hálózat), kb. 15 másodpercen belül **átveszi a csengetést**, a zenét és a
+  bemondásokat. Ha az átvétel előtti utolsó percben kimaradt egy csengetés, azt pótolja.
+- Amint a fő gép újra válaszol, a tartalék **visszaáll készenlétbe**.
+- A tartalék 5 percenként **átveszi a fő gépről** a csengetési rendet, a heti beosztást, a naptárt, a rendkívüli
+  eseményeket, a bemondásokat, a sablonokat és a mai kapcsolókat (a *Szinkronizálás most* gombbal azonnal is).
+  A zeneforrásokat, a hangkimenetet és a jelszavakat nem, ezeket gépenként kell beállítani.
+- Készenlétben a tartalék gépen is lehet kézzel csengetni és bemondani.
+- A két gép a webes vezérlés portján beszél (a webpanel jelszava nélkül is elindul, de csak a kulccsal válaszol).
+  Windows-on a tűzfalban engedélyezd a magánhálózaton. A forgalom nem titkosított, ezért csak az iskolai belső
+  hálózaton használd, és a kulcsot ne add ki.
 
 ## Napló és biztonsági mentés
 
@@ -186,6 +255,12 @@ távoli asztallal (VNC): `kozgaz-fm.local:5900`. Részletek: a Pi-hez mellékelt
 **A telefon nem éri el a webpanelt.** Ugyanazon a hálózaton van-e a telefon, mint a hangosító gép (nem mobilneten)?
 A *Beállítások → Webes vezérlés* alatt zöld-e az állapot? Windows-on a tűzfalban engedélyezve van-e a Közgáz FM
 a magánhálózaton? Egyes vendég-wifik elszigetelik a készülékeket egymástól – ilyenkor a tanári hálózatot használd.
+
+**A diákok nem érik el a kérés-oldalt.** Ugyanazon a wifin vannak-e, mint a hangosító gép? A diák-wifi gyakran
+el van választva a tanári hálózattól; ilyenkor a rendszergazdának kell átjárást nyitnia a gép webes portjára,
+vagy a zenekérést a tanári hálózatról lehet használni.
+
+**A tartalék gép „nem fogadta el a kulcsot” hibát ír.** A két gépen eltér a kulcs: másold át újra a fő gépről.
 
 **Bezártam az ablakot, és nem találom.** A program a tálcán fut tovább (az óra melletti ikonok között).
 A Start menüből újraindítva is előjön az ablak.
