@@ -116,6 +116,7 @@ class Vezerlopult(Oldal):
         self.forras_valaszto.setMinimumHeight(38)
         self.forras_valaszto.activated.connect(self._forras_valasztva)
         self.szam_cimke = cimke("Nem szól zene", "alcim", sortores=True)
+        self.szam_cimke.setTextFormat(Qt.TextFormat.PlainText)
         self.szam_cimke.setMinimumHeight(48)
         self.forras_cimke = cimke("", "halvany")
         self.elozo_gomb = ikon_gomb("elozo", "Előző szám")

@@ -59,6 +59,7 @@ class Kijelzo(QWidget):
         e.addWidget(self.halad)
         e.addStretch(1)
         self.zene = cimke()
+        self.zene.setTextFormat(Qt.TextFormat.PlainText)
         self.zene.setStyleSheet(f"font-size: 20pt; color: {SZIN['kiemelt']};")
         self.kovetkezo = cimke()
         self.kovetkezo.setStyleSheet(f"font-size: 20pt; color: {SZIN['halvany']};")

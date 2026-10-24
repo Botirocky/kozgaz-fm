@@ -161,6 +161,7 @@ class Ertesites(QFrame):
         e = QHBoxLayout(self)
         e.setContentsMargins(18, 12, 16, 12)
         self.szoveg = cimke(sortores=True)
+        self.szoveg.setTextFormat(Qt.TextFormat.PlainText)
         e.addWidget(self.szoveg)
         self._idozito = QTimer(self)
         self._idozito.setSingleShot(True)

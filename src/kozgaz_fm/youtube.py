@@ -98,7 +98,8 @@ def egy_szam(cel: str) -> tuple[str, str, int] | None:
     import yt_dlp
 
     kereses = cel.startswith("ytsearch")
-    with yt_dlp.YoutubeDL(_opciok(extract_flat="in_playlist", noplaylist=True)) as ydl:
+    with yt_dlp.YoutubeDL(_opciok(extract_flat="in_playlist", noplaylist=True,
+                                  allowed_extractors=["youtube", "youtube:search", "youtube:tab"])) as ydl:
         info = ydl.extract_info(cel, download=False)
     if not info:
         return None

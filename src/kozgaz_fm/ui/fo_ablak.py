@@ -225,6 +225,7 @@ class FoAblak(QMainWindow):
         elo_e.setSpacing(8)
         self.elo_ikon = cimke()
         self.elo_szoveg = cimke()
+        self.elo_szoveg.setTextFormat(Qt.TextFormat.PlainText)
         self.elo_szoveg.setMaximumWidth(360)
         elo_e.addWidget(self.elo_ikon)
         elo_e.addWidget(self.elo_szoveg)
