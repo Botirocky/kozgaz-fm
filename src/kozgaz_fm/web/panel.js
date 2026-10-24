@@ -9,6 +9,8 @@ let allapotIdeje = 0;
 let idozito = null;
 let hangeroKuldes = null;
 let uzenetIdozito = null;
+let sablonTorles = false;
+const HALK_CSENGO = 30;
 
 class BelepesKell extends Error {}
 
@@ -172,6 +174,14 @@ function megjelenit(a) {
     $("hangero-ertek").textContent = `${z.hangero}%`;
   }
 
+  zenesor(z.sor);
+  sablonok(a.sablonok);
+  $("csend-sav").hidden = !a.csend;
+  $("csend-indito").hidden = !!a.csend;
+  if (a.csend) {
+    $("csend-szoveg").textContent = `Csendes időszak ${a.csend.ig}-ig, ${a.csend.halk ? "halk" : "néma"} csengővel`;
+  }
+
   $("bemondas-stop").hidden = !a.bemondas_szol;
   $("ma-csengetes").checked = a.ma.csengetes;
   $("ma-zene").checked = a.ma.zene;
@@ -218,6 +228,48 @@ function menetrend(esemenyek) {
   lista.classList.toggle("gorgetett", lista.scrollTop > 2);
 }
 
+function zenesor(sor) {
+  const lista = $("zenesor");
+  const kulcs = JSON.stringify(sor);
+  $("zenesor-blokk").hidden = !sor.length;
+  if (lista.dataset.kulcs === kulcs) return;
+  lista.dataset.kulcs = kulcs;
+  lista.replaceChildren(...sor.map((s) => {
+    const li = document.createElement("li");
+    const g = document.createElement("button");
+    g.type = "button";
+    g.className = "zenesor-elem";
+    g.dataset.muvelet = "ugras";
+    g.dataset.index = s.index;
+    g.dataset.cim = s.cim;
+    g.title = "Lejátszás most";
+    g.textContent = s.cim;
+    li.append(g);
+    return li;
+  }));
+}
+
+function sablonok(lista) {
+  const doboz = $("sablonok");
+  const kulcs = JSON.stringify([lista, sablonTorles]);
+  if (doboz.dataset.kulcs === kulcs) return;
+  doboz.dataset.kulcs = kulcs;
+  doboz.classList.toggle("torles", sablonTorles);
+  $("sablon-szerkesztes").textContent = sablonTorles ? "Kész" : "Sablonok törlése";
+  $("sablon-szerkesztes").setAttribute("aria-pressed", String(sablonTorles));
+  $("sablon-szerkesztes").hidden = !lista.length;
+  doboz.replaceChildren(...lista.map((szoveg, i) => {
+    const g = document.createElement("button");
+    g.type = "button";
+    g.className = "sablon";
+    g.dataset.muvelet = sablonTorles ? "sablon-torles" : "sablon";
+    g.dataset.index = i;
+    g.title = sablonTorles ? "Sablon törlése" : szoveg;
+    g.textContent = szoveg;
+    return g;
+  }));
+}
+
 function riasztasKerdes() {
   const ablak = $("megerosites");
   ablak.returnValue = "";
@@ -249,6 +301,43 @@ document.addEventListener("click", (esemeny) => {
       break;
     case "riasztas-le":
       muvelet("DELETE", "/riasztas", undefined, "Riasztás leállítva");
+      break;
+    case "ugras":
+      muvelet("POST", "/zene/ugras", { index: Number(gomb.dataset.index), cim: gomb.dataset.cim }, "Szám indul");
+      break;
+    case "sablon":
+      $("bemondas-szoveg").value = allapot.sablonok[Number(gomb.dataset.index)] || "";
+      $("bemondas-szoveg").focus();
+      break;
+    case "sablon-mentes": {
+      const szoveg = $("bemondas-szoveg").value.trim();
+      if (!szoveg) {
+        uzenet("Előbb írd be a szöveget.", true);
+        break;
+      }
+      if (allapot.sablonok.includes(szoveg)) {
+        uzenet("Ez már szerepel a sablonok között.");
+        break;
+      }
+      muvelet("PUT", "/bemondas/sablonok", { sablonok: [...allapot.sablonok, szoveg] }, "Sablon elmentve");
+      break;
+    }
+    case "sablon-szerkesztes":
+      sablonTorles = !sablonTorles;
+      sablonok(allapot.sablonok);
+      break;
+    case "sablon-torles": {
+      const szoveg = allapot.sablonok[Number(gomb.dataset.index)];
+      if (szoveg === undefined || !confirm(`Törlöd ezt a sablont?\n\n${szoveg}`)) break;
+      muvelet("PUT", "/bemondas/sablonok", { sablonok: allapot.sablonok.filter((s) => s !== szoveg) }, "Sablon törölve");
+      break;
+    }
+    case "csend":
+      muvelet("POST", "/csend", { perc: Number($("csend-perc").value), hangero: $("csend-halk").checked ? HALK_CSENGO : 0 },
+        "Csendes időszak elindítva");
+      break;
+    case "csend-le":
+      muvelet("DELETE", "/csend", undefined, "Csendes időszak befejezve");
       break;
     case "kilepes":
       keres("DELETE", "/munkamenet").catch(() => {}).finally(belepesMutat);

@@ -20,6 +20,13 @@ BEEPITETT_HANGOK = {
     "riasztas": "Riasztás",
 }
 
+ALAP_SABLONOK = [
+    "Kedves Diákok! Felhívjuk figyelmeteket, hogy a mai napon rövidített órák lesznek.",
+    "Figyelem! Az osztályfőnöki órák után rendkívüli diákközgyűlést tartunk az aulában.",
+    "Kedves Diákok és Tanárok! A tanítás vége után a tornateremben kezdődik a ballagási próba.",
+    "Kérjük az ügyeletes diákokat, hogy jelentkezzenek a titkárságon.",
+]
+
 NAPOK = ["Hétfő", "Kedd", "Szerda", "Csütörtök", "Péntek", "Szombat", "Vasárnap"]
 
 
@@ -112,6 +119,7 @@ class Beallitasok:
     youtube_gyorsitotar: bool = True
     bemondasok: list[Bemondas] = field(default_factory=list)
     rendkivuli: list[Rendkivuli] = field(default_factory=list)
+    bemondas_sablonok: list[str] = field(default_factory=lambda: list(ALAP_SABLONOK))
     spotify_client_id: str = ""
     spotify_eszkoz: str = ""
     tts_hang: str = ""

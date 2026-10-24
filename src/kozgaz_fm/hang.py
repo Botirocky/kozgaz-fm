@@ -543,6 +543,13 @@ class ZeneLejatszo(QObject):
             self.allapot_valtozott.emit(True)
             self._jatszd(self.index - 1)
 
+    def kovetkezok(self, darab: int = 5) -> list[tuple[int, str]]:
+        if self.spotify_mod or not self.szamok:
+            return []
+        hossz = len(self.szamok)
+        return [((self.index + i) % hossz, self.szamok[(self.index + i) % hossz].cim)
+                for i in range(1, min(darab, hossz - 1) + 1)]
+
     def ugras(self, index: int) -> None:
         if self.szamok:
             self._szol = True

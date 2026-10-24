@@ -9,6 +9,10 @@
 <title>Közgáz FM</title>
 <link rel="icon" href="logo.png">
 <link rel="apple-touch-icon" href="logo.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Közgáz FM">
 <link rel="stylesheet" href="panel.css">
 <script src="panel.js" defer></script>
 </head>
@@ -46,6 +50,10 @@
       <div class="halad" aria-hidden="true"><div id="halad"></div></div>
       <p id="kovetkezo" class="kovetkezo"></p>
       <p id="elo" class="elo" hidden></p>
+      <div id="csend-sav" class="csend-sav" hidden>
+        <span id="csend-szoveg"></span>
+        <button type="button" class="gomb" data-muvelet="csend-le">Vége most</button>
+      </div>
       <button type="button" class="gomb csengo" data-muvelet="csengetes" data-hang="becsengo">Csengetés most</button>
       <div class="hangok" role="group" aria-label="Más csengőhang">
         <span class="hangok-cim">Más hang:</span>
@@ -58,11 +66,16 @@
       <form id="bemondas-urlap">
         <label for="bemondas-szoveg" class="rejtett">A felolvasandó szöveg</label>
         <textarea id="bemondas-szoveg" rows="3" maxlength="500" placeholder="Mit olvasson fel a rendszer?"></textarea>
+        <div id="sablonok" class="sablonok" role="group" aria-label="Bemondás-sablonok"></div>
         <div class="sor">
           <label class="pipa"><input type="checkbox" id="gong" checked> Gong előtte</label>
           <button type="submit" class="gomb fo">Felolvasás</button>
         </div>
         <button type="button" id="bemondas-stop" class="gomb" data-muvelet="bemondas-le" hidden>Bemondás leállítása</button>
+        <div class="sor sablon-muveletek">
+          <button type="button" class="link" data-muvelet="sablon-mentes">Mentés sablonként</button>
+          <button type="button" class="link" id="sablon-szerkesztes" data-muvelet="sablon-szerkesztes" aria-pressed="false">Sablonok törlése</button>
+        </div>
       </form>
     </section>
 
@@ -81,6 +94,10 @@
         <button type="button" id="zene-gomb" class="gomb fo" data-muvelet="zene">Zene indítása</button>
         <button type="button" class="gomb" data-muvelet="kovetkezo" id="kovetkezo-gomb">Következő szám</button>
       </div>
+      <div id="zenesor-blokk" hidden>
+        <h3 class="alcim">Következik</h3>
+        <ol id="zenesor" class="zenesor"></ol>
+      </div>
       <label for="forras">Zeneforrás</label>
       <select id="forras"></select>
       <label for="hangero">Hangerő <output id="hangero-ertek" for="hangero"></output></label>
@@ -93,6 +110,22 @@
       <label class="kapcsolo"><input type="checkbox" id="ma-zene" role="switch"> <span>Ma legyen szünetzene</span></label>
       <label for="ma-rend">Mai csengetési rend (éjfélkor visszaáll)</label>
       <select id="ma-rend"></select>
+      <div id="csend-indito" class="csend-indito">
+        <label for="csend-perc">Csendes időszak most (nincs zene és bemondás)</label>
+        <div class="sor">
+          <select id="csend-perc">
+            <option value="15">15 percre</option>
+            <option value="30">30 percre</option>
+            <option value="45" selected>45 percre</option>
+            <option value="60">1 órára</option>
+            <option value="90">1,5 órára</option>
+            <option value="120">2 órára</option>
+            <option value="180">3 órára</option>
+          </select>
+          <button type="button" class="gomb" data-muvelet="csend">Indítás</button>
+        </div>
+        <label class="pipa"><input type="checkbox" id="csend-halk"> Halk csengő (néma helyett)</label>
+      </div>
     </section>
 
     <section class="blokk menetrend" aria-labelledby="menetrend-cim">

@@ -47,6 +47,8 @@ MAX_MUNKAMENET = 64
 MAX_TOREK = 8192
 VALASZ_IDO = 5.0
 MAX_BEMONDAS = 500
+MAX_SABLON = 30
+CSEND_PERC = (5, 240)
 ALAP_PORT = 8080
 
 STATIKUS = {
@@ -54,6 +56,7 @@ STATIKUS = {
     "/panel.css": ("web/panel.css", "text/css; charset=utf-8"),
     "/panel.js": ("web/panel.js", "text/javascript; charset=utf-8"),
     "/logo.png": ("kepek/logo.png", "image/png"),
+    "/manifest.webmanifest": ("web/manifest.webmanifest", "application/manifest+json; charset=utf-8"),
 }
 
 BIZTONSAG = {
@@ -72,8 +75,12 @@ UTVONALAK = {
     ("POST", "/api/v1/zene/leallitas"): "zene_leallitas",
     ("POST", "/api/v1/zene/kovetkezo"): "zene_kovetkezo",
     ("PATCH", "/api/v1/zene"): "zene_allitas",
+    ("POST", "/api/v1/zene/ugras"): "zene_ugras",
     ("POST", "/api/v1/bemondas"): "bemondas",
     ("DELETE", "/api/v1/bemondas"): "bemondas_leallitas",
+    ("PUT", "/api/v1/bemondas/sablonok"): "sablonok_mentese",
+    ("POST", "/api/v1/csend"): "csend_inditas",
+    ("DELETE", "/api/v1/csend"): "csend_leallitas",
     ("POST", "/api/v1/riasztas"): "riasztas_inditas",
     ("DELETE", "/api/v1/riasztas"): "riasztas_leallitas",
     ("PATCH", "/api/v1/ma"): "ma_allitas",
@@ -421,12 +428,13 @@ class WebMuveletek(_Fosszal):
                      if e.tipus in CSENGOK or e.tipus in KULONLEGES or e.tipus in (Tipus.BEMONDAS, Tipus.ZENE_INDUL)]
         aktiv = v.aktiv_forras()
         ma = date.today().isoformat()
+        csend = v.aktiv_csend(most)
         return {
             "ido": most.isoformat(timespec="seconds"),
             "verzio": __version__,
             "cim": b.kijelzo_cim,
             "szakasz": a.cim,
-            "csend": a.csend,
+            "csend": {"nev": csend.nev, "ig": csend.ig, "halk": csend.csengo_hangero > 0} if csend else None,
             "hatra_mp": int(hatra.total_seconds()) if hatra is not None and mire else None,
             "hatra_mire": mire,
             "hossz_mp": int((a.vege - a.kezdet).total_seconds()) if mire and a.kezdet and a.vege else None,
@@ -441,6 +449,7 @@ class WebMuveletek(_Fosszal):
                 "forrasok": [{"index": i, "nev": f.nev, "tipus": f.tipus} for i, f in enumerate(b.forrasok)
                              if f.aktiv],
                 "hangero": b.zene_hangero,
+                "sor": [{"index": i, "cim": cim} for i, cim in v.zene.kovetkezok()] if v.zene.szol else [],
             },
             "ma": {
                 "csengetes": b.ma_nincs_csengetes != ma,
@@ -450,6 +459,7 @@ class WebMuveletek(_Fosszal):
             },
             "hangok": [{"azonosito": azon, "nev": nev} for azon, nev, _e in self._hangok()],
             "menetrend": menetrend,
+            "sablonok": list(b.bemondas_sablonok),
         }
 
     def _riasztas_kozben(self) -> None:
@@ -485,6 +495,19 @@ class WebMuveletek(_Fosszal):
             self.v.zene.kovetkezo()
         return self.allapot()
 
+    def zene_ugras(self, adat: dict, ip: str) -> dict:
+        self._riasztas_kozben()
+        szamok = self.v.zene.szamok
+        index = _egesz(adat, "index", 0, max(0, len(szamok) - 1))
+        cim = adat.get("cim")
+        if index is None or not isinstance(cim, str):
+            raise WebHiba(422, "validation_error", "Hiányzik a szám sorszáma vagy címe.")
+        if not self.v.zene.szol or not szamok or szamok[index].cim != cim:
+            raise WebHiba(409, "queue_changed", "Közben változott a lejátszási sor, frissítsd az oldalt.")
+        self.v.log(f"Webpanel ({ip}): ugrás – {cim}")
+        self.v.zene.ugras(index)
+        return self.allapot()
+
     def zene_allitas(self, adat: dict, ip: str) -> dict:
         b = self.v.b
         forras = _egesz(adat, "forras", 0, max(0, len(b.forrasok) - 1))
@@ -516,6 +539,43 @@ class WebMuveletek(_Fosszal):
     def bemondas_leallitas(self, _adat: dict, ip: str) -> dict:
         self.v.log(f"Webpanel ({ip}): bemondás leállítása")
         self.v.bemondas_leallit()
+        return self.allapot()
+
+    def sablonok_mentese(self, adat: dict, ip: str) -> dict:
+        sablonok = adat.get("sablonok")
+        if not isinstance(sablonok, list) or len(sablonok) > MAX_SABLON:
+            raise WebHiba(422, "validation_error", f"Legfeljebb {MAX_SABLON} sablon lehet.")
+        tiszta: list[str] = []
+        for s in sablonok:
+            if not isinstance(s, str) or not s.strip() or len(s) > MAX_BEMONDAS:
+                raise WebHiba(422, "validation_error",
+                              f"Minden sablon 1–{MAX_BEMONDAS} karakteres szöveg legyen.")
+            if s.strip() not in tiszta:
+                tiszta.append(s.strip())
+        self.v.b.bemondas_sablonok = tiszta
+        self.v.log(f"Webpanel ({ip}): bemondás-sablonok módosítva")
+        self.v.mentes()
+        return self.allapot()
+
+    def csend_inditas(self, adat: dict, ip: str) -> dict:
+        self._riasztas_kozben()
+        perc = _egesz(adat, "perc", *CSEND_PERC)
+        hangero = _egesz(adat, "hangero", 0, 100)
+        if perc is None:
+            raise WebHiba(422, "validation_error", "Add meg, hány percig tartson a csendes időszak.")
+        if self.v.aktiv_csend() is not None:
+            raise WebHiba(409, "quiet_active", "Már tart egy csendes időszak.")
+        try:
+            self.v.log(f"Webpanel ({ip}): csendes időszak indítása {perc} percre")
+            self.v.csend_most(perc, hangero or 0, "Csendes időszak (webpanelről)")
+        except ValueError as e:
+            raise WebHiba(409, "too_late", str(e)) from None
+        return self.allapot()
+
+    def csend_leallitas(self, _adat: dict, ip: str) -> dict:
+        if not self.v.csend_vege():
+            raise WebHiba(409, "no_quiet", "Most nincs csendes időszak.")
+        self.v.log(f"Webpanel ({ip}): csendes időszak befejezése")
         return self.allapot()
 
     def riasztas_inditas(self, _adat: dict, ip: str) -> dict:

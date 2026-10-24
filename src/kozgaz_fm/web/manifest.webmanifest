@@ -1,0 +1,14 @@
+{
+  "name": "Közgáz FM",
+  "short_name": "Közgáz FM",
+  "description": "Csengetés, szünetzene és bemondás az iskolai hálózatról.",
+  "lang": "hu",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#101317",
+  "theme_color": "#2F6CA6",
+  "icons": [
+    {"src": "logo.png", "sizes": "1005x1005", "type": "image/png", "purpose": "any"}
+  ]
+}

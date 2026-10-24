@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPlainTextEdit,
     QRadioButton,
+    QSizePolicy,
 )
 
 from kozgaz_fm.beallitasok import NAPOK, Bemondas
@@ -36,12 +37,7 @@ from kozgaz_fm.ui.elemek import Kartya, Oldal, cimke, gomb, ido_mezo, kapcsolo, 
 from kozgaz_fm.ui.tema import SZIN, ikon
 from kozgaz_fm.vezerlo import Vezerlo
 
-SABLONOK = [
-    "Kedves Diákok! Felhívjuk figyelmeteket, hogy a mai napon rövidített órák lesznek.",
-    "Figyelem! Az osztályfőnöki órák után rendkívüli diákközgyűlést tartunk az aulában.",
-    "Kedves Diákok és Tanárok! A tanítás vége után a tornateremben kezdődik a ballagási próba.",
-    "Kérjük az ügyeletes diákokat, hogy jelentkezzenek a titkárságon.",
-]
+MAX_SABLON = 30
 
 
 class BemondasAblak(QDialog):
@@ -150,10 +146,15 @@ class BemondasOldal(Oldal):
         self.szoveg.setPlaceholderText("Írd ide, amit a rendszer felolvasson…")
         self.szoveg.setMinimumHeight(140)
         self.sablon = QComboBox()
-        self.sablon.addItem("Sablon beillesztése…")
-        for s in SABLONOK:
-            self.sablon.addItem(s[:70] + ("…" if len(s) > 70 else ""), s)
+        self.sablon.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.sablon.setMinimumContentsLength(20)
+        self.sablon.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.sablon.activated.connect(self._sablon)
+        sablon_mentes = gomb("", "plusz", tipp="A beírt szöveg mentése sablonként (a webpanelen is megjelenik)")
+        sablon_mentes.clicked.connect(self._sablon_mentes)
+        sablon_torles = gomb("", "kuka", tipp="A kiválasztott sablon törlése")
+        sablon_torles.clicked.connect(self._sablon_torles)
+        self._sablonok()
         self.gong = kapcsolo("Gong előtte", True)
         mond = gomb("Bemondás most", "bemondas", "fo")
         mond.clicked.connect(self._mond)
@@ -162,7 +163,7 @@ class BemondasOldal(Oldal):
         self.hang = QComboBox()
         self.hang.setToolTip("Felolvasó hang (a Windows magyar hangja: Microsoft Szabolcs)")
         self.hang.activated.connect(self._hang_valasztva)
-        k.add(self.sablon)
+        k.add(sor(self.sablon, sablon_mentes, sablon_torles))
         k.add(self.szoveg)
         k.add(sor(self.gong, None, stop, mond))
         k.add(sor(cimke("Felolvasó hang:"), self.hang))
@@ -207,10 +208,52 @@ class BemondasOldal(Oldal):
         self.v.b.tts_hang = self.hang.currentData() or ""
         self.v.mentes()
 
+    def _sablonok(self) -> None:
+        self.sablon.blockSignals(True)
+        self.sablon.clear()
+        self.sablon.addItem("Sablon beillesztése…")
+        for s in self.v.b.bemondas_sablonok:
+            self.sablon.addItem(s[:70] + ("…" if len(s) > 70 else ""), s)
+        self.sablon.blockSignals(False)
+
+    def showEvent(self, esemeny) -> None:
+        self._sablonok()
+        super().showEvent(esemeny)
+
     def _sablon(self, i: int) -> None:
         if i > 0:
             self.szoveg.setPlainText(self.sablon.itemData(i))
+            self._kivalasztott_sablon = self.sablon.itemData(i)
         self.sablon.setCurrentIndex(0)
+
+    def _sablon_mentes(self) -> None:
+        szoveg = self.szoveg.toPlainText().strip()
+        sablonok = self.v.b.bemondas_sablonok
+        if not szoveg:
+            QMessageBox.information(self, "Sablon", "Előbb írd be a szöveget, amit sablonként el akarsz menteni.")
+            return
+        if szoveg in sablonok:
+            QMessageBox.information(self, "Sablon", "Ez a szöveg már szerepel a sablonok között.")
+            return
+        if len(sablonok) >= MAX_SABLON:
+            QMessageBox.warning(self, "Sablon", f"Legfeljebb {MAX_SABLON} sablon lehet. Törölj egy régit.")
+            return
+        sablonok.append(szoveg)
+        self.v.mentes()
+        self._sablonok()
+
+    def _sablon_torles(self) -> None:
+        szoveg = getattr(self, "_kivalasztott_sablon", None) or self.szoveg.toPlainText().strip()
+        sablonok = self.v.b.bemondas_sablonok
+        if szoveg not in sablonok:
+            QMessageBox.information(self, "Sablon", "Válassz ki egy sablont a listából, és utána töröld.")
+            return
+        if QMessageBox.question(self, "Sablon törlése", f"Törlöd ezt a sablont?\n\n{szoveg}") == \
+                QMessageBox.StandardButton.Yes:
+            sablonok.remove(szoveg)
+            self._kivalasztott_sablon = None
+            self.v.mentes()
+            self._sablonok()
 
     def _mond(self) -> None:
         szoveg = self.szoveg.toPlainText().strip()

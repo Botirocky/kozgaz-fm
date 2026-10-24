@@ -19,17 +19,17 @@ __lazy_modules__ = [
 import logging
 from collections import deque
 from dataclasses import dataclass, fields
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QTimer, QUrl, Signal
 
 from kozgaz_fm import __version__, sajat_hangok
-from kozgaz_fm.beallitasok import Beallitasok, Bemondas
+from kozgaz_fm.beallitasok import Beallitasok, Bemondas, Rendkivuli
 from kozgaz_fm.bemondo import Bemondo
 from kozgaz_fm.frissito import Frissito
 from kozgaz_fm.hang import CsengoLejatszo, ZeneLejatszo
-from kozgaz_fm.orarend import Esemeny, Tipus, napi_esemenyek, zene_ablakban
+from kozgaz_fm.orarend import Esemeny, Tipus, csendes_idoszakok, napi_esemenyek, zene_ablakban
 from kozgaz_fm.spotify import Spotify
 from kozgaz_fm.utvonalak import adat_mappa, naplo_fajl
 from kozgaz_fm.webpanel import WebPanel
@@ -266,6 +266,8 @@ class Vezerlo(QObject):
         elif e.tipus in (Tipus.CSEND, Tipus.CSEND_VEGE):
             self.log(f"Csendes időszak {'kezdődik' if e.tipus is Tipus.CSEND else 'véget ért'}: "
                      f"{e.rendkivuli.nev if e.rendkivuli else ''}")
+            if e.tipus is Tipus.CSEND and self.zene.szol:
+                self.zene_leallit()
         elif e.tipus is Tipus.RENDKIVULI and e.rendkivuli:
             if self.zene.szol:
                 self._auto_zene = False
@@ -412,6 +414,37 @@ class Vezerlo(QObject):
         self._szinkron()
         self.log(("Ma nincs csengetés" if mezo == "ma_nincs_csengetes" else "Ma nincs szünetzene")
                  + (" – bekapcsolva" if be else " – kikapcsolva"))
+
+    def aktiv_csend(self, most: datetime | None = None) -> Rendkivuli | None:
+        most = most or datetime.now()
+        return next((r for kezdet, vege, r in csendes_idoszakok(self.b, most.date()) if kezdet <= most < vege), None)
+
+    def csend_most(self, perc: int, hangero: int = 0, nev: str = "Csendes időszak") -> Rendkivuli:
+        most = datetime.now()
+        kezdet = most.replace(second=0, microsecond=0)
+        vege = min(kezdet + timedelta(minutes=perc), datetime.combine(most.date(), time(23, 59)))
+        if vege <= most:
+            raise ValueError("A nap végéig már nem fér bele csendes időszak.")
+        r = Rendkivuli(nev, most.date().isoformat(), f"{kezdet:%H:%M}", tipus="csend", ig=f"{vege:%H:%M}",
+                       csengo_hangero=hangero)
+        self.b.rendkivuli.append(r)
+        self.log(f"Csendes időszak kezdődik: {nev} ({r.tol}–{r.ig})")
+        if self.zene.szol:
+            self.zene_leallit()
+        self.mentes()
+        return r
+
+    def csend_vege(self) -> bool:
+        most = datetime.now()
+        r = self.aktiv_csend(most)
+        if r is None:
+            return False
+        r.ig = f"{most:%H:%M}"
+        if r.ig <= r.tol:
+            self.b.rendkivuli.remove(r)
+        self.log(f"Csendes időszak befejezve: {r.nev}")
+        self.mentes()
+        return True
 
     def ma_rend(self, nev: str) -> None:
         ma = date.today().isoformat()
