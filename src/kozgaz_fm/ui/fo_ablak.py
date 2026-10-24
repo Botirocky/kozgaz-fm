@@ -264,7 +264,8 @@ class FoAblak(QMainWindow):
         self.as_frissites = cimke()
         self.as_zar = cimke()
         self.as_jelszo = cimke()
-        for c in (self.as_automatika, self.as_kimenet, self.as_ido, self.as_jelszo, self.as_zar,
+        self.as_tartalek = cimke()
+        for c in (self.as_automatika, self.as_tartalek, self.as_kimenet, self.as_ido, self.as_jelszo, self.as_zar,
                   self.as_frissites):
             e.addWidget(c)
         e.addStretch(1)
@@ -473,6 +474,9 @@ class FoAblak(QMainWindow):
     def _allapotsor_frissit(self) -> None:
         if self.v.riasztas:
             self.as_automatika.setText(f"<span style='color:{SZIN['hiba']}'>&#9679;</span>&nbsp; Riasztás")
+        elif self.v.tartalek.passziv:
+            self.as_automatika.setText(f"<span style='color:{SZIN['kek']}'>&#9679;</span>&nbsp; Tartalék gép: "
+                                       "készenlétben")
         else:
             self.as_automatika.setText(f"<span style='color:{SZIN['szol']}'>&#9679;</span>&nbsp; Automatika fut")
         nev = getattr(self, "_kimenet_nev", None)
@@ -480,6 +484,8 @@ class FoAblak(QMainWindow):
             self._kimenet_kulcs = self.v.b.kimenet
             self._kimenet_nev = nev = kimeneti_eszkoz(self.v.b.kimenet).description() or "alapértelmezett"
         self.as_kimenet.setText(f"Hangkimenet: {nev}")
+        szoveg, szin = self.v.tartalek.leiras()
+        self.as_tartalek.setText(f"<span style='color:{SZIN[szin]}'>{szoveg}</span>" if szoveg else "")
         if self._ido_ok is False:
             self.as_ido.setText(f"<span style='color:{SZIN['figyelem']}'>Az óra nincs szinkronban "
                                 "az internetes időszerverrel</span>")

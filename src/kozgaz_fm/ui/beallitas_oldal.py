@@ -8,6 +8,7 @@ __lazy_modules__ = [
     "kozgaz_fm",
     "kozgaz_fm.beallitasok",
     "kozgaz_fm.hang",
+    "kozgaz_fm.tartalek",
     "kozgaz_fm.ui.elemek",
     "kozgaz_fm.ui.pin_ablak",
     "kozgaz_fm.ui.tema",
@@ -35,13 +36,14 @@ from PySide6.QtWidgets import (
 from kozgaz_fm import APP_NEV, KESZITO, __version__, rendszer
 from kozgaz_fm.beallitasok import Beallitasok, _ebbol
 from kozgaz_fm.hang import eszkoz_azonosito
+from kozgaz_fm.tartalek import SZEREPEK, TartalekHiba, cim_normalizal, uj_kulcs
 from kozgaz_fm.ui.elemek import Kartya, Oldal, cimke, gomb, kapcsolo, keskeny, sor
 from kozgaz_fm.ui.pin_ablak import UjJelszoAblak, UjPinAblak
 from kozgaz_fm.ui.tema import SZIN, TEMA_NEVEK, logo_pixmap
 from kozgaz_fm.utvonalak import adat_mappa
 from kozgaz_fm.vezerlo import Vezerlo
 
-HELYI_MEZOK = ("admin_pin", "web_panel", "web_port", "web_jelszo")
+HELYI_MEZOK = ("admin_pin", "web_panel", "web_port", "web_jelszo", "tartalek_mod", "tartalek_cim", "tartalek_kulcs")
 
 
 class BeallitasOldal(Oldal):
@@ -64,7 +66,8 @@ class BeallitasOldal(Oldal):
         racs.addWidget(self._rendszer_kartya(), 2, 1)
         racs.addWidget(self._hozzaferes_kartya(), 3, 0, 1, 2)
         racs.addWidget(self._web_kartya(), 4, 0, 1, 2)
-        racs.addWidget(self._nevjegy_kartya(), 5, 0, 1, 2)
+        racs.addWidget(self._tartalek_kartya(), 5, 0, 1, 2)
+        racs.addWidget(self._nevjegy_kartya(), 6, 0, 1, 2)
         racs.setColumnStretch(0, 1)
         racs.setColumnStretch(1, 1)
         self.add(racs)
@@ -347,6 +350,105 @@ class BeallitasOldal(Oldal):
         cimek = self.v.web.cimek()
         if cimek:
             QGuiApplication.clipboard().setText(cimek[0])
+
+    def _tartalek_kartya(self) -> Kartya:
+        b = self.v.b
+        k = Kartya("Tartalékgép")
+        k.add(cimke("Két gép (pl. a hangosító Windows-gép és egy Közgáz FM OS-es Raspberry Pi) figyeli egymást. "
+                    "A tartalék gép csak akkor csenget, ha a fő gép kb. 15 másodpercig nem válaszol (leállt, "
+                    "lefagyott, elment az áram), és visszaadja a vezérlést, amint a fő gép újra működik. A "
+                    "csengetési rendet, a naptárt és a bemondásokat a tartalék magától átveszi a fő gépről. Mindkét "
+                    "gép hangkimenete legyen az erősítőre kötve (pl. keverőn át), és ugyanazt a kulcsot kapják.",
+                    "halvany", sortores=True))
+        self.tartalek_szerep = QComboBox()
+        for kulcs, nev in SZEREPEK.items():
+            self.tartalek_szerep.addItem(nev, kulcs)
+        self.tartalek_szerep.setCurrentIndex(max(0, self.tartalek_szerep.findData(b.tartalek_mod)))
+        self.tartalek_szerep.activated.connect(self._tartalek_szerep)
+        self.tartalek_cim = QLineEdit(b.tartalek_cim)
+        self.tartalek_cim.setPlaceholderText("A másik gép címe, pl. 192.168.1.20:8080")
+        self.tartalek_cim.editingFinished.connect(self._tartalek_cim)
+        self.tartalek_kulcs = QLineEdit(b.tartalek_kulcs)
+        self.tartalek_kulcs.setEchoMode(QLineEdit.EchoMode.Password)
+        self.tartalek_kulcs.setPlaceholderText("Közös kulcs (a fő gépen generáld, a tartalékba másold be)")
+        self.tartalek_kulcs.editingFinished.connect(self._tartalek_kulcs)
+        uj = gomb("Új kulcs", "lakat", tipp="Új, véletlen kulcs a fő gépen")
+        uj.clicked.connect(self._tartalek_uj_kulcs)
+        masol = gomb("", "masol", tipp="Kulcs másolása a vágólapra")
+        masol.clicked.connect(lambda: QGuiApplication.clipboard().setText(self.v.b.tartalek_kulcs))
+        self.tartalek_szinkron = gomb("Szinkronizálás most", "frissites",
+                                      tipp="A csengetési rend és a naptár átvétele a fő gépről")
+        self.tartalek_szinkron.clicked.connect(self.v.tartalek.szinkron)
+        self.tartalek_allapot = cimke(sortores=True)
+        self.tartalek_allapot.setTextFormat(Qt.TextFormat.RichText)
+        racs = QGridLayout()
+        racs.setVerticalSpacing(10)
+        racs.addWidget(cimke("Ennek a gépnek a szerepe:"), 0, 0)
+        racs.addWidget(self.tartalek_szerep, 0, 1)
+        racs.addWidget(cimke("A másik gép címe:"), 1, 0)
+        racs.addLayout(sor(self.tartalek_cim, self.tartalek_szinkron), 1, 1)
+        racs.addWidget(cimke("Közös kulcs:"), 2, 0)
+        racs.addLayout(sor(self.tartalek_kulcs, uj, masol), 2, 1)
+        racs.setColumnStretch(1, 1)
+        k.add(racs)
+        k.add(self.tartalek_allapot)
+        k.add(cimke("A webes vezérlés portján kommunikálnak (jelszó nélkül is elindul, de csak a kulccsal "
+                    "válaszol). A tűzfalon engedélyezd a magánhálózaton.", "halvany", sortores=True))
+        self.v.frissult.connect(self._tartalek_frissit)
+        self._tartalek_frissit()
+        return k
+
+    def _tartalek_frissit(self) -> None:
+        szoveg, szin = self.v.tartalek.leiras()
+        if not szoveg:
+            szoveg, szin = "Kikapcsolva: ez a gép egyedül csenget.", "halvany"
+        html = f"<span style='color:{SZIN[szin]}'>&#9679;</span>&nbsp; {szoveg}"
+        if self.tartalek_allapot.text() != html:
+            self.tartalek_allapot.setText(html)
+        self.tartalek_szinkron.setVisible(self.v.b.tartalek_mod == "tartalek")
+
+    def _tartalek_mentes(self) -> None:
+        self.v.mentes()
+        self._tartalek_frissit()
+
+    def _tartalek_szerep(self, _i: int) -> None:
+        b = self.v.b
+        b.tartalek_mod = self.tartalek_szerep.currentData() or ""
+        if b.tartalek_mod == "fo" and not b.tartalek_kulcs:
+            b.tartalek_kulcs = uj_kulcs()
+            self.tartalek_kulcs.setText(b.tartalek_kulcs)
+        self.v.log(f"Tartalékgép-szerep: {SZEREPEK[b.tartalek_mod]}")
+        self._tartalek_mentes()
+
+    def _tartalek_cim(self) -> None:
+        try:
+            cim = cim_normalizal(self.tartalek_cim.text())
+        except TartalekHiba as e:
+            QMessageBox.warning(self, "Tartalékgép", str(e))
+            return
+        self.tartalek_cim.setText(cim)
+        if cim != self.v.b.tartalek_cim:
+            self.v.b.tartalek_cim = cim
+            self._tartalek_mentes()
+
+    def _tartalek_kulcs(self) -> None:
+        kulcs = self.tartalek_kulcs.text().strip()
+        if kulcs and len(kulcs) < 16:
+            QMessageBox.warning(self, "Tartalékgép", "A kulcs legalább 16 karakter legyen. A fő gépen az "
+                                "„Új kulcs” gombbal generálj egyet.")
+            return
+        if kulcs != self.v.b.tartalek_kulcs:
+            self.v.b.tartalek_kulcs = kulcs
+            self._tartalek_mentes()
+
+    def _tartalek_uj_kulcs(self) -> None:
+        if self.v.b.tartalek_kulcs and QMessageBox.question(
+                self, "Tartalékgép", "Új kulcsot generálsz? A tartalék gépbe is be kell majd másolnod."
+        ) != QMessageBox.StandardButton.Yes:
+            return
+        self.v.b.tartalek_kulcs = uj_kulcs()
+        self.tartalek_kulcs.setText(self.v.b.tartalek_kulcs)
+        self._tartalek_mentes()
 
     def _nevjegy_kartya(self) -> Kartya:
         k = Kartya("Névjegy")

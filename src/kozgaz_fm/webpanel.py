@@ -1,4 +1,5 @@
 __lazy_modules__ = [
+    "hmac",
     "json",
     "logging",
     "secrets",
@@ -14,11 +15,13 @@ __lazy_modules__ = [
     "PySide6.QtCore",
     "kozgaz_fm",
     "kozgaz_fm.orarend",
+    "kozgaz_fm.tartalek",
     "kozgaz_fm.utvonalak",
     "kozgaz_fm.zar",
     "kozgaz_fm.zenekeres",
 ]
 
+import hmac
 import json
 import logging
 import secrets
@@ -37,6 +40,7 @@ from PySide6.QtCore import QObject, Signal
 
 from kozgaz_fm import __version__, rendszer, sajat_hangok
 from kozgaz_fm.orarend import CSENGOK, KULONLEGES, Szakasz, Tipus, allapot
+from kozgaz_fm.tartalek import eletjel, szinkron_adat
 from kozgaz_fm.utvonalak import csomag_mappa
 from kozgaz_fm.zar import PinHiba, Zar
 from kozgaz_fm.zenekeres import KeresHiba
@@ -68,6 +72,11 @@ STATIKUS = {
 PUBLIKUS = {
     ("GET", "/api/v1/zenekeres"): "zenekeres_allapot",
     ("POST", "/api/v1/zenekeres"): "zenekeres_kuldes",
+}
+
+KULCSOS = {
+    ("GET", "/api/v1/tartalek/eletjel"): "tartalek_eletjel",
+    ("GET", "/api/v1/tartalek/beallitasok"): "tartalek_beallitasok",
 }
 
 KERES_STATUSZ = {"disabled": 503, "daily_limit": 429, "rate_limited": 429, "queue_full": 429, "not_found": 404,
@@ -185,9 +194,11 @@ class Munkamenetek:
 
 
 class Panel:
-    def __init__(self, muveletek, jelszo: Callable[[], str], ido: Callable[[], float] = time.monotonic) -> None:
+    def __init__(self, muveletek, jelszo: Callable[[], str], ido: Callable[[], float] = time.monotonic,
+                 kulcs: Callable[[], str] = lambda: "") -> None:
         self.muveletek = muveletek
         self._jelszo = jelszo
+        self._kulcs = kulcs
         self.munkamenetek = Munkamenetek(ido)
         self._zar = Zar(ido)
         self._belepes_zar = threading.Lock()
@@ -215,12 +226,17 @@ class Panel:
         token = _suti(fejlecek)
         if ut == "/api/v1/munkamenet":
             return self._munkamenet(metodus, adat, token, ip)
+        kulcsos = KULCSOS.get((metodus, ut))
+        if kulcsos is not None:
+            self._kulcs_ellenoriz(fejlecek)
+            muvelet = getattr(self.muveletek, kulcsos)
+            return _json_valasz(200, {"data": self.muveletek.vegrehajt(lambda: muvelet(adat, ip))})
         publikus = PUBLIKUS.get((metodus, ut))
         if publikus is not None:
             return self._publikus(publikus, metodus, adat, fejlecek, ip)
         nev = UTVONALAK.get((metodus, ut))
         if nev is None:
-            if any(u == ut for _m, u in [*UTVONALAK, *PUBLIKUS]):
+            if any(u == ut for _m, u in [*UTVONALAK, *PUBLIKUS, *KULCSOS]):
                 raise WebHiba(405, "method_not_allowed", "Ez a művelet itt nem használható.")
             raise WebHiba(404, "not_found", "Nincs ilyen művelet.")
         if not self.munkamenetek.ervenyes(token):
@@ -230,6 +246,14 @@ class Panel:
             return _json_valasz(200, {"data": self.muveletek.vegrehajt(lambda: muvelet(adat, ip))})
         except KeresHiba as e:
             raise WebHiba(KERES_STATUSZ.get(e.kod, 422), e.kod, str(e)) from None
+
+    def _kulcs_ellenoriz(self, fejlecek: Mapping[str, str]) -> None:
+        tarolt = self._kulcs()
+        if not tarolt:
+            raise WebHiba(404, "not_found", "Nincs ilyen művelet.")
+        kapott = fejlecek.get("x-kozgaz-fm-kulcs", "")
+        if not hmac.compare_digest(kapott.encode("utf-8", "replace"), tarolt.encode()):
+            raise WebHiba(401, "wrong_key", "Hibás tartalékgép-kulcs.")
 
     def _publikus(self, nev: str, metodus: str, adat: dict, fejlecek: Mapping[str, str], ip: str) -> Valasz:
         eszkoz = _suti(fejlecek, ESZKOZ_SUTI)
@@ -618,6 +642,14 @@ class WebMuveletek(_Fosszal):
         self.v.log(f"Webpanel ({ip}): csendes időszak befejezése")
         return self.allapot()
 
+    def tartalek_eletjel(self, _adat: dict, _ip: str) -> dict:
+        return eletjel(self.v.b, self.v.tartalek.allapot.atvett, self.v.riasztas)
+
+    def tartalek_beallitasok(self, _adat: dict, _ip: str) -> dict:
+        if self.v.b.tartalek_mod != "fo":
+            raise WebHiba(409, "not_main", "Ez nem a fő gép.")
+        return szinkron_adat(self.v.b)
+
     def zenekeres_allapot(self, _adat: dict, _ip: str, eszkoz: str) -> dict:
         b = self.v.b
         return {"aktiv": b.zenekeres, "cim": b.kijelzo_cim, "napi": b.zenekeres_napi,
@@ -673,7 +705,8 @@ class WebPanel:
     def __init__(self, v) -> None:
         self.v = v
         self.muveletek = WebMuveletek(v)
-        self.panel = Panel(self.muveletek, lambda: v.b.web_jelszo)
+        self.panel = Panel(self.muveletek, lambda: v.b.web_jelszo,
+                           kulcs=lambda: v.b.tartalek_kulcs if v.b.tartalek_mod else "")
         self.szerver = WebSzerver(self.panel)
         self._jelszo: str | None = None
         self.hiba = ""
@@ -701,7 +734,7 @@ class WebPanel:
             if self._jelszo is not None:
                 self.panel.munkamenetek.urit()
             self._jelszo = b.web_jelszo
-        if not (b.web_panel and b.web_jelszo):
+        if not ((b.web_panel and b.web_jelszo) or (b.tartalek_mod and b.tartalek_kulcs)):
             if self.fut:
                 self.leallit()
                 self.v.log("Webpanel leállítva")

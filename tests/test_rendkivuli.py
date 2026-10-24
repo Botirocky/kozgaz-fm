@@ -122,6 +122,7 @@ def test_mentes_es_betoltes(tmp_path, b):
 
 class AlVezerlo:
     _kezel = Vezerlo._kezel
+    tartalek = type("Tartalek", (), {"passziv": False})()
 
     def __init__(self) -> None:
         self.riasztas = False

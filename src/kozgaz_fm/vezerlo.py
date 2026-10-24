@@ -12,6 +12,7 @@ __lazy_modules__ = [
     "kozgaz_fm.hang",
     "kozgaz_fm.orarend",
     "kozgaz_fm.spotify",
+    "kozgaz_fm.tartalek",
     "kozgaz_fm.utvonalak",
     "kozgaz_fm.webpanel",
     "kozgaz_fm.youtube",
@@ -31,8 +32,9 @@ from kozgaz_fm.beallitasok import Beallitasok, Bemondas, Rendkivuli
 from kozgaz_fm.bemondo import Bemondo
 from kozgaz_fm.frissito import Frissito
 from kozgaz_fm.hang import CsengoLejatszo, Szam, ZeneLejatszo
-from kozgaz_fm.orarend import Esemeny, Tipus, csendes_idoszakok, napi_esemenyek, zene_ablakban
+from kozgaz_fm.orarend import CSENGOK, Esemeny, Tipus, csendes_idoszakok, napi_esemenyek, zene_ablakban
 from kozgaz_fm.spotify import Spotify
+from kozgaz_fm.tartalek import Tartalek
 from kozgaz_fm.utvonalak import adat_mappa, naplo_fajl
 from kozgaz_fm.webpanel import WebPanel
 from kozgaz_fm.zenekeres import Keres, Keresek, KeresHiba, youtube_cel
@@ -70,6 +72,7 @@ class Vezerlo(QObject):
         self.naplo: deque[str] = deque(maxlen=1000)
         self.riasztas = False
         self.keresek = Keresek()
+        self._kihagyott: Esemeny | None = None
         self._esemenyek: list[Esemeny] = []
         self._nap: date | None = None
         self._utolso: datetime | None = None
@@ -90,6 +93,11 @@ class Vezerlo(QObject):
         self._mento.setInterval(600)
         self._mento.timeout.connect(self.mentes)
         self.frissito = Frissito(self, self)
+        self.tartalek = Tartalek(beallitasok, self)
+        self.tartalek.valtozott.connect(self.frissult.emit)
+        self.tartalek.atvetel.connect(self._atvetel)
+        self.tartalek.visszaadas.connect(self._visszaadas)
+        self.tartalek.szinkronizalt.connect(self._szinkronizalt)
         self._web_indult = False
         self.web = WebPanel(self)
         self.beallitasok_alkalmazasa()
@@ -100,12 +108,14 @@ class Vezerlo(QObject):
         self.frissito.indit()
         self._web_indult = True
         self.web.alkalmaz()
+        self.tartalek.alkalmaz()
         QTimer.singleShot(1500, self._szinkron)
 
     def leallit(self) -> None:
         if self._mento.isActive():
             self.mentes()
         self._ora.stop()
+        self.tartalek.leallit()
         self.web.leallit()
         self.zene.allj()
         self.csengo.megallit()
@@ -147,6 +157,7 @@ class Vezerlo(QObject):
         self.zene.forras_beallitas(self.aktiv_forras())
         if self._web_indult:
             self.web.alkalmaz()
+            self.tartalek.alkalmaz()
         self._nap = None
         self.frissult.emit()
 
@@ -249,6 +260,12 @@ class Vezerlo(QObject):
         most = datetime.now()
         if self.riasztas:
             return
+        if self.tartalek.passziv:
+            if self._auto_zene and self.zene.szol:
+                self.zene.megallit()
+            self._auto_zene = False
+            self.frissult.emit()
+            return
         ablak = zene_ablakban(self.b, most)
         if ablak and not self.zene.szol:
             self._auto_zene = True
@@ -259,6 +276,10 @@ class Vezerlo(QObject):
         self.frissult.emit()
 
     def _kezel(self, e: Esemeny) -> None:
+        if self.tartalek.passziv:
+            if e.tipus in CSENGOK or e.tipus is Tipus.RENDKIVULI:
+                self._kihagyott = e
+            return
         if self.riasztas and e.tipus not in (Tipus.ZENE_LEALL, Tipus.RIADO_VEGE, Tipus.CSEND, Tipus.CSEND_VEGE):
             self.log(f"Kihagyva riasztás miatt: {e.leiras}")
             return
@@ -420,6 +441,24 @@ class Vezerlo(QObject):
         self._szinkron()
         self.log(("Ma nincs csengetés" if mezo == "ma_nincs_csengetes" else "Ma nincs szünetzene")
                  + (" – bekapcsolva" if be else " – kikapcsolva"))
+
+    def _atvetel(self) -> None:
+        self._jelez("A fő gép nem válaszol – a tartalék gép átvette a csengetést.", "hiba")
+        e, self._kihagyott = self._kihagyott, None
+        if e is not None and timedelta() <= datetime.now() - e.ido <= timedelta(seconds=60):
+            self.log(f"Kimaradt csengetés pótlása: {e.leiras}")
+            self._kezel(e)
+        self._szinkron()
+
+    def _visszaadas(self) -> None:
+        self.log("A fő gép újra elérhető – a tartalék gép visszaállt készenlétbe")
+        self._kihagyott = None
+        self._szinkron()
+
+    def _szinkronizalt(self, valtozott: list) -> None:
+        if valtozott:
+            self.log(f"Beállítások átvéve a fő gépről ({len(valtozott)} csoport)")
+            self.mentes()
 
     def zenekeres_uj(self, szoveg: str, nev: str, eszkoz: str, ip: str) -> Keres:
         if not self.b.zenekeres:

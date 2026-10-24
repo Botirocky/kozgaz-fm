@@ -136,6 +136,9 @@ class Beallitasok:
     zenekeres_napi: int = 3
     zenekeres_max_perc: int = 7
     zenekeres_tiltott: list[str] = field(default_factory=list)
+    tartalek_mod: str = ""
+    tartalek_cim: str = ""
+    tartalek_kulcs: str = ""
     kijelzo_cim: str = "Közgáz FM"
     frissites_kereses: bool = True
     frissites_auto: bool = True
