@@ -35,7 +35,7 @@ from urllib.parse import urlsplit
 from PySide6.QtCore import QObject, Signal
 
 from kozgaz_fm import __version__, rendszer, sajat_hangok
-from kozgaz_fm.orarend import CSENGOK, Szakasz, Tipus, allapot
+from kozgaz_fm.orarend import CSENGOK, KULONLEGES, Szakasz, Tipus, allapot
 from kozgaz_fm.utvonalak import csomag_mappa
 from kozgaz_fm.zar import PinHiba, Zar
 
@@ -418,7 +418,7 @@ class WebMuveletek(_Fosszal):
         menetrend = [{"ido": f"{e.ido:%H:%M}", "leiras": e.leiras if e.tipus is not Tipus.ZENE_INDUL else "Szünetzene",
                       "tipus": "csengo" if e.tipus in CSENGOK else e.tipus.name.lower(), "mult": e.ido <= most}
                      for e in v.mai_esemenyek()
-                     if e.tipus in CSENGOK or e.tipus in (Tipus.BEMONDAS, Tipus.ZENE_INDUL)]
+                     if e.tipus in CSENGOK or e.tipus in KULONLEGES or e.tipus in (Tipus.BEMONDAS, Tipus.ZENE_INDUL)]
         aktiv = v.aktiv_forras()
         ma = date.today().isoformat()
         return {
@@ -426,6 +426,7 @@ class WebMuveletek(_Fosszal):
             "verzio": __version__,
             "cim": b.kijelzo_cim,
             "szakasz": a.cim,
+            "csend": a.csend,
             "hatra_mp": int(hatra.total_seconds()) if hatra is not None and mire else None,
             "hatra_mire": mire,
             "hossz_mp": int((a.vege - a.kezdet).total_seconds()) if mire and a.kezdet and a.vege else None,

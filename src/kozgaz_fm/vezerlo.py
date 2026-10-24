@@ -45,6 +45,7 @@ class _Feladat:
     ertek: str = ""
     ismetles: bool = False
     tartalek: str = ""
+    hangero: int | None = None
 
 
 class Vezerlo(QObject):
@@ -68,6 +69,7 @@ class Vezerlo(QObject):
         self._nap: date | None = None
         self._utolso: datetime | None = None
         self._auto_zene = False
+        self._auto_riado = False
         self._sor: deque[_Feladat] = deque()
         self.csengo.kesz.connect(self._kovetkezo_feladat)
         self.bemondo.kesz.connect(self._kovetkezo_feladat)
@@ -251,10 +253,25 @@ class Vezerlo(QObject):
         self.frissult.emit()
 
     def _kezel(self, e: Esemeny) -> None:
-        if self.riasztas and e.tipus is not Tipus.ZENE_LEALL:
+        if self.riasztas and e.tipus not in (Tipus.ZENE_LEALL, Tipus.RIADO_VEGE, Tipus.CSEND, Tipus.CSEND_VEGE):
             self.log(f"Kihagyva riasztás miatt: {e.leiras}")
             return
-        if e.tipus is Tipus.ZENE_INDUL:
+        if e.tipus is Tipus.RIADO:
+            self.log(f"Rendkívüli esemény: {e.leiras}")
+            self.riasztas_indit()
+            self._auto_riado = True
+        elif e.tipus is Tipus.RIADO_VEGE:
+            if self.riasztas and self._auto_riado:
+                self.riasztas_leallit()
+        elif e.tipus in (Tipus.CSEND, Tipus.CSEND_VEGE):
+            self.log(f"Csendes időszak {'kezdődik' if e.tipus is Tipus.CSEND else 'véget ért'}: "
+                     f"{e.rendkivuli.nev if e.rendkivuli else ''}")
+        elif e.tipus is Tipus.RENDKIVULI and e.rendkivuli:
+            if self.zene.szol:
+                self._auto_zene = False
+                self.zene.megallit(elhalkitas=False)
+            self.csengetes(e.rendkivuli.hang, e.leiras)
+        elif e.tipus is Tipus.ZENE_INDUL:
             if self.aktiv_forras() is None:
                 return
             self.log("Szünetzene indul")
@@ -272,9 +289,9 @@ class Vezerlo(QObject):
                 self._auto_zene = False
                 self.zene.megallit(elhalkitas=False)
             hang = self.b.hang_jelzo if e.tipus is Tipus.JELZO else self.b.hang_becsengo
-            self.csengetes(hang, e.leiras)
+            self.csengetes(hang, e.leiras, e.hangero)
         elif e.tipus is Tipus.KICSENGO:
-            self.csengetes(self.b.hang_kicsengo, e.leiras)
+            self.csengetes(self.b.hang_kicsengo, e.leiras, e.hangero)
         self.frissult.emit()
 
     def _foglalt(self) -> bool:
@@ -286,12 +303,12 @@ class Vezerlo(QObject):
             return True
         return False
 
-    def csengetes(self, hang: str, leiras: str = "Kézi csengetés") -> None:
+    def csengetes(self, hang: str, leiras: str = "Kézi csengetés", hangero: int | None = None) -> None:
         if self.riasztas:
             self._jelez("Riasztás közben nincs csengetés.", "hiba")
             return
-        self.log(f"Csengetés: {leiras}")
-        self._sor.appendleft(_Feladat("hang", hang, tartalek=self._tartalek(hang)))
+        self.log(f"Csengetés: {leiras}" + (f" (halkan, {hangero}%)" if hangero is not None else ""))
+        self._sor.appendleft(_Feladat("hang", hang, tartalek=self._tartalek(hang), hangero=hangero))
         if not self._foglalt():
             self._kovetkezo_feladat()
 
@@ -327,7 +344,7 @@ class Vezerlo(QObject):
                 self._jelez("A gépen nincs elérhető felolvasó hang (TTS).", "hiba")
                 continue
             forras = Path(feladat.ertek) if feladat.tipus == "fajl" else feladat.ertek
-            hangero = 100 if feladat.ismetles else self.b.csengo_hangero
+            hangero = 100 if feladat.ismetles else feladat.hangero or self.b.csengo_hangero
             if self.csengo.lejatszas(forras, hangero, feladat.ismetles):
                 return
             if feladat.tartalek and feladat.tartalek != feladat.ertek:
@@ -342,6 +359,7 @@ class Vezerlo(QObject):
         if self.riasztas:
             return
         self.riasztas = True
+        self._auto_riado = False
         self._auto_zene = False
         self.zene.megallit(elhalkitas=False)
         self.log("RIASZTÁS ELINDÍTVA")
@@ -357,6 +375,7 @@ class Vezerlo(QObject):
         if not self.riasztas:
             return
         self.riasztas = False
+        self._auto_riado = False
         self._sor.clear()
         self.log("Riasztás leállítva")
         if not self._foglalt():

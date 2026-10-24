@@ -30,7 +30,7 @@ from PySide6.QtWidgets import (
 
 from kozgaz_fm import sajat_hangok
 from kozgaz_fm.hang import FORRAS_TIPUSOK
-from kozgaz_fm.orarend import CSENGOK, Szakasz, Tipus, allapot, napi_orak
+from kozgaz_fm.orarend import CSENGOK, KULONLEGES, Szakasz, Tipus, allapot, napi_orak
 from kozgaz_fm.ui.elemek import Kartya, Oldal, cimke, gomb, ikon_gomb, kapcsolo, sor
 from kozgaz_fm.ui.idovonal import Idovonal
 from kozgaz_fm.ui.tema import SZIN, ikon, szam_betu
@@ -211,9 +211,10 @@ class Vezerlopult(Oldal):
             self.hatra_cimke.setText("")
         if a.kovetkezo:
             nap = "Ma" if a.kovetkezo.ido.date() == most.date() else f"{a.kovetkezo.ido:%m.%d.}"
-            self.kovetkezo_cimke.setText(f"Következő: {nap} {a.kovetkezo.ido:%H:%M}, {a.kovetkezo.leiras}")
+            kovetkezo = f"Következő: {nap} {a.kovetkezo.ido:%H:%M}, {a.kovetkezo.leiras}"
         else:
-            self.kovetkezo_cimke.setText("A következő két hétben nincs csengetés")
+            kovetkezo = "A következő két hétben nincs csengetés"
+        self.kovetkezo_cimke.setText(f"Csendes időszak: {a.csend} · {kovetkezo}" if a.csend else kovetkezo)
         ures = a.szunnap_nev or ("Ma nincs csengetés" if a.szakasz is Szakasz.NINCS else "Ma nincs tanítás")
         self.idovonal.beallit(napi_orak(b, most.date()), most, self.v.zene.szol, ures)
         if not self.isVisible():
@@ -255,8 +256,8 @@ class Vezerlopult(Oldal):
             self.v.forras_valtas(index)
 
     def _mai_lista(self, most: datetime) -> None:
-        esemenyek = [e for e in self.v.mai_esemenyek() if e.tipus in CSENGOK or e.tipus is Tipus.BEMONDAS
-                     or e.tipus is Tipus.ZENE_INDUL]
+        esemenyek = [e for e in self.v.mai_esemenyek() if e.tipus in CSENGOK or e.tipus in KULONLEGES
+                     or e.tipus is Tipus.BEMONDAS or e.tipus is Tipus.ZENE_INDUL]
         kulcs = tuple((e.ido, e.tipus) for e in esemenyek)
         if getattr(self, "_lista_kulcs", None) != kulcs:
             self._lista_kulcs = kulcs
@@ -353,4 +354,5 @@ def _forras_ikon(tipus: str) -> str:
 
 
 def _esemeny_ikon(tipus: Tipus) -> str:
-    return {Tipus.BEMONDAS: "bemondas", Tipus.ZENE_INDUL: "zene"}.get(tipus, "csengo")
+    return {Tipus.BEMONDAS: "bemondas", Tipus.ZENE_INDUL: "zene", Tipus.RIADO: "riasztas",
+            Tipus.CSEND: "hold"}.get(tipus, "csengo")

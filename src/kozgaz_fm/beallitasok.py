@@ -55,6 +55,26 @@ class Bemondas:
 
 
 @dataclass
+class Rendkivuli:
+    nev: str
+    datum: str
+    tol: str
+    tipus: str = "csengetes"
+    ig: str = ""
+    hang: str = "beepitett:csengo"
+    riado_perc: int = 3
+    csengo_hangero: int = 0
+    aktiv: bool = True
+
+
+RENDKIVULI_TIPUSOK = {
+    "csengetes": "Rendkívüli csengetés",
+    "riado": "Tűzriadó-gyakorlat",
+    "csend": "Csendes időszak",
+}
+
+
+@dataclass
 class ZeneForras:
     tipus: str
     nev: str
@@ -91,6 +111,7 @@ class Beallitasok:
     keveres: bool = True
     youtube_gyorsitotar: bool = True
     bemondasok: list[Bemondas] = field(default_factory=list)
+    rendkivuli: list[Rendkivuli] = field(default_factory=list)
     spotify_client_id: str = ""
     spotify_eszkoz: str = ""
     tts_hang: str = ""

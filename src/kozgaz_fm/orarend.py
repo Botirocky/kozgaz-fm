@@ -1,10 +1,10 @@
 __lazy_modules__ = ["dataclasses", "datetime", "enum", "kozgaz_fm.beallitasok"]
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime, time, timedelta
 from enum import StrEnum
 
-from kozgaz_fm.beallitasok import Beallitasok, Bemondas, Csengetesirend
+from kozgaz_fm.beallitasok import Beallitasok, Bemondas, Csengetesirend, Rendkivuli
 
 
 class Tipus(StrEnum):
@@ -14,9 +14,15 @@ class Tipus(StrEnum):
     ZENE_INDUL = "zene indul"
     ZENE_LEALL = "zene leáll"
     BEMONDAS = "bemondás"
+    RENDKIVULI = "rendkívüli csengetés"
+    RIADO = "riadó"
+    RIADO_VEGE = "riadó vége"
+    CSEND = "csendes időszak"
+    CSEND_VEGE = "csendes időszak vége"
 
 
 CSENGOK = (Tipus.JELZO, Tipus.BECSENGO, Tipus.KICSENGO)
+KULONLEGES = (Tipus.RENDKIVULI, Tipus.RIADO, Tipus.CSEND)
 
 
 @dataclass(frozen=True, order=True)
@@ -25,13 +31,19 @@ class Esemeny:
     tipus: Tipus = field(compare=False)
     ora: int = field(default=0, compare=False)
     bemondas: Bemondas | None = field(default=None, compare=False, hash=False)
+    rendkivuli: Rendkivuli | None = field(default=None, compare=False, hash=False)
+    hangero: int | None = field(default=None, compare=False)
 
     @property
     def leiras(self) -> str:
         if self.tipus is Tipus.BEMONDAS and self.bemondas:
             return f"Bemondás: {self.bemondas.nev}"
+        if self.rendkivuli:
+            if self.tipus in (Tipus.RIADO_VEGE, Tipus.CSEND_VEGE):
+                return f"{self.rendkivuli.nev} – vége"
+            return self.rendkivuli.nev
         if self.tipus in CSENGOK:
-            return f"{self.ora}. óra – {self.tipus}"
+            return f"{self.ora}. óra – {self.tipus}" + (" (halkan)" if self.hangero else "")
         return self.tipus.value.capitalize()
 
 
@@ -52,6 +64,7 @@ class Allapot:
     vege: datetime | None = None
     kovetkezo: Esemeny | None = None
     szunnap_nev: str = ""
+    csend: str = ""
 
     def hatralevo(self, most: datetime) -> timedelta | None:
         if self.vege is None:
@@ -118,8 +131,60 @@ def _jelzo_ido(b: Beallitasok, kezdet: datetime, elozo_vege: datetime | None) ->
     return jelzo
 
 
-def napi_esemenyek(b: Beallitasok, nap: date) -> list[Esemeny]:
+def csendes_idoszakok(b: Beallitasok, nap: date) -> list[tuple[datetime, datetime, Rendkivuli]]:
+    iso = nap.isoformat()
+    eredmeny = []
+    for r in b.rendkivuli:
+        if not r.aktiv or r.tipus != "csend" or r.datum != iso or not r.ig:
+            continue
+        kezdet, vege = datetime.combine(nap, ido(r.tol)), datetime.combine(nap, ido(r.ig))
+        if vege > kezdet:
+            eredmeny.append((kezdet, vege, r))
+    return sorted(eredmeny, key=lambda c: c[0])
+
+
+def _csendben(csendek: list[tuple[datetime, datetime, Rendkivuli]], mikor: datetime) -> Rendkivuli | None:
+    return next((r for kezdet, vege, r in csendek if kezdet <= mikor < vege), None)
+
+
+def _zene_csend_nelkul(parok: list[tuple[datetime, datetime, int]],
+                       csendek: list[tuple[datetime, datetime, Rendkivuli]]) -> list[tuple[datetime, datetime, int]]:
+    for kezdet, vege, _ in csendek:
+        maradek = []
+        for indul, leall, szam in parok:
+            if leall <= kezdet or indul >= vege:
+                maradek.append((indul, leall, szam))
+                continue
+            if indul < kezdet:
+                maradek.append((indul, kezdet, szam))
+            if leall > vege:
+                maradek.append((vege, leall, szam))
+        parok = maradek
+    return [p for p in parok if p[1] - p[0] >= timedelta(seconds=30)]
+
+
+def _rendkivuli_esemenyek(b: Beallitasok, nap: date) -> list[Esemeny]:
+    iso = nap.isoformat()
     esemenyek: list[Esemeny] = []
+    for r in b.rendkivuli:
+        if not r.aktiv or r.datum != iso:
+            continue
+        kezdet = datetime.combine(nap, ido(r.tol))
+        if r.tipus == "csengetes":
+            esemenyek.append(Esemeny(kezdet, Tipus.RENDKIVULI, rendkivuli=r))
+        elif r.tipus == "riado":
+            esemenyek.append(Esemeny(kezdet, Tipus.RIADO, rendkivuli=r))
+            if r.riado_perc > 0:
+                esemenyek.append(Esemeny(kezdet + timedelta(minutes=r.riado_perc), Tipus.RIADO_VEGE, rendkivuli=r))
+    for kezdet, vege, r in csendes_idoszakok(b, nap):
+        esemenyek.append(Esemeny(kezdet, Tipus.CSEND, rendkivuli=r))
+        esemenyek.append(Esemeny(vege, Tipus.CSEND_VEGE, rendkivuli=r))
+    return esemenyek
+
+
+def napi_esemenyek(b: Beallitasok, nap: date) -> list[Esemeny]:
+    csengok: list[Esemeny] = []
+    zene_parok: list[tuple[datetime, datetime, int]] = []
     rend = napi_rend(b, nap)
     orak = _idopontok(rend, nap) if rend else []
     zene_ma = b.zene_szunetben and b.ma_nincs_zene != nap.isoformat()
@@ -127,13 +192,27 @@ def napi_esemenyek(b: Beallitasok, nap: date) -> list[Esemeny]:
     for szam, (kezdet, vege) in enumerate(orak, start=1):
         jelzo = _jelzo_ido(b, kezdet, elozo_vege)
         if jelzo:
-            esemenyek.append(Esemeny(jelzo, Tipus.JELZO, szam))
-        esemenyek.append(Esemeny(kezdet, Tipus.BECSENGO, szam))
+            csengok.append(Esemeny(jelzo, Tipus.JELZO, szam))
+        csengok.append(Esemeny(kezdet, Tipus.BECSENGO, szam))
         if b.kicsengo:
-            esemenyek.append(Esemeny(vege, Tipus.KICSENGO, szam))
+            csengok.append(Esemeny(vege, Tipus.KICSENGO, szam))
         if zene_ma:
-            esemenyek.extend(_zene_ablak(b, szam, elozo_vege, jelzo or kezdet))
+            ablak = _zene_ablak(b, elozo_vege, jelzo or kezdet)
+            if ablak:
+                zene_parok.append((*ablak, szam - 1))
         elozo_vege = vege
+    csendek = csendes_idoszakok(b, nap)
+    esemenyek: list[Esemeny] = []
+    for e in csengok:
+        csend = _csendben(csendek, e.ido)
+        if csend is None:
+            esemenyek.append(e)
+        elif csend.csengo_hangero > 0:
+            esemenyek.append(replace(e, hangero=csend.csengo_hangero))
+    for indul, leall, szam in _zene_csend_nelkul(zene_parok, csendek):
+        esemenyek.append(Esemeny(indul, Tipus.ZENE_INDUL, szam))
+        esemenyek.append(Esemeny(leall, Tipus.ZENE_LEALL, szam))
+    esemenyek.extend(_rendkivuli_esemenyek(b, nap))
     for bem in b.bemondasok:
         if not bem.aktiv:
             continue
@@ -142,29 +221,31 @@ def napi_esemenyek(b: Beallitasok, nap: date) -> list[Esemeny]:
                 continue
         elif nap.weekday() not in bem.napok or szunnap_nev(b, nap) is not None:
             continue
-        esemenyek.append(Esemeny(datetime.combine(nap, ido(bem.ido)), Tipus.BEMONDAS, bemondas=bem))
+        mikor = datetime.combine(nap, ido(bem.ido))
+        if _csendben(csendek, mikor) is None:
+            esemenyek.append(Esemeny(mikor, Tipus.BEMONDAS, bemondas=bem))
     return sorted(esemenyek, key=lambda e: (e.ido, _sorrend(e.tipus)))
 
 
 def _sorrend(tipus: Tipus) -> int:
-    return [Tipus.ZENE_LEALL, Tipus.KICSENGO, Tipus.JELZO, Tipus.BECSENGO, Tipus.BEMONDAS,
-            Tipus.ZENE_INDUL].index(tipus)
+    return [Tipus.ZENE_LEALL, Tipus.CSEND, Tipus.KICSENGO, Tipus.JELZO, Tipus.BECSENGO, Tipus.RENDKIVULI,
+            Tipus.RIADO_VEGE, Tipus.RIADO, Tipus.BEMONDAS, Tipus.CSEND_VEGE, Tipus.ZENE_INDUL].index(tipus)
 
 
-def _zene_ablak(b: Beallitasok, szam: int, elozo_vege: datetime | None,
-                kovetkezo_csengo: datetime) -> list[Esemeny]:
+def _zene_ablak(b: Beallitasok, elozo_vege: datetime | None,
+                kovetkezo_csengo: datetime) -> tuple[datetime, datetime] | None:
     leall = kovetkezo_csengo - timedelta(seconds=b.zene_leall_elotte)
     if elozo_vege is None:
         if not b.reggeli_zene:
-            return []
+            return None
         indul = datetime.combine(kovetkezo_csengo.date(), ido(b.reggeli_zene_tol))
     else:
         if kovetkezo_csengo - elozo_vege < timedelta(minutes=b.zene_min_szunet):
-            return []
+            return None
         indul = elozo_vege + timedelta(seconds=b.zene_kesleltetes)
     if leall - indul < timedelta(seconds=30):
-        return []
-    return [Esemeny(indul, Tipus.ZENE_INDUL, szam - 1), Esemeny(leall, Tipus.ZENE_LEALL, szam - 1)]
+        return None
+    return indul, leall
 
 
 def zene_ablakban(b: Beallitasok, most: datetime) -> bool:
@@ -189,6 +270,12 @@ def kovetkezo_esemeny(b: Beallitasok, most: datetime, csak_csengo: bool = True, 
 
 
 def allapot(b: Beallitasok, most: datetime) -> Allapot:
+    a = _allapot(b, most)
+    csend = _csendben(csendes_idoszakok(b, most.date()), most)
+    return replace(a, csend=csend.nev) if csend else a
+
+
+def _allapot(b: Beallitasok, most: datetime) -> Allapot:
     nap = most.date()
     kovetkezo = kovetkezo_esemeny(b, most)
     rend = napi_rend(b, nap)

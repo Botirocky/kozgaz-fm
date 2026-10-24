@@ -219,6 +219,8 @@ output { color: var(--szoveg); font-weight: 600; margin-left: 4px; }
 .menetrend li.mult { color: var(--tiltott); }
 .menetrend li.kovetkezo-sor { border-left-color: var(--kek); background: var(--kek-halvany); }
 .menetrend li.zene_indul span, .menetrend li.bemondas span { color: var(--halvany); }
+.menetrend li.riado span { color: var(--hiba); font-weight: 600; }
+.menetrend li.csend span, .menetrend li.rendkivuli span { color: var(--kek); font-weight: 600; }
 .menetrend li.mult span { color: inherit; }
 .menetrend .ures { color: var(--halvany); padding: 10px 0; }
 
