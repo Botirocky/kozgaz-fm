@@ -9,6 +9,7 @@ __lazy_modules__ = [
     "kozgaz_fm.spotify",
     "kozgaz_fm.ui.elemek",
     "kozgaz_fm.ui.tema",
+    "kozgaz_fm.ui.zenekeres_kartya",
     "kozgaz_fm.utvonalak",
     "kozgaz_fm.vezerlo",
 ]
@@ -36,6 +37,7 @@ from kozgaz_fm.hang import FORRAS_TIPUSOK, HANGFAJLOK
 from kozgaz_fm.spotify import ATIRANYITAS, SpotifyHiba, spotify_uri
 from kozgaz_fm.ui.elemek import Kartya, Oldal, cimke, gomb, ido_mezo, kapcsolo, sor
 from kozgaz_fm.ui.tema import SZIN, ikon
+from kozgaz_fm.ui.zenekeres_kartya import ZenekeresKartya
 from kozgaz_fm.utvonalak import gyorsitotar_mappa
 from kozgaz_fm.vezerlo import Vezerlo
 
@@ -58,6 +60,7 @@ class ZeneOldal(Oldal):
         also.setSpacing(16)
         also.addWidget(self._beallitas_kartya(), 0, 0)
         also.addWidget(self._spotify_kartya(), 0, 1)
+        also.addWidget(ZenekeresKartya(v), 1, 0, 1, 2)
         also.setColumnStretch(0, 1)
         also.setColumnStretch(1, 1)
         self.add(also)

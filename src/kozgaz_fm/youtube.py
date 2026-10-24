@@ -92,3 +92,23 @@ def gyorsitotar_urites(mappa: Path) -> None:
     for f in mappa.glob("*"):
         if f.is_file():
             f.unlink(missing_ok=True)
+
+
+def egy_szam(cel: str) -> tuple[str, str, int] | None:
+    import yt_dlp
+
+    kereses = cel.startswith("ytsearch")
+    with yt_dlp.YoutubeDL(_opciok(extract_flat="in_playlist", noplaylist=True)) as ydl:
+        info = ydl.extract_info(cel, download=False)
+    if not info:
+        return None
+    elemek = info.get("entries")
+    if elemek is not None:
+        if not kereses:
+            return None
+        info = next((e for e in elemek if e and e.get("id")), None)
+        if info is None:
+            return None
+    if info.get("is_live") or info.get("live_status") in ("is_live", "is_upcoming"):
+        return info["id"], info.get("title") or info["id"], 0
+    return info["id"], info.get("title") or info["id"], int(info.get("duration") or 0)

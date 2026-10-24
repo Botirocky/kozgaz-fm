@@ -250,6 +250,39 @@ output { color: var(--szoveg); font-weight: 600; margin-left: 4px; }
 .sablonok.torles .sablon::before { content: "× "; font-weight: 700; }
 .sablon-muveletek { justify-content: flex-start; gap: 18px; margin-top: 8px; }
 
+.keres-tartalom { max-width: 560px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
+.keres-cim { font-size: 1.4rem; margin-bottom: 8px; }
+.keres-leiras, .keres-maradek { color: var(--halvany); }
+.keres-maradek { margin-top: 12px; font-size: 0.9rem; }
+.keres-kikapcsolva { margin-top: 14px; padding: 12px; border-radius: 8px; background: var(--felulet2); }
+.keres-oldal input[type="text"] {
+  width: 100%; padding: 11px 12px; background: var(--felulet2);
+  border: 1px solid var(--keret-eros); border-radius: 8px;
+}
+.gomb.teljes { width: 100%; margin-top: 16px; }
+.keres-lista { list-style: none; margin: 10px 0 0; padding: 0; }
+.keres-elem {
+  display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 10px 0 10px 12px;
+  border-left: 3px solid var(--keret-eros);
+}
+.keres-elem + .keres-elem { margin-top: 8px; }
+.keres-elem strong { overflow-wrap: anywhere; }
+.keres-elem time { grid-row: 1; grid-column: 2; color: var(--halvany); font-size: 0.9rem; }
+.keres-allapot { grid-column: 1 / -1; color: var(--halvany); font-size: 0.9rem; }
+.keres-elem.varakozik, .keres-elem.kereses { border-left-color: var(--elo); }
+.keres-elem.elfogadva, .keres-elem.szol { border-left-color: var(--szol); }
+.keres-elem.szol .keres-allapot { color: var(--szol); font-weight: 600; }
+.keres-elem.elutasitva { border-left-color: var(--hiba); }
+.keres-elem.elutasitva .keres-allapot { color: var(--hiba); }
+.halvany-szoveg { color: var(--halvany); }
+.keresek-blokk { order: 2; }
+.keresek { list-style: none; margin: 0; padding: 0; }
+.keresek li { padding: 10px 0; }
+.keresek li + li { border-top: 1px solid var(--keret); }
+.keresek .keres-meta { color: var(--halvany); font-size: 0.85rem; }
+.keresek .sor { margin-top: 8px; }
+.keresek a { color: var(--kek); }
+
 .veszely { background: var(--hiba-hatter); border-color: var(--hiba); }
 .veszely p { margin-bottom: 14px; color: var(--szoveg); }
 .veszely .gomb { width: 100%; }

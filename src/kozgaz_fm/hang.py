@@ -162,6 +162,7 @@ class Szam:
     cim: str
     helyi: Path | None = None
     yt: str = ""
+    kert: bool = False
 
 
 def mappa_szamai(mappa: Path) -> list[Szam]:
@@ -189,6 +190,7 @@ def fajl_lista(cim: str) -> list[Szam]:
 
 class ZeneLejatszo(QObject):
     szam_valtozott = Signal(str, str)
+    kert_szol = Signal(str)
     allapot_valtozott = Signal(bool)
     hiba = Signal(str)
     lista_valtozott = Signal()
@@ -214,6 +216,7 @@ class ZeneLejatszo(QObject):
         self.spotify: Spotify | None = None
         self.spotify_eszkoz = ""
         self.szamok: list[Szam] = []
+        self._fuggo_kert: list[Szam] = []
         self.index = 0
         self.keveres = True
         self.gyorsitotar = True
@@ -294,6 +297,7 @@ class ZeneLejatszo(QObject):
         if folyt:
             self.megallit(elhalkitas=False)
         self.forras = forras
+        self._fuggo_kert = [s for s in self.szamok if s.kert] + self._fuggo_kert
         self.szamok = []
         self.index = 0
         self._generacio += 1
@@ -323,7 +327,8 @@ class ZeneLejatszo(QObject):
             self._betoltes_alatt = False
             if self.keveres:
                 random.shuffle(szamok)
-            self.szamok = szamok
+            self.szamok = [s for s in self.szamok if s.kert] + self._fuggo_kert + szamok
+            self._fuggo_kert = []
             self.index = 0
             self.lista_valtozott.emit()
             if not szamok:
@@ -371,6 +376,9 @@ class ZeneLejatszo(QObject):
         self._kifuto_leallit()
         self.index = index % len(self.szamok)
         szam = self.szamok[self.index]
+        if szam.kert:
+            szam.kert = False
+            self.kert_szol.emit(szam.yt)
         self.most_cim = szam.cim
         self.szam_valtozott.emit(szam.cim, self.forras.nev if self.forras else "")
         if szam.helyi:
@@ -542,6 +550,22 @@ class ZeneLejatszo(QObject):
             self._szol = True
             self.allapot_valtozott.emit(True)
             self._jatszd(self.index - 1)
+
+    def beszur(self, szam: Szam) -> bool:
+        if self.spotify_mod or self.forras is None:
+            return False
+        szam.kert = True
+        if not self.szamok:
+            self._fuggo_kert.append(szam)
+            return True
+        megallitva = not self._szol and self.lejatszo.playbackState() == QMediaPlayer.PlaybackState.StoppedState
+        hely = self.index if megallitva else self.index + 1
+        while hely < len(self.szamok) and self.szamok[hely].kert:
+            hely += 1
+        self.szamok.insert(hely, szam)
+        self.lista_valtozott.emit()
+        self._elore_letolt()
+        return True
 
     def kovetkezok(self, darab: int = 5) -> list[tuple[int, str]]:
         if self.spotify_mod or not self.szamok:

@@ -5,6 +5,7 @@ __lazy_modules__ = [
     "PySide6.QtWidgets",
     "kozgaz_fm.orarend",
     "kozgaz_fm.ui.elemek",
+    "kozgaz_fm.ui.qr",
     "kozgaz_fm.ui.tema",
     "kozgaz_fm.ui.vezerlopult",
     "kozgaz_fm.vezerlo",
@@ -18,6 +19,7 @@ from PySide6.QtWidgets import QProgressBar, QVBoxLayout, QWidget
 
 from kozgaz_fm.orarend import Szakasz, allapot
 from kozgaz_fm.ui.elemek import cimke, sor
+from kozgaz_fm.ui.qr import qr_pixmap
 from kozgaz_fm.ui.tema import SOTET as SZIN
 from kozgaz_fm.ui.tema import logo_pixmap
 from kozgaz_fm.ui.vezerlopult import HONAPOK, NAPOK, idotartam
@@ -60,7 +62,20 @@ class Kijelzo(QWidget):
         self.zene.setStyleSheet(f"font-size: 20pt; color: {SZIN['kiemelt']};")
         self.kovetkezo = cimke()
         self.kovetkezo.setStyleSheet(f"font-size: 20pt; color: {SZIN['halvany']};")
-        e.addLayout(sor(self.zene, None, self.kovetkezo))
+        self.qr = cimke()
+        self.qr_felirat = cimke("Kérj zenét!")
+        self.qr_felirat.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.qr_felirat.setStyleSheet(f"font-size: 16pt; font-weight: 700; color: {SZIN['kiemelt']};")
+        qr_doboz = QVBoxLayout()
+        qr_doboz.setSpacing(6)
+        qr_doboz.addWidget(self.qr, 0, Qt.AlignmentFlag.AlignCenter)
+        qr_doboz.addWidget(self.qr_felirat)
+        self._qr_kulcs: tuple[str, int] | None = None
+        szoveg = QVBoxLayout()
+        szoveg.addStretch(1)
+        szoveg.addWidget(self.zene)
+        szoveg.addWidget(self.kovetkezo)
+        e.addLayout(sor(szoveg, None, qr_doboz, terkoz=32))
         v.zene.szam_valtozott.connect(self._szam)
 
     def _szam(self, cim: str, _forras: str = "") -> None:
@@ -108,6 +123,18 @@ class Kijelzo(QWidget):
             self.kovetkezo.setText(f"Következő csengetés: {a.kovetkezo.ido:%H:%M}")
         else:
             self.kovetkezo.setText("")
+        self._qr_frissit()
+
+    def _qr_frissit(self) -> None:
+        cim = self.v.web.keres_cim() if self.v.b.zenekeres else ""
+        meret = max(140, (self.height() or 1080) // 5)
+        if (cim, meret) == self._qr_kulcs:
+            return
+        self._qr_kulcs = (cim, meret)
+        self.qr.setVisible(bool(cim))
+        self.qr_felirat.setVisible(bool(cim))
+        if cim:
+            self.qr.setPixmap(qr_pixmap(cim, meret))
 
     def keyPressEvent(self, esemeny: QKeyEvent) -> None:
         if esemeny.key() in (Qt.Key.Key_Escape, Qt.Key.Key_Q):

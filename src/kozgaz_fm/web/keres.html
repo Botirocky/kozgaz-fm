@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#2F6CA6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101317" media="(prefers-color-scheme: dark)">
+<title>Zenekérés – Közgáz FM</title>
+<link rel="icon" href="logo.png">
+<link rel="stylesheet" href="panel.css">
+<script src="keres.js" defer></script>
+</head>
+<body class="keres-oldal">
+<header class="fejlec">
+  <img src="logo.png" alt="" width="36" height="36">
+  <span id="cim" class="fejlec-cim">Közgáz FM</span>
+</header>
+
+<main class="keres-tartalom">
+  <section class="blokk">
+    <h1 class="keres-cim">Kérj zenét a szünetre</h1>
+    <p class="keres-leiras">Írd be a szám előadóját és címét, vagy másold be a YouTube-linkjét. A kérést jóváhagyás
+      után játsszuk le, a következő szünetek egyikében.</p>
+    <p id="kikapcsolva" class="keres-kikapcsolva" hidden>A zenekérés most nincs bekapcsolva. Nézz vissza később!</p>
+    <form id="urlap" hidden>
+      <label for="szoveg">Előadó és cím, vagy YouTube-link</label>
+      <input id="szoveg" type="text" maxlength="150" autocomplete="off" required
+             placeholder="pl. Queen – Don't Stop Me Now">
+      <label for="nev">Neved vagy osztályod (nem kötelező)</label>
+      <input id="nev" type="text" maxlength="30" autocomplete="off" placeholder="pl. 10.B">
+      <button type="submit" class="gomb fo teljes">Kérés küldése</button>
+      <p id="maradek" class="keres-maradek"></p>
+    </form>
+  </section>
+
+  <section id="sajat-blokk" class="blokk" hidden>
+    <h2>Mai kéréseid</h2>
+    <ul id="sajat" class="keres-lista"></ul>
+  </section>
+</main>
+
+<div id="uzenet" class="uzenet" role="status" aria-live="polite"></div>
+</body>
+</html>

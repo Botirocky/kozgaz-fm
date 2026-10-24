@@ -16,6 +16,7 @@ __lazy_modules__ = [
     "kozgaz_fm.orarend",
     "kozgaz_fm.utvonalak",
     "kozgaz_fm.zar",
+    "kozgaz_fm.zenekeres",
 ]
 
 import json
@@ -38,10 +39,13 @@ from kozgaz_fm import __version__, rendszer, sajat_hangok
 from kozgaz_fm.orarend import CSENGOK, KULONLEGES, Szakasz, Tipus, allapot
 from kozgaz_fm.utvonalak import csomag_mappa
 from kozgaz_fm.zar import PinHiba, Zar
+from kozgaz_fm.zenekeres import KeresHiba
 
 naplo = logging.getLogger(__name__)
 
 SUTI = "kfm_munkamenet"
+ESZKOZ_SUTI = "kfm_eszkoz"
+ESZKOZ_ELETTARTAM = 400 * 24 * 3600
 ELETTARTAM = 12 * 3600
 MAX_MUNKAMENET = 64
 MAX_TOREK = 8192
@@ -57,7 +61,17 @@ STATIKUS = {
     "/panel.js": ("web/panel.js", "text/javascript; charset=utf-8"),
     "/logo.png": ("kepek/logo.png", "image/png"),
     "/manifest.webmanifest": ("web/manifest.webmanifest", "application/manifest+json; charset=utf-8"),
+    "/keres": ("web/keres.html", "text/html; charset=utf-8"),
+    "/keres.js": ("web/keres.js", "text/javascript; charset=utf-8"),
 }
+
+PUBLIKUS = {
+    ("GET", "/api/v1/zenekeres"): "zenekeres_allapot",
+    ("POST", "/api/v1/zenekeres"): "zenekeres_kuldes",
+}
+
+KERES_STATUSZ = {"disabled": 503, "daily_limit": 429, "rate_limited": 429, "queue_full": 429, "not_found": 404,
+                 "conflict": 409, "no_source": 409}
 
 BIZTONSAG = {
     "Content-Security-Policy": "default-src 'self'; img-src 'self'; object-src 'none'; base-uri 'none'; "
@@ -84,6 +98,7 @@ UTVONALAK = {
     ("POST", "/api/v1/riasztas"): "riasztas_inditas",
     ("DELETE", "/api/v1/riasztas"): "riasztas_leallitas",
     ("PATCH", "/api/v1/ma"): "ma_allitas",
+    ("POST", "/api/v1/zenekeres/dontes"): "zenekeres_dontes",
 }
 
 
@@ -112,12 +127,16 @@ def _hiba_valasz(e: WebHiba) -> Valasz:
     return _json_valasz(e.statusz, {"error": {"code": e.kod, "message": e.uzenet}}, e.fejlecek)
 
 
-def _suti(fejlecek: Mapping[str, str]) -> str:
+def _suti(fejlecek: Mapping[str, str], keresett: str = SUTI) -> str:
     for darab in fejlecek.get("cookie", "").split(";"):
         nev, _, ertek = darab.strip().partition("=")
-        if nev == SUTI:
+        if nev == keresett:
             return ertek
     return ""
+
+
+def _eszkoz_ervenyes(azon: str) -> bool:
+    return 16 <= len(azon) <= 64 and all(c.isalnum() or c in "-_" for c in azon)
 
 
 def _suti_fejlec(token: str, elettartam: int) -> str:
@@ -196,15 +215,35 @@ class Panel:
         token = _suti(fejlecek)
         if ut == "/api/v1/munkamenet":
             return self._munkamenet(metodus, adat, token, ip)
+        publikus = PUBLIKUS.get((metodus, ut))
+        if publikus is not None:
+            return self._publikus(publikus, metodus, adat, fejlecek, ip)
         nev = UTVONALAK.get((metodus, ut))
         if nev is None:
-            if any(u == ut for _m, u in UTVONALAK):
+            if any(u == ut for _m, u in [*UTVONALAK, *PUBLIKUS]):
                 raise WebHiba(405, "method_not_allowed", "Ez a művelet itt nem használható.")
             raise WebHiba(404, "not_found", "Nincs ilyen művelet.")
         if not self.munkamenetek.ervenyes(token):
             raise WebHiba(401, "unauthorized", "Jelentkezz be újra.")
         muvelet = getattr(self.muveletek, nev)
-        return _json_valasz(200, {"data": self.muveletek.vegrehajt(lambda: muvelet(adat, ip))})
+        try:
+            return _json_valasz(200, {"data": self.muveletek.vegrehajt(lambda: muvelet(adat, ip))})
+        except KeresHiba as e:
+            raise WebHiba(KERES_STATUSZ.get(e.kod, 422), e.kod, str(e)) from None
+
+    def _publikus(self, nev: str, metodus: str, adat: dict, fejlecek: Mapping[str, str], ip: str) -> Valasz:
+        eszkoz = _suti(fejlecek, ESZKOZ_SUTI)
+        uj = not _eszkoz_ervenyes(eszkoz)
+        if uj:
+            eszkoz = secrets.token_urlsafe(18)
+        muvelet = getattr(self.muveletek, nev)
+        try:
+            eredmeny = self.muveletek.vegrehajt(lambda: muvelet(adat, ip, eszkoz))
+        except KeresHiba as e:
+            raise WebHiba(KERES_STATUSZ.get(e.kod, 422), e.kod, str(e)) from None
+        fejlec = {"Set-Cookie": f"{ESZKOZ_SUTI}={eszkoz}; HttpOnly; SameSite=Lax; Path=/; "
+                                f"Max-Age={ESZKOZ_ELETTARTAM}"} if uj else {}
+        return _json_valasz(201 if metodus == "POST" else 200, {"data": eredmeny}, fejlec)
 
     def _keresztoldal(self, fejlecek: Mapping[str, str]) -> None:
         if fejlecek.get("x-kozgaz-fm") != "1":
@@ -460,6 +499,7 @@ class WebMuveletek(_Fosszal):
             "hangok": [{"azonosito": azon, "nev": nev} for azon, nev, _e in self._hangok()],
             "menetrend": menetrend,
             "sablonok": list(b.bemondas_sablonok),
+            "zenekeres": {"aktiv": b.zenekeres, "keresek": [k.admin() for k in v.keresek.fuggo()]},
         }
 
     def _riasztas_kozben(self) -> None:
@@ -578,6 +618,27 @@ class WebMuveletek(_Fosszal):
         self.v.log(f"Webpanel ({ip}): csendes időszak befejezése")
         return self.allapot()
 
+    def zenekeres_allapot(self, _adat: dict, _ip: str, eszkoz: str) -> dict:
+        b = self.v.b
+        return {"aktiv": b.zenekeres, "cim": b.kijelzo_cim, "napi": b.zenekeres_napi,
+                "maradek": self.v.keresek.maradek(eszkoz, b.zenekeres_napi), "max_perc": b.zenekeres_max_perc,
+                "sajat": [k.nyilvanos() for k in self.v.keresek.sajat(eszkoz)]}
+
+    def zenekeres_kuldes(self, adat: dict, ip: str, eszkoz: str) -> dict:
+        szoveg, nev = adat.get("szoveg", ""), adat.get("nev", "")
+        if not isinstance(szoveg, str) or not isinstance(nev, str):
+            raise WebHiba(422, "validation_error", "Hibás kérés.")
+        self.v.zenekeres_uj(szoveg, nev, eszkoz, ip)
+        return self.zenekeres_allapot(adat, ip, eszkoz)
+
+    def zenekeres_dontes(self, adat: dict, ip: str) -> dict:
+        azon = adat.get("azon")
+        elfogad = _logikai(adat, "elfogad")
+        if not isinstance(azon, str) or elfogad is None:
+            raise WebHiba(422, "validation_error", "Hiányzik a kérés azonosítója vagy a döntés.")
+        self.v.zenekeres_dontes(azon, elfogad, f"webpanel, {ip}")
+        return self.allapot()
+
     def riasztas_inditas(self, _adat: dict, ip: str) -> dict:
         self.v.log(f"Webpanel ({ip}): riasztás indítása")
         self.v.riasztas_indit()
@@ -629,6 +690,10 @@ class WebPanel:
         if rendszer.kozgazfm_os() is not None:
             cimek.append(f"http://{socket.gethostname()}.local{port}")
         return cimek
+
+    def keres_cim(self) -> str:
+        cimek = self.cimek()
+        return f"{cimek[0]}/keres" if cimek else ""
 
     def alkalmaz(self) -> None:
         b = self.v.b

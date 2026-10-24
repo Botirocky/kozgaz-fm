@@ -10,7 +10,7 @@ readme = "README.md"
 license = "GPL-3.0-or-later"
 authors = [{ name = "Botirocky" }, { name = "a Közgáz FM csapata" }]
 requires-python = ">=3.12"
-dependencies = ["PySide6>=6.10", "yt-dlp>=2026.1"]
+dependencies = ["PySide6>=6.10", "yt-dlp>=2026.1", "segno>=1.6"]
 classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.14",

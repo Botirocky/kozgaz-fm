@@ -175,6 +175,7 @@ function megjelenit(a) {
   }
 
   zenesor(z.sor);
+  keresek(a.zenekeres);
   sablonok(a.sablonok);
   $("csend-sav").hidden = !a.csend;
   $("csend-indito").hidden = !!a.csend;
@@ -249,6 +250,52 @@ function zenesor(sor) {
   }));
 }
 
+function keresek(zk) {
+  $("keresek-blokk").hidden = !zk.aktiv && !zk.keresek.length;
+  $("keresek-ures").hidden = zk.keresek.length > 0;
+  const lista = $("keresek");
+  const kulcs = JSON.stringify(zk.keresek);
+  if (lista.dataset.kulcs === kulcs) return;
+  lista.dataset.kulcs = kulcs;
+  lista.replaceChildren(...zk.keresek.map((k) => {
+    const li = document.createElement("li");
+    const cim = document.createElement(k.link ? "a" : "strong");
+    cim.textContent = k.cim || k.szoveg;
+    if (k.link) {
+      cim.href = k.link;
+      cim.target = "_blank";
+      cim.rel = "noopener noreferrer";
+    }
+    const meta = document.createElement("p");
+    meta.className = "keres-meta";
+    const hossz = k.hossz ? `${Math.floor(k.hossz / 60)}:${String(k.hossz % 60).padStart(2, "0")}` : "";
+    meta.textContent = [k.ido, k.nev, hossz, k.cim && k.cim !== k.szoveg ? `kérés: „${k.szoveg}”` : ""]
+      .filter(Boolean).join(" · ");
+    li.append(cim, meta);
+    if (k.allapot === "kereses") {
+      const var_ = document.createElement("p");
+      var_.className = "keres-meta";
+      var_.textContent = "Keresés a YouTube-on…";
+      li.append(var_);
+    } else {
+      const sor = document.createElement("div");
+      sor.className = "sor";
+      for (const [szoveg, elfogad, osztaly] of [["Elfogadás", true, "gomb fo"], ["Elutasítás", false, "gomb"]]) {
+        const g = document.createElement("button");
+        g.type = "button";
+        g.className = osztaly;
+        g.dataset.muvelet = "dontes";
+        g.dataset.azon = k.azon;
+        g.dataset.elfogad = String(elfogad);
+        g.textContent = szoveg;
+        sor.append(g);
+      }
+      li.append(sor);
+    }
+    return li;
+  }));
+}
+
 function sablonok(lista) {
   const doboz = $("sablonok");
   const kulcs = JSON.stringify([lista, sablonTorles]);
@@ -302,6 +349,11 @@ document.addEventListener("click", (esemeny) => {
     case "riasztas-le":
       muvelet("DELETE", "/riasztas", undefined, "Riasztás leállítva");
       break;
+    case "dontes": {
+      const elfogad = gomb.dataset.elfogad === "true";
+      muvelet("POST", "/zenekeres/dontes", { azon: gomb.dataset.azon, elfogad }, elfogad ? "Kérés elfogadva" : "Kérés elutasítva");
+      break;
+    }
     case "ugras":
       muvelet("POST", "/zene/ugras", { index: Number(gomb.dataset.index), cim: gomb.dataset.cim }, "Szám indul");
       break;

@@ -14,6 +14,8 @@ __lazy_modules__ = [
     "kozgaz_fm.spotify",
     "kozgaz_fm.utvonalak",
     "kozgaz_fm.webpanel",
+    "kozgaz_fm.youtube",
+    "kozgaz_fm.zenekeres",
 ]
 
 import logging
@@ -24,15 +26,16 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, QTimer, QUrl, Signal
 
-from kozgaz_fm import __version__, sajat_hangok
+from kozgaz_fm import __version__, hatter, sajat_hangok, youtube
 from kozgaz_fm.beallitasok import Beallitasok, Bemondas, Rendkivuli
 from kozgaz_fm.bemondo import Bemondo
 from kozgaz_fm.frissito import Frissito
-from kozgaz_fm.hang import CsengoLejatszo, ZeneLejatszo
+from kozgaz_fm.hang import CsengoLejatszo, Szam, ZeneLejatszo
 from kozgaz_fm.orarend import Esemeny, Tipus, csendes_idoszakok, napi_esemenyek, zene_ablakban
 from kozgaz_fm.spotify import Spotify
 from kozgaz_fm.utvonalak import adat_mappa, naplo_fajl
 from kozgaz_fm.webpanel import WebPanel
+from kozgaz_fm.zenekeres import Keres, Keresek, KeresHiba, youtube_cel
 
 naplo = logging.getLogger(__name__)
 
@@ -54,6 +57,7 @@ class Vezerlo(QObject):
     uzenet = Signal(str, str)
     riasztas_valtozott = Signal(bool)
     hangok_valtoztak = Signal()
+    keresek_valtoztak = Signal()
 
     def __init__(self, beallitasok: Beallitasok, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -65,6 +69,7 @@ class Vezerlo(QObject):
         self.spotify: Spotify | None = None
         self.naplo: deque[str] = deque(maxlen=1000)
         self.riasztas = False
+        self.keresek = Keresek()
         self._esemenyek: list[Esemeny] = []
         self._nap: date | None = None
         self._utolso: datetime | None = None
@@ -76,6 +81,7 @@ class Vezerlo(QObject):
         self.zene.hiba.connect(lambda s: self._jelez(s, "hiba"))
         self.zene.szam_valtozott.connect(lambda cim, forras: self.log(f"Zene: {cim} ({forras})"))
         self.zene.allapot_valtozott.connect(lambda _: self.frissult.emit())
+        self.zene.kert_szol.connect(self._kert_szol)
         self._ora = QTimer(self)
         self._ora.setInterval(250)
         self._ora.timeout.connect(self._tick)
@@ -414,6 +420,44 @@ class Vezerlo(QObject):
         self._szinkron()
         self.log(("Ma nincs csengetés" if mezo == "ma_nincs_csengetes" else "Ma nincs szünetzene")
                  + (" – bekapcsolva" if be else " – kikapcsolva"))
+
+    def zenekeres_uj(self, szoveg: str, nev: str, eszkoz: str, ip: str) -> Keres:
+        if not self.b.zenekeres:
+            raise KeresHiba("disabled", "A zenekérés most nincs bekapcsolva.")
+        k = self.keresek.uj(szoveg, nev, eszkoz, ip, self.b.zenekeres_napi, self.b.zenekeres_tiltott)
+        self.log(f"Zenekérés érkezett ({ip}): {k.szoveg}")
+        azon, cel = k.azon, youtube_cel(k.szoveg)
+
+        def kesz(talalat: tuple[str, str, int] | None) -> None:
+            if talalat is None:
+                self.keresek.nem_talalt(azon, "Nem található ilyen szám a YouTube-on.")
+            else:
+                k = self.keresek.talalat(azon, *talalat, self.b.zenekeres_max_perc, self.b.zenekeres_tiltott)
+                if k.allapot == "varakozik":
+                    self.uzenet.emit(f"Új zenekérés: {k.cim}", "info")
+            self.keresek_valtoztak.emit()
+
+        def hiba(_e: Exception) -> None:
+            self.keresek.nem_talalt(azon, "A keresés nem sikerült, próbáld újra később.")
+            self.keresek_valtoztak.emit()
+
+        hatter.futtat(lambda: youtube.egy_szam(cel), kesz, hiba)
+        self.keresek_valtoztak.emit()
+        return k
+
+    def zenekeres_dontes(self, azon: str, elfogad: bool, ki: str = "") -> Keres:
+        k = self.keresek.keres(azon)
+        if elfogad and k.allapot == "varakozik" and not self.zene.beszur(Szam(k.cim, yt=k.yt)):
+            raise KeresHiba("no_source", "A kért szám csak mappa, MP3 vagy YouTube forrás mellett játszható "
+                                         "(Spotify mellett nem).")
+        k = self.keresek.dont(azon, elfogad)
+        self.log(f"Zenekérés {'elfogadva' if elfogad else 'elutasítva'}{f' ({ki})' if ki else ''}: {k.cim}")
+        self.keresek_valtoztak.emit()
+        return k
+
+    def _kert_szol(self, yt: str) -> None:
+        if self.keresek.szol(yt):
+            self.keresek_valtoztak.emit()
 
     def aktiv_csend(self, most: datetime | None = None) -> Rendkivuli | None:
         most = most or datetime.now()

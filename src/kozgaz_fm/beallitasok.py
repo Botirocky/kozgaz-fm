@@ -132,6 +132,10 @@ class Beallitasok:
     web_panel: bool = False
     web_port: int = 8080
     web_jelszo: str = ""
+    zenekeres: bool = False
+    zenekeres_napi: int = 3
+    zenekeres_max_perc: int = 7
+    zenekeres_tiltott: list[str] = field(default_factory=list)
     kijelzo_cim: str = "Közgáz FM"
     frissites_kereses: bool = True
     frissites_auto: bool = True
