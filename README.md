@@ -44,6 +44,8 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
   toplista, CSV-export (pl. jogdíj-elszámoláshoz), heti összefoglaló a webpanelen.
 - **Tanév rendje importálása:** az iskola naptára (.ics fájl vagy Google Naptár/webcal link) egy kattintással:
   szünetek szünnapként, rövidített és szombati munkanapok kivételnapként, előnézettel.
+- **Hangzónák:** több hangkimenet (pl. folyosó, udvar, tanári), zónánként kapcsolható csengő, zene és
+  bemondás, külön hangerővel; a riasztás mindig mindenhol szól.
 - **Értesítés a rendszergazdának:** ntfy (telefon) vagy e-mail, ha kimaradt egy csengetés, hiba van, eltűnt
   a hangkimenet, riasztás indult vagy a tartalékgép átvette a csengetést; reggeli önteszt tanítási napokon.
 - **Világos és sötét téma**, a mai nap idővonala a Vezérlőpulton.
@@ -66,6 +68,11 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
 ### Frissítés
 
 ![Frissítés](docs/frissites.png)
+
+## Újdonságok a 0.9.0-ban
+
+- Hangzónák: több hangkimenet egyszerre, zónánként csengő / zene / bemondás és hangerő, próbahang zónánként.
+- A felolvasott bemondás eSpeak NG-vel a kiválasztott zónákban szól.
 
 ## Újdonságok a 0.8.0-ban
 

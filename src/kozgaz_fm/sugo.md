@@ -244,6 +244,24 @@ vagy az egész tanév. A *Lejátszási lista mentése (CSV)* gomb Excelben megny
 cím, forrás, kért szám-e, hossz) – például jogdíj-elszámoláshoz. Az elmúlt hét összefoglalója a webpanelen is
 látszik. Az adatok 400 napig maradnak meg.
 
+## Hangzónák (több hangkimenet)
+
+Ha az iskolában több külön hangosítás van (pl. folyosó, udvar, tanári), a **Beállítások → Hangzónák** kártyán
+mindegyik kaphat saját hangkimenetet (hangkártyát, USB-s hangkártyát, HDMI-t). Zónánként beállítható:
+
+- **Csengő** – szóljon-e itt a becsengő, kicsengő, jelzőcsengő;
+- **Zene** – szóljon-e itt a szünetzene (pl. a tanáriban ne);
+- **Bemondás** – hallják-e itt a bemondásokat (a gongot is);
+- **Hangerő** – halkítás ebben a zónában (100% = teljes, 50% = halkabb); a riasztást nem halkítja.
+
+A **riasztás mindig minden zónában szól**, ezt nem lehet kikapcsolni. A ▶ gombbal próbahangot játszhatsz csak az
+adott zónában. Ha egy zóna eszköze nem érhető el (kihúzták), ott az alapértelmezett kimenet szól, és a program
+figyelmeztet (értesítést is küld, ha be van kapcsolva). Üres zónalistánál minden a felső Hangkimenetre megy.
+
+A **felolvasott bemondás** a zónákra a magyar *eSpeak NG* hanggal megy (a Közgáz FM OS-ben benne van; Windowson
+az eSpeak NG telepítése után). Ha nincs eSpeak NG, a felolvasott szöveg a gép alapértelmezett kimenetén szól,
+a gong és a hangfájlos bemondás viszont zónák szerint. A zónák gépenként külön állítandók (az export nem viszi át).
+
 ## Értesítések a rendszergazdának
 
 **Beállítások → Értesítések a rendszergazdának.** A program szól a telefonodra vagy e-mailben, ha baj van:

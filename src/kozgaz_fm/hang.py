@@ -10,6 +10,7 @@ __lazy_modules__ = [
     "kozgaz_fm",
     "kozgaz_fm.beallitasok",
     "kozgaz_fm.hangossag",
+    "kozgaz_fm.kimenetek",
     "kozgaz_fm.sajat_hangok",
     "kozgaz_fm.spotify",
     "kozgaz_fm.utvonalak",
@@ -23,11 +24,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QTimer, QUrl, QVariantAnimation, Signal
-from PySide6.QtMultimedia import QAudioDevice, QAudioOutput, QMediaDevices, QMediaPlayer
+from PySide6.QtMultimedia import QMediaPlayer
 
 from kozgaz_fm import hatter, sajat_hangok, youtube
 from kozgaz_fm.beallitasok import BEEPITETT_HANGOK, ZeneForras
 from kozgaz_fm.hangossag import Kiegyenlito
+from kozgaz_fm.kimenetek import TobbLejatszo, ZonaKimenet, eszkoz_azonosito, kimeneti_eszkoz
 from kozgaz_fm.sajat_hangok import HANGFAJLOK
 from kozgaz_fm.spotify import Spotify, SpotifyHiba, spotify_uri
 from kozgaz_fm.utvonalak import beepitett_hang, gyorsitotar_mappa
@@ -57,15 +59,7 @@ def hang_nev(ertek: str) -> str:
     return Path(ertek).name
 
 
-def kimeneti_eszkoz(azonosito: str) -> QAudioDevice:
-    for eszkoz in QMediaDevices.audioOutputs():
-        if azonosito and bytes(eszkoz.id().data()).decode(errors="replace") == azonosito:
-            return eszkoz
-    return QMediaDevices.defaultAudioOutput()
-
-
-def eszkoz_azonosito(eszkoz: QAudioDevice) -> str:
-    return bytes(eszkoz.id().data()).decode(errors="replace")
+__all__ = ["CsengoLejatszo", "Szam", "ZeneLejatszo", "eszkoz_azonosito", "hang_nev", "hang_ut", "kimeneti_eszkoz"]
 
 
 def _hangero(szazalek: float) -> float:
@@ -96,23 +90,30 @@ class CsengoLejatszo(QObject):
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
-        self.kimenet = QAudioOutput(self)
-        self.lejatszo = QMediaPlayer(self)
-        self.lejatszo.setAudioOutput(self.kimenet)
+        self.lejatszo = TobbLejatszo(self)
+        self.kimenet = self.lejatszo
         self.lejatszo.mediaStatusChanged.connect(self._statusz)
         self.lejatszo.errorOccurred.connect(self._hiba)
         self._aktiv = False
         self._vedelem = _Vedelem()
         self._jel = 0
+        self._fuggo_zonak: list[ZonaKimenet] | None = None
 
     @property
     def szol(self) -> bool:
         return self._aktiv
 
     def eszkoz(self, azonosito: str) -> None:
-        self.kimenet.setDevice(kimeneti_eszkoz(azonosito))
+        self.zonak([ZonaKimenet("Alapértelmezett", azonosito)])
 
-    def lejatszas(self, ertek: str | Path, hangero: int, ismetles: bool = False) -> bool:
+    def zonak(self, lista: list[ZonaKimenet]) -> None:
+        if not self._aktiv or not self.lejatszo.ujraepitendo(lista):
+            self._fuggo_zonak = None
+            self.lejatszo.zonak(lista)
+        else:
+            self._fuggo_zonak = list(lista)
+
+    def lejatszas(self, ertek: str | Path, hangero: int, ismetles: bool = False, cel: str = "csengo") -> bool:
         ut = ertek if isinstance(ertek, Path) else hang_ut(ertek)
         if ut is None or not ut.exists():
             naplo.warning("A hangfájl nem található: %s", ertek)
@@ -122,16 +123,20 @@ class CsengoLejatszo(QObject):
         jel = self._jel
         hatra = self._vedelem.hatra_ms()
         if hatra:
-            QTimer.singleShot(hatra, lambda: self._indit(jel, ut, hangero, ismetles))
+            QTimer.singleShot(hatra, lambda: self._indit(jel, ut, hangero, ismetles, cel))
         else:
-            self._indit(jel, ut, hangero, ismetles)
+            self._indit(jel, ut, hangero, ismetles, cel)
         return True
 
-    def _indit(self, jel: int, ut: Path, hangero: int, ismetles: bool) -> None:
+    def _indit(self, jel: int, ut: Path, hangero: int, ismetles: bool, cel: str = "csengo") -> None:
         if jel != self._jel or not self._aktiv:
             return
-        self.kimenet.setVolume(_hangero(hangero))
         self.lejatszo.stop()
+        if not self.lejatszo.aktiv(cel):
+            naplo.warning("Nincs zóna ehhez: %s", cel)
+            self._vege()
+            return
+        self.kimenet.setVolume(_hangero(hangero))
         self.lejatszo.setLoops(QMediaPlayer.Loops.Infinite if ismetles else 1)
         self.lejatszo.setSource(QUrl.fromLocalFile(str(ut)))
         self.lejatszo.play()
@@ -146,7 +151,7 @@ class CsengoLejatszo(QObject):
 
     def elenged(self) -> None:
         self.megallit()
-        self.lejatszo.setSource(QUrl())
+        self.lejatszo.elenged()
         self._vedelem.indit()
 
     def _statusz(self, statusz: QMediaPlayer.MediaStatus) -> None:
@@ -165,6 +170,9 @@ class CsengoLejatszo(QObject):
 
     def _kesz_jelzes(self) -> None:
         if not self._aktiv:
+            if self._fuggo_zonak is not None:
+                lista, self._fuggo_zonak = self._fuggo_zonak, None
+                self.lejatszo.zonak(lista)
             self.kesz.emit()
 
 
@@ -208,12 +216,10 @@ class ZeneLejatszo(QObject):
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
-        self.kimenet = QAudioOutput(self)
-        self.lejatszo = QMediaPlayer(self)
-        self.lejatszo.setAudioOutput(self.kimenet)
-        self._kifuto_kimenet = QAudioOutput(self)
-        self._kifuto = QMediaPlayer(self)
-        self._kifuto.setAudioOutput(self._kifuto_kimenet)
+        self.lejatszo = TobbLejatszo(self)
+        self.kimenet = self.lejatszo
+        self._kifuto = TobbLejatszo(self)
+        self._kifuto_kimenet = self._kifuto
         for lejatszo in (self.lejatszo, self._kifuto):
             lejatszo.mediaStatusChanged.connect(self._statusz)
             lejatszo.errorOccurred.connect(self._lejatszasi_hiba)
@@ -255,6 +261,7 @@ class ZeneLejatszo(QObject):
         self.most_cim = ""
         self._vedelem = _Vedelem()
         self._indito_jel = 0
+        self._zona_folytat = False
 
     @property
     def szol(self) -> bool:
@@ -265,13 +272,32 @@ class ZeneLejatszo(QObject):
         return self.forras is not None and self.forras.tipus == "spotify"
 
     def eszkoz(self, azonosito: str) -> None:
-        eszkoz = kimeneti_eszkoz(azonosito)
-        self.kimenet.setDevice(eszkoz)
-        self._kifuto_kimenet.setDevice(eszkoz)
+        self.zonak([ZonaKimenet("Alapértelmezett", azonosito)])
+
+    def zonak(self, lista: list[ZonaKimenet]) -> None:
+        if not self.lejatszo.ujraepitendo(lista):
+            for lejatszo in (self.lejatszo, self._kifuto):
+                lejatszo.zonak(lista)
+                lejatszo.aktiv("zene")
+            return
+        folyt = self._szol and not self.spotify_mod
+        if folyt:
+            self.megallit(elhalkitas=False, kovetkezore=False)
+        for lejatszo in (self.lejatszo, self._kifuto):
+            lejatszo.zonak(lista)
+            lejatszo.aktiv("zene")
+        if folyt:
+            self._zona_folytat = True
+            QTimer.singleShot(VEDELEM_MS + 50, self._zona_utan_folytat)
+
+    def _zona_utan_folytat(self) -> None:
+        if self._zona_folytat:
+            self._zona_folytat = False
+            self.indit()
 
     def _fo_jelzes(self) -> bool:
         kuldo = self.sender()
-        return not isinstance(kuldo, QMediaPlayer) or kuldo is self.lejatszo
+        return not isinstance(kuldo, TobbLejatszo) or kuldo is self.lejatszo
 
     def _kifuto_leallit(self) -> None:
         self._kifuto_animacio.stop()
@@ -377,6 +403,9 @@ class ZeneLejatszo(QObject):
             return
         if self.spotify_mod:
             self._spotify_indit()
+            return
+        if not self.lejatszo.aktiv_zonak:
+            self.hiba.emit("Egyik hangzónában sincs bekapcsolva a zene (Beállítások → Hangzónák).")
             return
         if not self.szamok:
             if not self._betoltes_alatt:
@@ -546,6 +575,7 @@ class ZeneLejatszo(QObject):
             teendo()
 
     def megallit(self, elhalkitas: bool = True, kovetkezore: bool = True) -> None:
+        self._zona_folytat = False
         if not self._szol:
             return
         self._szol = False
@@ -746,6 +776,7 @@ class ZeneLejatszo(QObject):
         hatter.futtat(spotify.most_szol, kesz)
 
     def allj(self) -> None:
+        self._zona_folytat = False
         self._generacio += 1
         self._animacio.stop()
         self._kifuto_leallit()

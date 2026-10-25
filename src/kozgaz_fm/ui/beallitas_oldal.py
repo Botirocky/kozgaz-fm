@@ -8,6 +8,7 @@ __lazy_modules__ = [
     "kozgaz_fm",
     "kozgaz_fm.beallitasok",
     "kozgaz_fm.ertesites",
+    "kozgaz_fm.ui.zonak_kartya",
     "kozgaz_fm.hang",
     "kozgaz_fm.tartalek",
     "kozgaz_fm.ui.elemek",
@@ -42,12 +43,13 @@ from kozgaz_fm.tartalek import SZEREPEK, TartalekHiba, cim_normalizal, uj_kulcs
 from kozgaz_fm.ui.elemek import Kartya, Oldal, cimke, gomb, ido_mezo, kapcsolo, keskeny, sor
 from kozgaz_fm.ui.pin_ablak import UjJelszoAblak, UjPinAblak
 from kozgaz_fm.ui.tema import SZIN, TEMA_NEVEK, logo_pixmap
+from kozgaz_fm.ui.zonak_kartya import ZonakKartya
 from kozgaz_fm.utvonalak import adat_mappa
 from kozgaz_fm.vezerlo import Vezerlo
 
 HELYI_MEZOK = ("admin_pin", "web_panel", "web_port", "web_jelszo", "tartalek_mod", "tartalek_cim", "tartalek_kulcs",
                "ertesites_ntfy", "ertesites_ntfy_token", "ertesites_email", "smtp_szerver", "smtp_port", "smtp_mod",
-               "smtp_felhasznalo", "smtp_jelszo", "smtp_felado")
+               "smtp_felhasznalo", "smtp_jelszo", "smtp_felado", "kimenet", "zonak")
 
 
 class BeallitasOldal(Oldal):
@@ -64,15 +66,18 @@ class BeallitasOldal(Oldal):
         racs.setSpacing(16)
         racs.addWidget(self._hang_kartya(), 0, 0)
         racs.addWidget(self._inditas_kartya(), 0, 1)
-        racs.addWidget(self._kijelzo_kartya(), 1, 0)
-        racs.addWidget(self._mentes_kartya(), 1, 1)
-        racs.addWidget(self._frissites_kartya(), 2, 0)
-        racs.addWidget(self._rendszer_kartya(), 2, 1)
-        racs.addWidget(self._hozzaferes_kartya(), 3, 0, 1, 2)
-        racs.addWidget(self._web_kartya(), 4, 0, 1, 2)
-        racs.addWidget(self._tartalek_kartya(), 5, 0, 1, 2)
-        racs.addWidget(self._ertesites_kartya(), 6, 0, 1, 2)
-        racs.addWidget(self._nevjegy_kartya(), 7, 0, 1, 2)
+        self.zonak_kartya = ZonakKartya(v)
+        self.zonak_kartya.valtozott.connect(self._kimenet_zona_allapot)
+        racs.addWidget(self.zonak_kartya, 1, 0, 1, 2)
+        racs.addWidget(self._kijelzo_kartya(), 2, 0)
+        racs.addWidget(self._mentes_kartya(), 2, 1)
+        racs.addWidget(self._frissites_kartya(), 3, 0)
+        racs.addWidget(self._rendszer_kartya(), 3, 1)
+        racs.addWidget(self._hozzaferes_kartya(), 4, 0, 1, 2)
+        racs.addWidget(self._web_kartya(), 5, 0, 1, 2)
+        racs.addWidget(self._tartalek_kartya(), 6, 0, 1, 2)
+        racs.addWidget(self._ertesites_kartya(), 7, 0, 1, 2)
+        racs.addWidget(self._nevjegy_kartya(), 8, 0, 1, 2)
         racs.setColumnStretch(0, 1)
         racs.setColumnStretch(1, 1)
         self.add(racs)
@@ -573,6 +578,13 @@ class BeallitasOldal(Oldal):
         for e in QMediaDevices.audioOutputs():
             self.kimenet.addItem(e.description(), eszkoz_azonosito(e))
         self.kimenet.setCurrentIndex(max(0, self.kimenet.findData(self.v.b.kimenet)))
+        self._kimenet_zona_allapot()
+
+    def _kimenet_zona_allapot(self) -> None:
+        zonas = bool(self.v.b.zonak)
+        self.kimenet.setEnabled(not zonas)
+        self.kimenet.setToolTip("Hangzónák vannak beállítva, a kimeneteket lent, zónánként választod."
+                                if zonas else "")
 
     def _kimenet_valasztva(self, _i: int) -> None:
         self.v.b.kimenet = self.kimenet.currentData() or ""

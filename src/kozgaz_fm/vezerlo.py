@@ -14,6 +14,7 @@ __lazy_modules__ = [
     "kozgaz_fm.frissito",
     "kozgaz_fm.hang",
     "kozgaz_fm.hangossag",
+    "kozgaz_fm.kimenetek",
     "kozgaz_fm.orarend",
     "kozgaz_fm.spotify",
     "kozgaz_fm.statisztika",
@@ -32,7 +33,7 @@ from dataclasses import dataclass, fields
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QTimer, QUrl, Signal
+from PySide6.QtCore import QObject, QTimer, Signal
 from PySide6.QtMultimedia import QMediaDevices
 
 from kozgaz_fm import __version__, hatter, sajat_hangok, youtube
@@ -42,6 +43,7 @@ from kozgaz_fm.ertesites import Ertesito, kimaradt_csengetesek, reggeli_jelentes
 from kozgaz_fm.frissito import Frissito
 from kozgaz_fm.hang import CsengoLejatszo, Szam, ZeneLejatszo, eszkoz_azonosito
 from kozgaz_fm.hangossag import Kiegyenlito
+from kozgaz_fm.kimenetek import ZonaKimenet, kimeneti_eszkoz
 from kozgaz_fm.orarend import (
     CSENGOK,
     Esemeny,
@@ -70,6 +72,7 @@ class _Feladat:
     ismetles: bool = False
     tartalek: str = ""
     hangero: int | None = None
+    cel: str = "csengo"
 
 
 class Vezerlo(QObject):
@@ -93,8 +96,9 @@ class Vezerlo(QObject):
         self.stat = self._statisztika_nyit()
         self.ertesito = Ertesito(lambda: self.b, self.log)
         self._reggeli_nap: date | None = None
+        self._eszkoz_tar: set[str] | None = None
         self._media = QMediaDevices(self)
-        self._media.audioOutputsChanged.connect(self._kimenet_ellenoriz)
+        self._media.audioOutputsChanged.connect(self._eszkozok_valtoztak)
         self._kovetkezo_kert = False
         self.spotify: Spotify | None = None
         self.naplo: deque[str] = deque(maxlen=1000)
@@ -109,6 +113,7 @@ class Vezerlo(QObject):
         self._sor: deque[_Feladat] = deque()
         self.csengo.kesz.connect(self._kovetkezo_feladat)
         self.bemondo.kesz.connect(self._kovetkezo_feladat)
+        self.bemondo.hangfajl_kesz.connect(self._bemondas_hangfajl)
         self.zene.hiba.connect(self._zenehiba)
         self.zene.szam_valtozott.connect(lambda cim, forras: self.log(f"Zene: {cim} ({forras})"))
         self.zene.szam_valtozott.connect(self._szam_stat)
@@ -236,10 +241,23 @@ class Vezerlo(QObject):
         if most - utolso > timedelta(minutes=2):
             self._kimaradtak(utolso, most)
 
+    def zona_kimenetek(self) -> list[ZonaKimenet]:
+        if not self.b.zonak:
+            return [ZonaKimenet("Alapértelmezett", self.b.kimenet)]
+        return [ZonaKimenet(z.nev or f"{i}. zóna", z.kimenet, z.csengo, z.zene, z.bemondas,
+                            max(0, min(100, z.hangero)) / 100) for i, z in enumerate(self.b.zonak, 1)]
+
+    def _bemondas_hangfajl(self, ut: str) -> None:
+        if not self.csengo.lejatszas(Path(ut), self.b.csengo_hangero, cel="bemondas"):
+            self._kovetkezo_feladat()
+
     def kimenet_nev(self) -> str | None:
         kimenetek = QMediaDevices.audioOutputs()
         if not kimenetek:
             return None
+        if self.b.zonak:
+            return None if self.hianyzo_zonak() else ", ".join(
+                f"{z.nev}: {kimeneti_eszkoz(z.kimenet).description()}" for z in self.b.zonak)
         if self.b.kimenet:
             return next((e.description() for e in kimenetek if eszkoz_azonosito(e) == self.b.kimenet), None)
         return QMediaDevices.defaultAudioOutput().description() or kimenetek[0].description()
@@ -250,6 +268,9 @@ class Vezerlo(QObject):
         if not QMediaDevices.audioOutputs():
             szoveg = "A gépen nincs elérhető hangkimenet, a csengő nem fog szólni. Ellenőrizd a hangkártyát, " \
                      "a HDMI- vagy USB-kábelt."
+        elif self.b.zonak:
+            szoveg = f"Nem érhető el ezeknek a zónáknak a hangkimenete: {', '.join(self.hianyzo_zonak())}. " \
+                     "Ott az alapértelmezett kimenet szól; ellenőrizd a kábeleket és az erősítőket."
         else:
             szoveg = "A beállított hangkimenet nem érhető el (pl. kihúzták a kábelt), a csengő az alapértelmezett " \
                      "kimeneten szól. Ellenőrizd az erősítő bekötését."
@@ -289,9 +310,11 @@ class Vezerlo(QObject):
 
     def beallitasok_alkalmazasa(self) -> None:
         b = self.b
-        self.csengo.eszkoz(b.kimenet)
-        self.proba.eszkoz(b.kimenet)
-        self.zene.eszkoz(b.kimenet)
+        zonak = self.zona_kimenetek()
+        self.csengo.zonak(zonak)
+        self.proba.zonak(zonak)
+        self.zene.zonak(zonak)
+        self.bemondo.zona_mod = bool(b.zonak)
         self.zene.keveres = b.keveres
         self.zene.gyorsitotar = b.youtube_gyorsitotar
         self.zene.elhalkitas_mp = b.elhalkitas
@@ -332,7 +355,7 @@ class Vezerlo(QObject):
         if not self.csengo.szol:
             self.csengo.elenged()
             return
-        if self.csengo.lejatszo.source() == QUrl.fromLocalFile(str(sajat_hangok.ut(ertek))):
+        if str(sajat_hangok.ut(ertek)) in self.csengo.lejatszo.forrasok():
             raise sajat_hangok.SajatHangHiba("Ez a hang most szól. Várd meg, amíg elhallgat, és próbáld újra.")
 
     def hang_proba(self, ertek: str) -> bool:
@@ -342,7 +365,23 @@ class Vezerlo(QObject):
         if self.riasztas or self.csengo.szol:
             self._tiltas("Csengetés vagy riasztás közben nincs meghallgatás.")
             return True
-        return self.proba.lejatszas(ertek, self.b.csengo_hangero)
+        return self.proba.lejatszas(ertek, self.b.csengo_hangero, cel="elso")
+
+    def zona_proba(self, index: int) -> bool:
+        if self.riasztas or self.csengo.szol:
+            self._tiltas("Csengetés vagy riasztás közben nincs próbahang.")
+            return False
+        self.proba.zonak(self.zona_kimenetek())
+        return self.proba.lejatszas(self.b.hang_gong, self.b.csengo_hangero, cel=f"zona:{index}")
+
+    def hianyzo_zonak(self) -> list[str]:
+        if self._eszkoz_tar is None:
+            self._eszkoz_tar = {eszkoz_azonosito(e) for e in QMediaDevices.audioOutputs()}
+        return [z.nev or "névtelen" for z in self.b.zonak if z.kimenet and z.kimenet not in self._eszkoz_tar]
+
+    def _eszkozok_valtoztak(self) -> None:
+        self._eszkoz_tar = None
+        self._kimenet_ellenoriz()
 
     def sajat_hang_atnevezes(self, ertek: str, nev: str) -> sajat_hangok.SajatHang:
         self._csengo_elenged(ertek)
@@ -521,8 +560,8 @@ class Vezerlo(QObject):
             return
         self.log(f"Bemondás: {bem.nev}")
         if bem.gong:
-            self._sor.append(_Feladat("hang", self.b.hang_gong, tartalek=HANG_MEZOK["hang_gong"]))
-        self._sor.append(_Feladat("szoveg" if bem.tipus == "szoveg" else "fajl", bem.tartalom))
+            self._sor.append(_Feladat("hang", self.b.hang_gong, tartalek=HANG_MEZOK["hang_gong"], cel="bemondas"))
+        self._sor.append(_Feladat("szoveg" if bem.tipus == "szoveg" else "fajl", bem.tartalom, cel="bemondas"))
         if not self.csengo.szol and not self.bemondo.beszel:
             self._kovetkezo_feladat()
 
@@ -548,11 +587,11 @@ class Vezerlo(QObject):
                 continue
             forras = Path(feladat.ertek) if feladat.tipus == "fajl" else feladat.ertek
             hangero = 100 if feladat.ismetles else feladat.hangero or self.b.csengo_hangero
-            if self.csengo.lejatszas(forras, hangero, feladat.ismetles):
+            if self.csengo.lejatszas(forras, hangero, feladat.ismetles, cel=feladat.cel):
                 return
             if feladat.tartalek and feladat.tartalek != feladat.ertek:
                 self._jelez("A beállított csengőhang nem található, a beépített hang szól helyette.", "hiba")
-                if self.csengo.lejatszas(feladat.tartalek, hangero, feladat.ismetles):
+                if self.csengo.lejatszas(feladat.tartalek, hangero, feladat.ismetles, cel=feladat.cel):
                     return
             self._jelez(f"A hangfájl nem található: {feladat.ertek}", "hiba")
         if not self.riasztas:
@@ -569,7 +608,7 @@ class Vezerlo(QObject):
         self.ertesito.kuld("riasztas", "Riasztás indult", f"{datetime.now():%H:%M}-kor elindult a riasztás a "
                            "Közgáz FM-en.", "hiba", ismetles_mp=60)
         self._sor.clear()
-        self._sor.append(_Feladat("hang", self.b.hang_riasztas, ismetles=True,
+        self._sor.append(_Feladat("hang", self.b.hang_riasztas, ismetles=True, cel="mind",
                                   tartalek=HANG_MEZOK["hang_riasztas"]))
         if not self._foglalt():
             self._kovetkezo_feladat()

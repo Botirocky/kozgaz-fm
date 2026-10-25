@@ -82,6 +82,16 @@ RENDKIVULI_TIPUSOK = {
 
 
 @dataclass
+class Zona:
+    nev: str
+    kimenet: str = ""
+    csengo: bool = True
+    zene: bool = True
+    bemondas: bool = True
+    hangero: int = 100
+
+
+@dataclass
 class ZeneForras:
     tipus: str
     nev: str
@@ -125,6 +135,7 @@ class Beallitasok:
     spotify_eszkoz: str = ""
     tts_hang: str = ""
     kimenet: str = ""
+    zonak: list[Zona] = field(default_factory=list)
     talcara_zar: bool = True
     automatikus_inditas: bool = False
     admin_pin: str = ""

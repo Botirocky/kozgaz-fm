@@ -483,11 +483,16 @@ class FoAblak(QMainWindow):
                                        "készenlétben")
         else:
             self.as_automatika.setText(f"<span style='color:{SZIN['szol']}'>&#9679;</span>&nbsp; Automatika fut")
-        nev = getattr(self, "_kimenet_nev", None)
-        if nev is None or getattr(self, "_kimenet_kulcs", None) != self.v.b.kimenet:
-            self._kimenet_kulcs = self.v.b.kimenet
-            self._kimenet_nev = nev = kimeneti_eszkoz(self.v.b.kimenet).description() or "alapértelmezett"
-        self.as_kimenet.setText(f"Hangkimenet: {nev}")
+        if self.v.b.zonak:
+            hianyzo = self.v.hianyzo_zonak()
+            self.as_kimenet.setText(f"Hangzónák: {len(self.v.b.zonak)}"
+                                    + (f" (nem elérhető: {', '.join(hianyzo)})" if hianyzo else ""))
+        else:
+            nev = getattr(self, "_kimenet_nev", None)
+            if nev is None or getattr(self, "_kimenet_kulcs", None) != self.v.b.kimenet:
+                self._kimenet_kulcs = self.v.b.kimenet
+                self._kimenet_nev = nev = kimeneti_eszkoz(self.v.b.kimenet).description() or "alapértelmezett"
+            self.as_kimenet.setText(f"Hangkimenet: {nev}")
         szoveg, szin = self.v.tartalek.leiras()
         self.as_tartalek.setText(f"<span style='color:{SZIN[szin]}'>{szoveg}</span>" if szoveg else "")
         if self._ido_ok is False:
