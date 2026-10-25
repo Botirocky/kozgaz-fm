@@ -140,7 +140,7 @@ def test_elenged_minden_zonaban(tmp_path):
     from PySide6.QtCore import QUrl
     t.setSource(QUrl.fromLocalFile(str(hang)))
     t.aktiv("zene")
-    assert t.forrasok() == {str(hang)}
+    assert t.forrasok() == {hang}
     t.elenged()
     assert t.forrasok() == set()
 

@@ -69,7 +69,7 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
 
 ![Frissítés](docs/frissites.png)
 
-## Újdonságok a 0.9.0-ban
+## Újdonságok a 0.9.1-ben
 
 - Hangzónák: több hangkimenet egyszerre, zónánként csengő / zene / bemondás és hangerő, próbahang zónánként.
 - A felolvasott bemondás eSpeak NG-vel a kiválasztott zónákban szól.

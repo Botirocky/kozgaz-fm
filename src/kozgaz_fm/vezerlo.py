@@ -355,7 +355,7 @@ class Vezerlo(QObject):
         if not self.csengo.szol:
             self.csengo.elenged()
             return
-        if str(sajat_hangok.ut(ertek)) in self.csengo.lejatszo.forrasok():
+        if sajat_hangok.ut(ertek) in self.csengo.lejatszo.forrasok():
             raise sajat_hangok.SajatHangHiba("Ez a hang most szól. Várd meg, amíg elhallgat, és próbáld újra.")
 
     def hang_proba(self, ertek: str) -> bool:

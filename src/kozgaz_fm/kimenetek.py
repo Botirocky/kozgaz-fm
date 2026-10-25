@@ -1,6 +1,7 @@
-__lazy_modules__ = ["dataclasses", "PySide6.QtCore", "PySide6.QtMultimedia"]
+__lazy_modules__ = ["dataclasses", "pathlib", "PySide6.QtCore", "PySide6.QtMultimedia"]
 
 from dataclasses import dataclass
+from pathlib import Path
 
 from PySide6.QtCore import QObject, QUrl, Signal
 from PySide6.QtMultimedia import QAudioDevice, QAudioOutput, QMediaDevices, QMediaPlayer
@@ -125,8 +126,9 @@ class TobbLejatszo(QObject):
             lejatszo.stop()
             lejatszo.setSource(QUrl())
 
-    def forrasok(self) -> set[str]:
-        return {lejatszo.source().toLocalFile() for lejatszo, _k, _z in self._tagok if not lejatszo.source().isEmpty()}
+    def forrasok(self) -> set[Path]:
+        return {Path(lejatszo.source().toLocalFile()) for lejatszo, _k, _z in self._tagok
+                if lejatszo.source().isLocalFile()}
 
     def play(self) -> None:
         for lejatszo in self._aktiv_lejatszok():
