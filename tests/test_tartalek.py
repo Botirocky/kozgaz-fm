@@ -132,7 +132,7 @@ class AlVezerlo:
     def log(self, szoveg: str) -> None:
         self.naplo.append(szoveg)
 
-    def _jelez(self, szoveg: str, szint: str = "info") -> None:
+    def _jelez(self, szoveg: str, szint: str = "info", **_kw) -> None:
         self.naplo.append(szoveg)
 
     def _szinkron(self) -> None:

@@ -141,6 +141,18 @@ class Beallitasok:
     tartalek_cim: str = ""
     tartalek_kulcs: str = ""
     kijelzo_cim: str = "Közgáz FM"
+    ertesites_ntfy: str = ""
+    ertesites_ntfy_token: str = ""
+    ertesites_email: str = ""
+    smtp_szerver: str = ""
+    smtp_port: int = 587
+    smtp_mod: str = "starttls"
+    smtp_felhasznalo: str = ""
+    smtp_jelszo: str = ""
+    smtp_felado: str = ""
+    ertesites_esemenyek: list[str] = field(default_factory=lambda: [
+        "kimaradt", "hiba", "hangkimenet", "riasztas", "tartalek", "indulas", "reggel"])
+    ertesites_reggel_ido: str = "07:15"
     frissites_kereses: bool = True
     frissites_auto: bool = True
     ma_nincs_csengetes: str = ""

@@ -7,6 +7,7 @@ __lazy_modules__ = [
     "PySide6.QtWidgets",
     "kozgaz_fm",
     "kozgaz_fm.beallitasok",
+    "kozgaz_fm.ertesites",
     "kozgaz_fm.hang",
     "kozgaz_fm.tartalek",
     "kozgaz_fm.ui.elemek",
@@ -35,15 +36,18 @@ from PySide6.QtWidgets import (
 
 from kozgaz_fm import APP_NEV, KESZITO, __version__, rendszer
 from kozgaz_fm.beallitasok import Beallitasok, _ebbol
+from kozgaz_fm.ertesites import ESEMENYEK, SMTP_MODOK, ErtesitesHiba, ntfy_cel
 from kozgaz_fm.hang import eszkoz_azonosito
 from kozgaz_fm.tartalek import SZEREPEK, TartalekHiba, cim_normalizal, uj_kulcs
-from kozgaz_fm.ui.elemek import Kartya, Oldal, cimke, gomb, kapcsolo, keskeny, sor
+from kozgaz_fm.ui.elemek import Kartya, Oldal, cimke, gomb, ido_mezo, kapcsolo, keskeny, sor
 from kozgaz_fm.ui.pin_ablak import UjJelszoAblak, UjPinAblak
 from kozgaz_fm.ui.tema import SZIN, TEMA_NEVEK, logo_pixmap
 from kozgaz_fm.utvonalak import adat_mappa
 from kozgaz_fm.vezerlo import Vezerlo
 
-HELYI_MEZOK = ("admin_pin", "web_panel", "web_port", "web_jelszo", "tartalek_mod", "tartalek_cim", "tartalek_kulcs")
+HELYI_MEZOK = ("admin_pin", "web_panel", "web_port", "web_jelszo", "tartalek_mod", "tartalek_cim", "tartalek_kulcs",
+               "ertesites_ntfy", "ertesites_ntfy_token", "ertesites_email", "smtp_szerver", "smtp_port", "smtp_mod",
+               "smtp_felhasznalo", "smtp_jelszo", "smtp_felado")
 
 
 class BeallitasOldal(Oldal):
@@ -67,7 +71,8 @@ class BeallitasOldal(Oldal):
         racs.addWidget(self._hozzaferes_kartya(), 3, 0, 1, 2)
         racs.addWidget(self._web_kartya(), 4, 0, 1, 2)
         racs.addWidget(self._tartalek_kartya(), 5, 0, 1, 2)
-        racs.addWidget(self._nevjegy_kartya(), 6, 0, 1, 2)
+        racs.addWidget(self._ertesites_kartya(), 6, 0, 1, 2)
+        racs.addWidget(self._nevjegy_kartya(), 7, 0, 1, 2)
         racs.setColumnStretch(0, 1)
         racs.setColumnStretch(1, 1)
         self.add(racs)
@@ -350,6 +355,103 @@ class BeallitasOldal(Oldal):
         cimek = self.v.web.cimek()
         if cimek:
             QGuiApplication.clipboard().setText(cimek[0])
+
+    def _ertesites_kartya(self) -> Kartya:
+        b = self.v.b
+        k = Kartya("Értesítések a rendszergazdának")
+        k.add(cimke("Telefonos értesítés, ha baj van (kimaradt csengetés, hiba, eltűnt hangkimenet, riasztás, "
+                    "tartalékgép-átvétel), és reggeli önteszt tanítási napokon. Telefonra a legegyszerűbb az "
+                    "ingyenes ntfy alkalmazás: válassz egy hosszú, nehezen kitalálható témanevet, iratkozz fel rá "
+                    "az appban, és írd ide a teljes címet. E-mailhez az iskola SMTP-szervere kell.",
+                    "halvany", sortores=True))
+        racs = QGridLayout()
+        racs.setHorizontalSpacing(12)
+        racs.setVerticalSpacing(8)
+
+        def mezo(nev: str, ertek: str, tipp: str, jelszo: bool = False) -> QLineEdit:
+            m = QLineEdit(ertek)
+            m.setPlaceholderText(tipp)
+            if jelszo:
+                m.setEchoMode(QLineEdit.EchoMode.Password)
+            m.editingFinished.connect(lambda: self._ertesites_mezo(nev, m.text().strip() if not jelszo
+                                                                   else m.text()))
+            return m
+
+        self.ntfy = mezo("ertesites_ntfy", b.ertesites_ntfy, "https://ntfy.sh/kozgaz-fm-sajat-hosszu-tema")
+        sorok = [
+            ("ntfy-cím:", self.ntfy),
+            ("ntfy-token (ha kell):", mezo("ertesites_ntfy_token", b.ertesites_ntfy_token,
+                                           "csak saját, védett ntfy-szervernél", jelszo=True)),
+            ("E-mail címzett(ek):", mezo("ertesites_email", b.ertesites_email, "rendszergazda@iskola.hu, …")),
+            ("SMTP-szerver:", mezo("smtp_szerver", b.smtp_szerver, "pl. smtp.gmail.com")),
+            ("SMTP-felhasználó:", mezo("smtp_felhasznalo", b.smtp_felhasznalo, "általában az e-mail-cím")),
+            ("SMTP-jelszó:", mezo("smtp_jelszo", b.smtp_jelszo, "alkalmazásjelszó", jelszo=True)),
+            ("Feladó (ha más):", mezo("smtp_felado", b.smtp_felado, "üresen a felhasználónév")),
+        ]
+        for i, (felirat, elem) in enumerate(sorok):
+            racs.addWidget(cimke(felirat), i, 0)
+            racs.addWidget(elem, i, 1)
+        port = QSpinBox(minimum=1, maximum=65535, prefix="Port: ")
+        port.setValue(b.smtp_port)
+        port.valueChanged.connect(lambda e: self._ertesites_mezo("smtp_port", e))
+        mod = QComboBox()
+        for kulcs, nev in SMTP_MODOK.items():
+            mod.addItem(nev, kulcs)
+        mod.setCurrentIndex(max(0, mod.findData(b.smtp_mod)))
+        def mod_valtozott() -> None:
+            uj = mod.currentData()
+            self._ertesites_mezo("smtp_mod", uj)
+            alap = {"ssl": 465, "starttls": 587}.get(uj)
+            if alap and port.value() in (465, 587, 25):
+                port.setValue(alap)
+
+        mod.activated.connect(lambda _: mod_valtozott())
+        racs.addLayout(sor(port, mod, nyujt=True), len(sorok), 1)
+        racs.setColumnStretch(1, 1)
+        k.add(racs)
+        k.add(cimke("Miről kapj értesítést:", "alcim"))
+        esemenyek = QGridLayout()
+        for i, (kulcs, nev) in enumerate(ESEMENYEK.items()):
+            pipa = kapcsolo(nev, kulcs in b.ertesites_esemenyek)
+            pipa.toggled.connect(lambda e, kk=kulcs: self._ertesites_esemeny(kk, e))
+            esemenyek.addWidget(pipa, i // 2, i % 2)
+        k.add(esemenyek)
+        reggel = ido_mezo(b.ertesites_reggel_ido)
+        reggel.timeChanged.connect(lambda t: self._ertesites_mezo("ertesites_reggel_ido", t.toString("HH:mm")))
+        self.proba_gomb = gomb("Próbaértesítés küldése", "bemondas")
+        self.proba_gomb.clicked.connect(self._ertesites_proba)
+        k.add(sor(cimke("A reggeli önteszt ideje:"), reggel, None, self.proba_gomb))
+        self.ertesites_allapot = cimke("", "halvany", sortores=True)
+        k.add(self.ertesites_allapot)
+        return k
+
+    def _ertesites_mezo(self, mezo: str, ertek) -> None:
+        if mezo == "ertesites_ntfy" and ertek:
+            try:
+                ntfy_cel(ertek)
+            except ErtesitesHiba as e:
+                self.ertesites_allapot.setText(str(e))
+                return
+        if getattr(self.v.b, mezo) != ertek:
+            setattr(self.v.b, mezo, ertek)
+            self.v.mentes_kesobb()
+        self.ertesites_allapot.setText("")
+
+    def _ertesites_esemeny(self, kulcs: str, be: bool) -> None:
+        lista = [e for e in self.v.b.ertesites_esemenyek if e != kulcs]
+        self.v.b.ertesites_esemenyek = [*lista, kulcs] if be else lista
+        self.v.mentes_kesobb()
+
+    def _ertesites_proba(self) -> None:
+        self.proba_gomb.setEnabled(False)
+        self.ertesites_allapot.setText("Küldés…")
+
+        def kesz(hibak: list[str]) -> None:
+            self.proba_gomb.setEnabled(True)
+            self.ertesites_allapot.setText("\n".join(hibak) if hibak else "Elküldve. Nézd meg a telefonodat vagy "
+                                                                            "a postafiókodat.")
+
+        self.v.ertesito.proba(kesz)
 
     def _tartalek_kartya(self) -> Kartya:
         b = self.v.b

@@ -33,6 +33,10 @@ def sajat_hangok_mappa() -> Path:
     return adat_mappa() / "hangok"
 
 
+def eletjel_fajl() -> Path:
+    return adat_mappa() / "utolso_futas.txt"
+
+
 def naplo_fajl() -> Path:
     return adat_mappa() / "naplo.txt"
 

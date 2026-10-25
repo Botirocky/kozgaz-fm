@@ -1,5 +1,7 @@
 __lazy_modules__ = [
+    "contextlib",
     "logging",
+    "shutil",
     "collections",
     "dataclasses",
     "datetime",
@@ -8,6 +10,7 @@ __lazy_modules__ = [
     "kozgaz_fm",
     "kozgaz_fm.beallitasok",
     "kozgaz_fm.bemondo",
+    "kozgaz_fm.ertesites",
     "kozgaz_fm.frissito",
     "kozgaz_fm.hang",
     "kozgaz_fm.hangossag",
@@ -21,25 +24,37 @@ __lazy_modules__ = [
     "kozgaz_fm.zenekeres",
 ]
 
+import contextlib
 import logging
+import shutil
 from collections import deque
 from dataclasses import dataclass, fields
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QTimer, QUrl, Signal
+from PySide6.QtMultimedia import QMediaDevices
 
 from kozgaz_fm import __version__, hatter, sajat_hangok, youtube
 from kozgaz_fm.beallitasok import Beallitasok, Bemondas, Rendkivuli
 from kozgaz_fm.bemondo import Bemondo
+from kozgaz_fm.ertesites import Ertesito, kimaradt_csengetesek, reggeli_jelentes
 from kozgaz_fm.frissito import Frissito
-from kozgaz_fm.hang import CsengoLejatszo, Szam, ZeneLejatszo
+from kozgaz_fm.hang import CsengoLejatszo, Szam, ZeneLejatszo, eszkoz_azonosito
 from kozgaz_fm.hangossag import Kiegyenlito
-from kozgaz_fm.orarend import CSENGOK, Esemeny, Tipus, csendes_idoszakok, napi_esemenyek, zene_ablakban
+from kozgaz_fm.orarend import (
+    CSENGOK,
+    Esemeny,
+    Tipus,
+    csendes_idoszakok,
+    napi_esemenyek,
+    napi_rend,
+    zene_ablakban,
+)
 from kozgaz_fm.spotify import Spotify
 from kozgaz_fm.statisztika import Statisztika
 from kozgaz_fm.tartalek import Tartalek
-from kozgaz_fm.utvonalak import adat_mappa, naplo_fajl
+from kozgaz_fm.utvonalak import adat_mappa, eletjel_fajl, naplo_fajl
 from kozgaz_fm.webpanel import WebPanel
 from kozgaz_fm.zenekeres import Keres, Keresek, KeresHiba, youtube_cel
 
@@ -76,6 +91,10 @@ class Vezerlo(QObject):
         self.kiegyenlito.mert.connect(self.zene.mert_jott)
         self.bemondo = Bemondo(self)
         self.stat = self._statisztika_nyit()
+        self.ertesito = Ertesito(lambda: self.b, self.log)
+        self._reggeli_nap: date | None = None
+        self._media = QMediaDevices(self)
+        self._media.audioOutputsChanged.connect(self._kimenet_ellenoriz)
         self._kovetkezo_kert = False
         self.spotify: Spotify | None = None
         self.naplo: deque[str] = deque(maxlen=1000)
@@ -90,7 +109,7 @@ class Vezerlo(QObject):
         self._sor: deque[_Feladat] = deque()
         self.csengo.kesz.connect(self._kovetkezo_feladat)
         self.bemondo.kesz.connect(self._kovetkezo_feladat)
-        self.zene.hiba.connect(lambda s: self._jelez(s, "hiba"))
+        self.zene.hiba.connect(self._zenehiba)
         self.zene.szam_valtozott.connect(lambda cim, forras: self.log(f"Zene: {cim} ({forras})"))
         self.zene.szam_valtozott.connect(self._szam_stat)
         self.zene.allapot_valtozott.connect(lambda _: self.frissult.emit())
@@ -108,6 +127,12 @@ class Vezerlo(QObject):
         self.tartalek.valtozott.connect(self.frissult.emit)
         self.tartalek.atvetel.connect(self._atvetel)
         self.tartalek.visszaadas.connect(self._visszaadas)
+        self.tartalek.atvetel.connect(lambda: self.ertesito.kuld(
+            "tartalek", "A tartalékgép átvette a csengetést", "A fő gép nem válaszol, ez a gép csenget helyette.",
+            "hiba", ismetles_mp=60))
+        self.tartalek.visszaadas.connect(lambda: self.ertesito.kuld(
+            "tartalek", "A fő gép újra működik", "A tartalékgép visszaadta a csengetést a fő gépnek.", "info",
+            ismetles_mp=60))
         self.tartalek.szinkronizalt.connect(self._szinkronizalt)
         self._web_indult = False
         self.web = WebPanel(self)
@@ -115,6 +140,15 @@ class Vezerlo(QObject):
 
     def indit(self) -> None:
         self.log(f"Közgáz FM {__version__} elindult")
+        self.ertesito.kuld("indulas", "A Közgáz FM elindult", f"Verzió: {__version__}. Ha nem te indítottad "
+                           "újra, lehet, hogy összeomlott vagy áramszünet volt.", "info", ismetles_mp=60)
+        QTimer.singleShot(20000, self._kimenet_ellenoriz)
+        self._leallas_alatt_kimaradt()
+        self._eletjel = QTimer(self)
+        self._eletjel.setInterval(60000)
+        self._eletjel.timeout.connect(self._eletjel_ir)
+        self._eletjel.start()
+        self._eletjel_ir()
         self._ora.start()
         self.frissito.indit()
         self._web_indult = True
@@ -175,9 +209,83 @@ class Vezerlo(QObject):
             pass
         self.naplo_bejegyzes.emit(sor)
 
-    def _jelez(self, szoveg: str, szint: str = "info") -> None:
+    def _jelez(self, szoveg: str, szint: str = "info", ertesit: bool = True) -> None:
         self.log(szoveg if szint == "info" else f"HIBA: {szoveg}")
         self.uzenet.emit(szoveg, szint)
+        if szint == "hiba" and ertesit:
+            self.ertesito.kuld("hiba", "Hiba a csengetőn", szoveg, "figy")
+
+    def _tiltas(self, szoveg: str) -> None:
+        self.log(szoveg)
+        self.uzenet.emit(szoveg, "hiba")
+
+    def _zenehiba(self, szoveg: str) -> None:
+        self._jelez(szoveg, "hiba", ertesit=False)
+        self.ertesito.kuld("hiba", "Zenehiba", szoveg, "figy", kulcs_szoveg="zenehiba")
+
+    def _eletjel_ir(self) -> None:
+        with contextlib.suppress(OSError):
+            eletjel_fajl().write_text(datetime.now().isoformat(timespec="seconds"), encoding="utf-8")
+
+    def _leallas_alatt_kimaradt(self) -> None:
+        try:
+            utolso = datetime.fromisoformat(eletjel_fajl().read_text(encoding="utf-8").strip())
+        except (OSError, ValueError):
+            return
+        most = datetime.now()
+        if most - utolso > timedelta(minutes=2):
+            self._kimaradtak(utolso, most)
+
+    def kimenet_nev(self) -> str | None:
+        kimenetek = QMediaDevices.audioOutputs()
+        if not kimenetek:
+            return None
+        if self.b.kimenet:
+            return next((e.description() for e in kimenetek if eszkoz_azonosito(e) == self.b.kimenet), None)
+        return QMediaDevices.defaultAudioOutput().description() or kimenetek[0].description()
+
+    def _kimenet_ellenoriz(self) -> None:
+        if self.kimenet_nev() is not None:
+            return
+        if not QMediaDevices.audioOutputs():
+            szoveg = "A gépen nincs elérhető hangkimenet, a csengő nem fog szólni. Ellenőrizd a hangkártyát, " \
+                     "a HDMI- vagy USB-kábelt."
+        else:
+            szoveg = "A beállított hangkimenet nem érhető el (pl. kihúzták a kábelt), a csengő az alapértelmezett " \
+                     "kimeneten szól. Ellenőrizd az erősítő bekötését."
+        self.log(f"HIBA: {szoveg}")
+        self.ertesito.kuld("hangkimenet", "Hangkimenet-gond", szoveg, "hiba")
+
+    def _reggeli_onteszt(self, most: datetime) -> None:
+        if self._reggeli_nap == most.date() or self.tartalek.passziv or not self.ertesito.bekapcsolt("reggel"):
+            return
+        try:
+            ido_ = datetime.combine(most.date(), time.fromisoformat(self.b.ertesites_reggel_ido))
+        except ValueError:
+            return
+        if most < ido_ or most - ido_ > timedelta(hours=3):
+            return
+        self._reggeli_nap = most.date()
+        rend = napi_rend(self.b, most.date())
+        if rend is None:
+            return
+        csengok = [e for e in self._esemenyek if e.tipus in CSENGOK]
+        forras = self.aktiv_forras()
+        tegnap = self.stat.osszegzes(most.date() - timedelta(days=1), most.date() - timedelta(days=1)) \
+            if self.stat else None
+        hatar = f"{most - timedelta(hours=24):%Y-%m-%d %H:%M:%S}"
+        hibak = sum(1 for sor in self.naplo if sor[:19] >= hatar and "HIBA:" in sor)
+        try:
+            szabad = shutil.disk_usage(adat_mappa()).free / 1e9
+        except OSError:
+            szabad = None
+        cim, uzenet, szint = reggeli_jelentes(
+            nap=most.date(), rend=rend.nev, elso=min((e.ido for e in csengok), default=None),
+            csengetesek=len(csengok), kimenet=self.kimenet_nev(), forras=forras.nev if forras else None,
+            szamok=len(self.zene.szamok), tegnap=tegnap, hibak=hibak,
+            uj_verzio=self.frissito.kiadas.verzio if self.frissito.kiadas else None, szabad_gb=szabad)
+        self.log(f"Reggeli önteszt: {cim}")
+        self.ertesito.kuld("reggel", cim, uzenet, szint, ismetles_mp=0)
 
     def beallitasok_alkalmazasa(self) -> None:
         b = self.b
@@ -232,7 +340,7 @@ class Vezerlo(QObject):
             self.proba.megallit()
             return True
         if self.riasztas or self.csengo.szol:
-            self._jelez("Csengetés vagy riasztás közben nincs meghallgatás.", "hiba")
+            self._tiltas("Csengetés vagy riasztás közben nincs meghallgatás.")
             return True
         return self.proba.lejatszas(ertek, self.b.csengo_hangero)
 
@@ -292,8 +400,10 @@ class Vezerlo(QObject):
         if elozo is None or most < elozo or most - elozo > timedelta(seconds=20):
             if elozo is not None:
                 self.log("Óraugrás vagy alvás után újraszinkronizálás")
+                self._kimaradtak(elozo, most)
             self._szinkron()
             return
+        self._reggeli_onteszt(most)
         if elozo.date() != most.date():
             esemenyek = napi_esemenyek(self.b, elozo.date()) + self._esemenyek
         else:
@@ -301,6 +411,21 @@ class Vezerlo(QObject):
         for e in esemenyek:
             if elozo < e.ido <= most:
                 self._kezel(e)
+
+    def _kimaradtak(self, elozo: datetime, most: datetime) -> None:
+        if self.tartalek.passziv:
+            return
+        esemenyek = [e for nap in sorted({elozo.date(), most.date()}) for e in
+                     (self._esemenyek if nap == self._nap else napi_esemenyek(self.b, nap))]
+        kimaradt = kimaradt_csengetesek(esemenyek, elozo, most, (*CSENGOK, Tipus.RENDKIVULI))
+        if not kimaradt:
+            return
+        lista = ", ".join(f"{e.ido:%H:%M} {e.leiras}" for e in kimaradt[:8])
+        tovabbi = f" és még {len(kimaradt) - 8}" if len(kimaradt) > 8 else ""
+        szoveg = f"{len(kimaradt)} csengetés kimaradt ({elozo:%m.%d. %H:%M} és {most:%m.%d. %H:%M} között a " \
+                 f"program nem futott, a gép aludt vagy ugrott az órája): {lista}{tovabbi}"
+        self.log(f"HIBA: {szoveg}")
+        self.ertesito.kuld("kimaradt", "Kimaradt csengetés", szoveg, "hiba")
 
     def _szinkron(self) -> None:
         most = datetime.now()
@@ -381,7 +506,7 @@ class Vezerlo(QObject):
     def csengetes(self, hang: str, leiras: str = "Kézi csengetés", hangero: int | None = None,
                   tervezett: datetime | None = None, tipus: str = "kezi") -> None:
         if self.riasztas:
-            self._jelez("Riasztás közben nincs csengetés.", "hiba")
+            self._tiltas("Riasztás közben nincs csengetés.")
             return
         self.log(f"Csengetés: {leiras}" + (f" (halkan, {hangero}%)" if hangero is not None else ""))
         if self.stat:
@@ -392,7 +517,7 @@ class Vezerlo(QObject):
 
     def bemondas(self, bem: Bemondas) -> None:
         if self.riasztas:
-            self._jelez("Riasztás közben nincs bemondás.", "hiba")
+            self._tiltas("Riasztás közben nincs bemondás.")
             return
         self.log(f"Bemondás: {bem.nev}")
         if bem.gong:
@@ -441,6 +566,8 @@ class Vezerlo(QObject):
         self._auto_zene = False
         self.zene.megallit(elhalkitas=False)
         self.log("RIASZTÁS ELINDÍTVA")
+        self.ertesito.kuld("riasztas", "Riasztás indult", f"{datetime.now():%H:%M}-kor elindult a riasztás a "
+                           "Közgáz FM-en.", "hiba", ismetles_mp=60)
         self._sor.clear()
         self._sor.append(_Feladat("hang", self.b.hang_riasztas, ismetles=True,
                                   tartalek=HANG_MEZOK["hang_riasztas"]))
@@ -492,7 +619,7 @@ class Vezerlo(QObject):
                  + (" – bekapcsolva" if be else " – kikapcsolva"))
 
     def _atvetel(self) -> None:
-        self._jelez("A fő gép nem válaszol – a tartalék gép átvette a csengetést.", "hiba")
+        self._jelez("A fő gép nem válaszol – a tartalék gép átvette a csengetést.", "hiba", ertesit=False)
         e, self._kihagyott = self._kihagyott, None
         if e is not None and timedelta() <= datetime.now() - e.ido <= timedelta(seconds=60):
             self.log(f"Kimaradt csengetés pótlása: {e.leiras}")

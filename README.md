@@ -44,6 +44,8 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
   toplista, CSV-export (pl. jogdíj-elszámoláshoz), heti összefoglaló a webpanelen.
 - **Tanév rendje importálása:** az iskola naptára (.ics fájl vagy Google Naptár/webcal link) egy kattintással:
   szünetek szünnapként, rövidített és szombati munkanapok kivételnapként, előnézettel.
+- **Értesítés a rendszergazdának:** ntfy (telefon) vagy e-mail, ha kimaradt egy csengetés, hiba van, eltűnt
+  a hangkimenet, riasztás indult vagy a tartalékgép átvette a csengetést; reggeli önteszt tanítási napokon.
 - **Világos és sötét téma**, a mai nap idővonala a Vezérlőpulton.
 - **Automatikus frissítés a GitHubról:** saját frissítő ablak változáslistával; csak tanítási időn kívül
   települ magától, SHA-256-tal ellenőrzött csomagból (Windows-telepítő, Linux-csomag és a Pi is).
@@ -64,6 +66,12 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
 ### Frissítés
 
 ![Frissítés](docs/frissites.png)
+
+## Újdonságok a 0.8.0-ban
+
+- Értesítések a rendszergazdának telefonra (ntfy) vagy e-mailben: kimaradt csengetés, hibák, eltűnt
+  hangkimenet, riasztás, tartalékgép-átvétel, a program újraindulása.
+- Reggeli önteszt tanítási napokon: mai rend, hangkimenet, zeneforrás, tegnapi pontosság, frissítés.
 
 ## Újdonságok a 0.7.0-ban
 

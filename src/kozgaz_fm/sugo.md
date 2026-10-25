@@ -244,6 +244,30 @@ vagy az egész tanév. A *Lejátszási lista mentése (CSV)* gomb Excelben megny
 cím, forrás, kért szám-e, hossz) – például jogdíj-elszámoláshoz. Az elmúlt hét összefoglalója a webpanelen is
 látszik. Az adatok 400 napig maradnak meg.
 
+## Értesítések a rendszergazdának
+
+**Beállítások → Értesítések a rendszergazdának.** A program szól a telefonodra vagy e-mailben, ha baj van:
+
+- **kimaradt csengetés** – a gép aludt, lefagyott vagy ugrott az órája, és emiatt csengetés maradt ki (időponttal);
+- **hiba** – hiányzik egy hangfájl, nem játszható a zene, nincs felolvasó hang;
+- **hangkimenet** – kihúzták az erősítő kábelét, vagy nincs hangkártya;
+- **riasztás indult**, illetve a **tartalékgép átvette** vagy visszaadta a csengetést;
+- **a program elindult** – ha nem te indítottad, összeomlás vagy áramszünet lehetett;
+- **reggeli önteszt** tanítási napokon a megadott időben: mai rend, első csengetés, hangkimenet, zeneforrás,
+  tegnapi csengetések pontossága, elérhető frissítés.
+
+Ugyanaz az üzenet fél órán belül nem ismétlődik.
+
+**Telefonra (ntfy, ingyenes):** telepítsd az *ntfy* alkalmazást, iratkozz fel egy hosszú, nehezen kitalálható
+témára (pl. `kozgaz-fm-7f3k9q2x`), és a beállításokba a teljes címet írd: `https://ntfy.sh/kozgaz-fm-7f3k9q2x`.
+Aki ismeri a témanevet, olvashatja az értesítéseket, ezért ne használj egyszerű nevet. Saját ntfy-szervernél
+tokent is megadhatsz.
+
+**E-mailben:** a címzett(ek) mellé az iskola SMTP-szervere kell (Gmailnél `smtp.gmail.com`, 587-es port,
+STARTTLS és alkalmazásjelszó). A *Próbaértesítés küldése* gombbal azonnal kipróbálhatod. Az értesítési
+beállításokat (ntfy-cím, token, SMTP-adatok) a beállítás-exportálás nem viszi át másik gépre, minden gépen
+külön kell megadni.
+
 ## Napló és biztonsági mentés
 
 - A **Napló** oldalon minden csengetés, zene és bemondás visszakereshető.
