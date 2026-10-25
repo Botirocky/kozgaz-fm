@@ -117,6 +117,7 @@ class Beallitasok:
     aktiv_forras: int = 0
     keveres: bool = True
     youtube_gyorsitotar: bool = True
+    hangero_kiegyenlites: bool = True
     bemondasok: list[Bemondas] = field(default_factory=list)
     rendkivuli: list[Rendkivuli] = field(default_factory=list)
     bemondas_sablonok: list[str] = field(default_factory=lambda: list(ALAP_SABLONOK))

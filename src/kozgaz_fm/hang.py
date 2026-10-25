@@ -9,6 +9,7 @@ __lazy_modules__ = [
     "PySide6.QtMultimedia",
     "kozgaz_fm",
     "kozgaz_fm.beallitasok",
+    "kozgaz_fm.hangossag",
     "kozgaz_fm.sajat_hangok",
     "kozgaz_fm.spotify",
     "kozgaz_fm.utvonalak",
@@ -26,6 +27,7 @@ from PySide6.QtMultimedia import QAudioDevice, QAudioOutput, QMediaDevices, QMed
 
 from kozgaz_fm import hatter, sajat_hangok, youtube
 from kozgaz_fm.beallitasok import BEEPITETT_HANGOK, ZeneForras
+from kozgaz_fm.hangossag import Kiegyenlito
 from kozgaz_fm.sajat_hangok import HANGFAJLOK
 from kozgaz_fm.spotify import Spotify, SpotifyHiba, spotify_uri
 from kozgaz_fm.utvonalak import beepitett_hang, gyorsitotar_mappa
@@ -34,6 +36,7 @@ naplo = logging.getLogger(__name__)
 
 FORRAS_TIPUSOK = {"mappa": "Mappa", "fajlok": "Fájlok", "youtube": "YouTube", "spotify": "Spotify"}
 VEDELEM_MS = 350
+KESO_MERES_MS = 8000
 
 
 def hang_ut(ertek: str) -> Path | None:
@@ -67,6 +70,14 @@ def eszkoz_azonosito(eszkoz: QAudioDevice) -> str:
 
 def _hangero(szazalek: float) -> float:
     return max(0.0, min(1.0, szazalek / 100.0)) ** 2
+
+
+def _kimeneti_szint(szazalek: float, erosites: float) -> float:
+    return min(1.0, _hangero(szazalek) * erosites)
+
+
+def _helyi_ut(url: QUrl) -> Path | None:
+    return Path(url.toLocalFile()) if url.isLocalFile() else None
 
 
 class _Vedelem:
@@ -208,8 +219,12 @@ class ZeneLejatszo(QObject):
             lejatszo.errorOccurred.connect(self._lejatszasi_hiba)
             lejatszo.playbackStateChanged.connect(self._lejatszas_allapot)
             lejatszo.positionChanged.connect(self._pozicio)
+        self.kiegyenlito: Kiegyenlito | None = None
+        self._erosites = 1.0
+        self._kifuto_erosites = 1.0
         self._kifuto_animacio = QVariantAnimation(self)
-        self._kifuto_animacio.valueChanged.connect(lambda v: self._kifuto_kimenet.setVolume(_hangero(float(v))))
+        self._kifuto_animacio.valueChanged.connect(
+            lambda v: self._kifuto_kimenet.setVolume(_kimeneti_szint(float(v), self._kifuto_erosites)))
         self._kifuto_animacio.finished.connect(self._kifuto_leallit)
         self.atusztatas_mp = 4.0
         self.forras: ZeneForras | None = None
@@ -231,7 +246,7 @@ class ZeneLejatszo(QObject):
         self._varakozo: tuple[str, int, int] | None = None
         self._generacio = 0
         self._animacio = QVariantAnimation(self)
-        self._animacio.valueChanged.connect(lambda v: self.kimenet.setVolume(_hangero(float(v))))
+        self._animacio.valueChanged.connect(lambda v: self.kimenet.setVolume(_kimeneti_szint(float(v), self._erosites)))
         self._animacio_vege: list = []
         self._animacio.finished.connect(self._animacio_kesz)
         self._spotify_figyelo = QTimer(self)
@@ -279,12 +294,16 @@ class ZeneLejatszo(QObject):
             return
         self.lejatszo, self._kifuto = self._kifuto, self.lejatszo
         self.kimenet, self._kifuto_kimenet = self._kifuto_kimenet, self.kimenet
+        self._kifuto_erosites = self._erosites
         self._kifuto_animacio.stop()
         self._kifuto_animacio.setStartValue(float(self._cel_hangero()))
         self._kifuto_animacio.setEndValue(0.0)
         self._kifuto_animacio.setDuration(atusztatas)
         self._kifuto_animacio.start()
         self.index = kovetkezo
+        if szam.kert:
+            szam.kert = False
+            self.kert_szol.emit(szam.yt)
         self.most_cim = szam.cim
         self.szam_valtozott.emit(szam.cim, self.forras.nev if self.forras else "")
         self._forrast_indit(QUrl.fromLocalFile(str(szam.helyi)), atusztatas)
@@ -336,6 +355,9 @@ class ZeneLejatszo(QObject):
                 self._indit_betoltes_utan = False
                 return
             self._elore_letolt()
+            if self.kiegyenlito:
+                for s in szamok:
+                    self.kiegyenlito.kell(s.helyi)
             if self._indit_betoltes_utan:
                 self._indit_betoltes_utan = False
                 self.indit()
@@ -418,6 +440,7 @@ class ZeneLejatszo(QObject):
             return
         self._animacio.stop()
         self._animacio_vege.clear()
+        self._erosites = self.kiegyenlito.szorzo(_helyi_ut(url)) if self.kiegyenlito else 1.0
         self.kimenet.setVolume(0.0)
         self.lejatszo.setSource(url)
         self.lejatszo.play()
@@ -445,6 +468,9 @@ class ZeneLejatszo(QObject):
                 szam.helyi = None
 
     def _elore_letolt(self) -> None:
+        if self.kiegyenlito and self.szamok:
+            for eltolas in range(3, -1, -1):
+                self.kiegyenlito.kell(self.szamok[(self.index + eltolas) % len(self.szamok)].helyi, elore=True)
         if not self.gyorsitotar or not self.szamok:
             return
         for eltolas in range(3):
@@ -485,6 +511,34 @@ class ZeneLejatszo(QObject):
 
     def _cel_hangero(self) -> float:
         return self.hangero_ertek * (0.25 if self._halkitva else 1.0)
+
+    def erosites_ujra(self) -> None:
+        most = _helyi_ut(self.lejatszo.source())
+        uj = self.kiegyenlito.szorzo(most) if self.kiegyenlito else 1.0
+        if abs(uj - self._erosites) < 0.01:
+            return
+        self._erosites = uj
+        if self._szol and self._animacio.state() != QVariantAnimation.State.Running and not self._vedelem.hatra_ms():
+            self.kimenet.setVolume(_kimeneti_szint(self._cel_hangero(), uj))
+
+    def mert_jott(self, ut_szoveg: str) -> None:
+        if self.kiegyenlito is None or not self._szol or self.spotify_mod:
+            return
+        most = _helyi_ut(self.lejatszo.source())
+        if most is None or str(most) != ut_szoveg or self.lejatszo.position() > KESO_MERES_MS:
+            return
+        regi, uj = self._erosites, self.kiegyenlito.szorzo(most)
+        if abs(uj - regi) < 0.01:
+            return
+        self._erosites = uj
+        if self._animacio.state() == QVariantAnimation.State.Running or self._vedelem.hatra_ms():
+            return
+        cel = self._cel_hangero()
+        honnan = min(100.0, cel * (regi / uj) ** 0.5)
+        self._animacio.setStartValue(float(honnan))
+        self._animacio.setEndValue(float(cel))
+        self._animacio.setDuration(1200)
+        self._animacio.start()
 
     def _animacio_kesz(self) -> None:
         teendok, self._animacio_vege = self._animacio_vege, []
@@ -587,7 +641,7 @@ class ZeneLejatszo(QObject):
                 self._spotify_hivas(lambda s: s.hangero(round(self._cel_hangero())))
             return
         if self._animacio.state() != QVariantAnimation.State.Running and not self._vedelem.hatra_ms():
-            self.kimenet.setVolume(_hangero(self._cel_hangero()))
+            self.kimenet.setVolume(_kimeneti_szint(self._cel_hangero(), self._erosites))
 
     def halkit(self, halkitva: bool) -> None:
         if self._halkitva == halkitva:

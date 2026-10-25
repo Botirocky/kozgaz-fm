@@ -10,8 +10,10 @@ __lazy_modules__ = [
     "kozgaz_fm.bemondo",
     "kozgaz_fm.frissito",
     "kozgaz_fm.hang",
+    "kozgaz_fm.hangossag",
     "kozgaz_fm.orarend",
     "kozgaz_fm.spotify",
+    "kozgaz_fm.statisztika",
     "kozgaz_fm.tartalek",
     "kozgaz_fm.utvonalak",
     "kozgaz_fm.webpanel",
@@ -32,8 +34,10 @@ from kozgaz_fm.beallitasok import Beallitasok, Bemondas, Rendkivuli
 from kozgaz_fm.bemondo import Bemondo
 from kozgaz_fm.frissito import Frissito
 from kozgaz_fm.hang import CsengoLejatszo, Szam, ZeneLejatszo
+from kozgaz_fm.hangossag import Kiegyenlito
 from kozgaz_fm.orarend import CSENGOK, Esemeny, Tipus, csendes_idoszakok, napi_esemenyek, zene_ablakban
 from kozgaz_fm.spotify import Spotify
+from kozgaz_fm.statisztika import Statisztika
 from kozgaz_fm.tartalek import Tartalek
 from kozgaz_fm.utvonalak import adat_mappa, naplo_fajl
 from kozgaz_fm.webpanel import WebPanel
@@ -67,7 +71,12 @@ class Vezerlo(QObject):
         self.csengo = CsengoLejatszo(self)
         self.proba = CsengoLejatszo(self)
         self.zene = ZeneLejatszo(self)
+        self.kiegyenlito = Kiegyenlito(self)
+        self.zene.kiegyenlito = self.kiegyenlito
+        self.kiegyenlito.mert.connect(self.zene.mert_jott)
         self.bemondo = Bemondo(self)
+        self.stat = self._statisztika_nyit()
+        self._kovetkezo_kert = False
         self.spotify: Spotify | None = None
         self.naplo: deque[str] = deque(maxlen=1000)
         self.riasztas = False
@@ -83,7 +92,9 @@ class Vezerlo(QObject):
         self.bemondo.kesz.connect(self._kovetkezo_feladat)
         self.zene.hiba.connect(lambda s: self._jelez(s, "hiba"))
         self.zene.szam_valtozott.connect(lambda cim, forras: self.log(f"Zene: {cim} ({forras})"))
+        self.zene.szam_valtozott.connect(self._szam_stat)
         self.zene.allapot_valtozott.connect(lambda _: self.frissult.emit())
+        self.zene.allapot_valtozott.connect(self._zene_allapot_stat)
         self.zene.kert_szol.connect(self._kert_szol)
         self._ora = QTimer(self)
         self._ora.setInterval(250)
@@ -117,10 +128,41 @@ class Vezerlo(QObject):
         self._ora.stop()
         self.tartalek.leallit()
         self.web.leallit()
+        self.kiegyenlito.leallit()
         self.zene.allj()
+        if self.stat:
+            self.stat.bezar()
         self.csengo.megallit()
         self.proba.megallit()
         self.bemondo.megallit()
+
+    @staticmethod
+    def _statisztika_nyit() -> Statisztika | None:
+        try:
+            stat = Statisztika()
+            stat.takarit()
+            return stat
+        except Exception as e:
+            naplo.warning("A statisztika nem nyitható meg: %s", e)
+            return None
+
+    def _zene_allapot_stat(self, szol: bool) -> None:
+        if self.stat is None:
+            return
+        if not szol:
+            self.stat.szam_vege()
+        else:
+            QTimer.singleShot(1500, self._folytatas_stat)
+
+    def _folytatas_stat(self) -> None:
+        if self.stat and self.zene.szol and not self.stat.nyitott and self.zene.most_cim:
+            forras = self.zene.forras.nev if self.zene.forras else ""
+            self.stat.szam_kezd(self.zene.most_cim, forras)
+
+    def _szam_stat(self, cim: str, forras: str) -> None:
+        kert, self._kovetkezo_kert = self._kovetkezo_kert, False
+        if self.stat:
+            self.stat.szam_kezd(cim, forras, kert)
 
     def log(self, szoveg: str) -> None:
         sor = f"{datetime.now():%Y-%m-%d %H:%M:%S}  {szoveg}"
@@ -148,6 +190,10 @@ class Vezerlo(QObject):
         self.zene.atusztatas_mp = b.atusztatas
         self.zene.hangero(b.zene_hangero)
         self.zene.spotify_eszkoz = b.spotify_eszkoz
+        self.kiegyenlito.bekapcsolva = b.hangero_kiegyenlites
+        self.zene.erosites_ujra()
+        for szam in self.zene.szamok:
+            self.kiegyenlito.kell(szam.helyi)
         self.bemondo.beallit(b.tts_hang, b.csengo_hangero)
         if b.spotify_client_id and (self.spotify is None or self.spotify.client_id != b.spotify_client_id.strip()):
             self.spotify = Spotify(b.spotify_client_id, adat_mappa() / "spotify_token.json")
@@ -299,7 +345,7 @@ class Vezerlo(QObject):
             if self.zene.szol:
                 self._auto_zene = False
                 self.zene.megallit(elhalkitas=False)
-            self.csengetes(e.rendkivuli.hang, e.leiras)
+            self.csengetes(e.rendkivuli.hang, e.leiras, tervezett=e.ido, tipus=e.tipus.name.lower())
         elif e.tipus is Tipus.ZENE_INDUL:
             if self.aktiv_forras() is None:
                 return
@@ -318,9 +364,9 @@ class Vezerlo(QObject):
                 self._auto_zene = False
                 self.zene.megallit(elhalkitas=False)
             hang = self.b.hang_jelzo if e.tipus is Tipus.JELZO else self.b.hang_becsengo
-            self.csengetes(hang, e.leiras, e.hangero)
+            self.csengetes(hang, e.leiras, e.hangero, tervezett=e.ido, tipus=e.tipus.name.lower())
         elif e.tipus is Tipus.KICSENGO:
-            self.csengetes(self.b.hang_kicsengo, e.leiras, e.hangero)
+            self.csengetes(self.b.hang_kicsengo, e.leiras, e.hangero, tervezett=e.ido, tipus="kicsengo")
         self.frissult.emit()
 
     def _foglalt(self) -> bool:
@@ -332,11 +378,14 @@ class Vezerlo(QObject):
             return True
         return False
 
-    def csengetes(self, hang: str, leiras: str = "Kézi csengetés", hangero: int | None = None) -> None:
+    def csengetes(self, hang: str, leiras: str = "Kézi csengetés", hangero: int | None = None,
+                  tervezett: datetime | None = None, tipus: str = "kezi") -> None:
         if self.riasztas:
             self._jelez("Riasztás közben nincs csengetés.", "hiba")
             return
         self.log(f"Csengetés: {leiras}" + (f" (halkan, {hangero}%)" if hangero is not None else ""))
+        if self.stat:
+            self.stat.csengetes(tipus, leiras, tervezett)
         self._sor.appendleft(_Feladat("hang", hang, tartalek=self._tartalek(hang), hangero=hangero))
         if not self._foglalt():
             self._kovetkezo_feladat()
@@ -465,6 +514,8 @@ class Vezerlo(QObject):
             raise KeresHiba("disabled", "A zenekérés most nincs bekapcsolva.")
         k = self.keresek.uj(szoveg, nev, eszkoz, ip, self.b.zenekeres_napi, self.b.zenekeres_tiltott)
         self.log(f"Zenekérés érkezett ({ip}): {k.szoveg}")
+        if self.stat:
+            self.stat.keres("erkezett")
         azon, cel = k.azon, youtube_cel(k.szoveg)
 
         def kesz(talalat: tuple[str, str, int] | None) -> None:
@@ -491,10 +542,13 @@ class Vezerlo(QObject):
                                          "(Spotify mellett nem).")
         k = self.keresek.dont(azon, elfogad)
         self.log(f"Zenekérés {'elfogadva' if elfogad else 'elutasítva'}{f' ({ki})' if ki else ''}: {k.cim}")
+        if self.stat:
+            self.stat.keres("elfogadva" if elfogad else "elutasitva")
         self.keresek_valtoztak.emit()
         return k
 
     def _kert_szol(self, yt: str) -> None:
+        self._kovetkezo_kert = True
         if self.keresek.szol(yt):
             self.keresek_valtoztak.emit()
 

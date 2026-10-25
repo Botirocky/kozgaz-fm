@@ -156,7 +156,26 @@ class ZeneOldal(Oldal):
         k.add(gyors)
         k.add(sor(self.gyors_cimke, None, urit))
         self._gyors_meret()
+        kiegyenlit = kapcsolo("Hangerő-kiegyenlítés (minden zeneszám ugyanolyan hangosan szól)",
+                              b.hangero_kiegyenlites)
+        kiegyenlit.toggled.connect(lambda e: self._allit("hangero_kiegyenlites", e))
+        self.kiegyenlito_cimke = cimke("", "halvany", sortores=True)
+        k.add(kiegyenlit)
+        k.add(self.kiegyenlito_cimke)
+        self.v.kiegyenlito.allapot_valtozott.connect(self._kiegyenlito_allapot)
+        self._kiegyenlito_allapot()
         return k
+
+    def _kiegyenlito_allapot(self) -> None:
+        ke = self.v.kiegyenlito
+        if not ke.elerheto:
+            self.kiegyenlito_cimke.setText("Nincs ffmpeg ezen a gépen, ezért a kiegyenlítés nem működik.")
+            return
+        var = ke.varakozik()
+        szoveg = f"{ke.tar.darab()} szám hangossága ismert"
+        self.kiegyenlito_cimke.setText(szoveg + (f", {var} mérése folyamatban." if var else ".")
+                                       + " A csengő- és riasztóhangokat nem változtatja; a Spotify saját "
+                                         "kiegyenlítést használ.")
 
     def _spotify_kartya(self) -> Kartya:
         b = self.v.b

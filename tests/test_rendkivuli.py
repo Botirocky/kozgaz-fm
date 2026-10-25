@@ -140,7 +140,7 @@ class AlVezerlo:
     def riasztas_leallit(self) -> None:
         self.riasztas = False
 
-    def csengetes(self, hang: str, leiras: str = "", hangero: int | None = None) -> None:
+    def csengetes(self, hang: str, leiras: str = "", hangero: int | None = None, **_kw) -> None:
         self.csengetesek.append((hang, leiras, hangero))
 
     @property

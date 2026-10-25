@@ -38,6 +38,12 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
 - **Tartalékgép:** két gép (pl. a hangosító Windows-gép és egy Pi) figyeli egymást; ha a fő gép kiesik, a
   tartalék kb. 15 másodpercen belül átveszi a csengetést, és visszaadja, amint a fő gép újra működik. A
   csengetési rendet és a naptárt a tartalék magától átveszi.
+- **Hangerő-kiegyenlítés:** minden szám ugyanolyan hangosan szól (EBU R128 mérés ffmpeg-gel, egyszer, a
+  háttérben); a csengő- és riasztóhangok hangereje nem változik.
+- **Statisztika:** mi szólt, hányszor, mennyi kért szám, mennyire pontosak a csengetések; napi zeneidő,
+  toplista, CSV-export (pl. jogdíj-elszámoláshoz), heti összefoglaló a webpanelen.
+- **Tanév rendje importálása:** az iskola naptára (.ics fájl vagy Google Naptár/webcal link) egy kattintással:
+  szünetek szünnapként, rövidített és szombati munkanapok kivételnapként, előnézettel.
 - **Világos és sötét téma**, a mai nap idővonala a Vezérlőpulton.
 - **Automatikus frissítés a GitHubról:** saját frissítő ablak változáslistával; csak tanítási időn kívül
   települ magától, SHA-256-tal ellenőrzött csomagból (Windows-telepítő, Linux-csomag és a Pi is).
@@ -58,6 +64,14 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
 ### Frissítés
 
 ![Frissítés](docs/frissites.png)
+
+## Újdonságok a 0.7.0-ban
+
+- Hangerő-kiegyenlítés: nincs többé túl halk vagy túl hangos szám a folyosón.
+- Statisztika oldal: zeneidő, toplista, kért számok, csengetési pontosság, CSV-export; heti összefoglaló a
+  webpanelen.
+- Tanév rendje importálása .ics fájlból vagy naptárlinkről, előnézettel.
+- A párbeszédablakok gombjai magyarul jelennek meg (Mégse, Igen, Nem).
 
 ## Újdonságok a 0.6.0-ban
 

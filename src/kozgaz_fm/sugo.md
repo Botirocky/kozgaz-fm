@@ -72,6 +72,10 @@ magától csenget, a szünetekben zenét játszik (saját MP3-ak, YouTube vagy S
 - **Reggeli zene:** az első óra előtt a megadott időponttól is szól zene.
 - **YouTube-számok előre letöltése:** a következő számokat a program előre letölti, így nem akad és rövid
   internetkimaradásnál is szól. A letöltött fájlok a *Gyorsítótár ürítése* gombbal törölhetők.
+- **Hangerő-kiegyenlítés:** a program minden számnak megméri a hangosságát (egyszer, a háttérben), és úgy
+  szabályozza, hogy mind ugyanolyan hangosan szóljon – nincs túl halk vagy fülsértően hangos dal. A csengő-,
+  riasztó- és bemondáshangok hangereje nem változik. A Spotify a saját kiegyenlítését használja. Az új számok mérése pár
+  másodperc; ha egy szám még nincs megmérve, az első másodpercekben áll be a helyes hangerő.
 
 ### Zenekérés diákoktól
 
@@ -115,6 +119,19 @@ A Spotify a saját alkalmazásában beállított hangkimenetet használja – az
   legyen csengetés (pl. szombati tanítási nap).
 - A naptárban pirossal a szünnapok, sárgával a kivételnapok, kékkel aláhúzva a rendkívüli események látszanak;
   egy napra kattintva kiírja, milyen rend lesz aznap.
+
+### Tanév rendje importálása
+
+A **Szünnapok** kártyán a *Tanév rendje…* gombbal az iskola naptára egyszerre betölthető: `.ics` fájlból vagy
+naptárlinkről (Google Naptárban: a naptár beállításai → *Titkos cím iCal formátumban*; webcal:// link is jó).
+Az előnézetben látszik, mi mivé válik:
+
+- a **szünetek**, tanítás nélküli munkanapok és ünnepek **szünnapok** lesznek;
+- a **rövidített órás** napok kivételnapok a „Rövidített” renddel (ha van ilyen nevű rend);
+- a **szombati munkanapok** kivételnapok a hétköznapi renddel;
+- a többi esemény (ünnepség, szülői értekezlet) nem érinti a csengetést, csak a listában látszik.
+
+Amit nem szeretnél, arról vedd le a pipát. A már meglévő szünnapokat nem veszi fel újra.
 
 ### Rendkívüli események
 
@@ -218,6 +235,14 @@ Működés:
 - A két gép a webes vezérlés portján beszél (a webpanel jelszava nélkül is elindul, de csak a kulccsal válaszol).
   Windows-on a tűzfalban engedélyezd a magánhálózaton. A forgalom nem titkosított, ezért csak az iskolai belső
   hálózaton használd, és a kulcsot ne add ki.
+
+## Statisztika
+
+A **Statisztika** oldalon látszik, mennyi zene szólt, melyik számok mentek a legtöbbször, hány kért szám volt, és
+hogy a csengetések mennyire pontosak (átlagos eltérés a beállított időtől). Időszak: ma, az elmúlt 7 vagy 30 nap,
+vagy az egész tanév. A *Lejátszási lista mentése (CSV)* gomb Excelben megnyitható listát készít (dátum, idő,
+cím, forrás, kért szám-e, hossz) – például jogdíj-elszámoláshoz. Az elmúlt hét összefoglalója a webpanelen is
+látszik. Az adatok 400 napig maradnak meg.
 
 ## Napló és biztonsági mentés
 

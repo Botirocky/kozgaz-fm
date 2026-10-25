@@ -83,6 +83,7 @@ def main() -> int:
     QApplication.setDesktopFileName(APP_ID)
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
+    _magyar_qt(app)
 
     csatlakozo = QLocalSocket()
     csatlakozo.connectToServer(APP_ID)
@@ -125,6 +126,16 @@ def main() -> int:
     kod = app.exec()
     hatter.leallit()
     return kod
+
+
+def _magyar_qt(app) -> None:
+    from PySide6.QtCore import QLibraryInfo, QLocale, QTranslator
+
+    QLocale.setDefault(QLocale(QLocale.Language.Hungarian, QLocale.Country.Hungary))
+    fordito = QTranslator(app)
+    if fordito.load(QLocale(QLocale.Language.Hungarian), "qtbase", "_",
+                    QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)):
+        app.installTranslator(fordito)
 
 
 if __name__ == "__main__":

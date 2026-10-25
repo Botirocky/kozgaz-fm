@@ -10,6 +10,8 @@ let idozito = null;
 let hangeroKuldes = null;
 let uzenetIdozito = null;
 let sablonTorles = false;
+let statIdeje = 0;
+const STAT_MS = 60000;
 const HALK_CSENGO = 30;
 
 class BelepesKell extends Error {}
@@ -61,6 +63,10 @@ function panelMutat() {
 async function frissit() {
   try {
     megjelenit(await keres("GET", "/allapot"));
+    if (Date.now() - statIdeje > STAT_MS) {
+      statIdeje = Date.now();
+      keres("GET", "/statisztika").then(statisztika).catch(() => { statIdeje = 0; });
+    }
     $("kapcsolat").classList.remove("nincs");
     $("kapcsolat").title = "Kapcsolódva a hangosító géphez";
   } catch (e) {
@@ -190,6 +196,44 @@ function megjelenit(a) {
 
   menetrend(a.menetrend);
   orat();
+}
+
+function percSzoveg(perc) {
+  if (perc < 60) return `${perc} perc`;
+  return perc % 60 ? `${Math.floor(perc / 60)} óra ${perc % 60} perc` : `${perc / 60} óra`;
+}
+
+function statisztika(s) {
+  const dl = $("stat-szamok");
+  dl.replaceChildren();
+  const c = s.csengetes;
+  const sorok = [
+    ["Zene", `${percSzoveg(s.zene.perc)}, ${s.zene.szamok} szám`],
+    ["Kért számok", `${s.zene.kert} (érkezett: ${s.keresek.erkezett})`],
+    ["Csengetések", `${c.darab}${c.kezi ? `, ebből ${c.kezi} kézi` : ""}`],
+    ["Pontosság", c.atlag_keses_ms === null ? "–" : `átlag ${(c.atlag_keses_ms / 1000).toFixed(1).replace(".", ",")} mp`
+      + (c.kesett ? `, ${c.kesett} késett` : "")],
+  ];
+  for (const [cim, ertek] of sorok) {
+    const dt = document.createElement("dt");
+    dt.textContent = cim;
+    const dd = document.createElement("dd");
+    dd.textContent = ertek;
+    dl.append(dt, dd);
+  }
+  const ol = $("stat-top");
+  ol.replaceChildren();
+  for (const t of s.legtobbet) {
+    const li = document.createElement("li");
+    li.textContent = `${t.cim} – ${t.darab}×`;
+    ol.append(li);
+  }
+  if (!s.legtobbet.length) {
+    const li = document.createElement("li");
+    li.textContent = "A héten még nem szólt zene.";
+    li.className = "ures";
+    ol.append(li);
+  }
 }
 
 function menetrend(esemenyek) {

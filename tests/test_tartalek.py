@@ -138,7 +138,7 @@ class AlVezerlo:
     def _szinkron(self) -> None:
         pass
 
-    def csengetes(self, hang: str, leiras: str = "", hangero=None) -> None:
+    def csengetes(self, hang: str, leiras: str = "", hangero=None, **_kw) -> None:
         self.csengetesek.append(leiras)
 
 

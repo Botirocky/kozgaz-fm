@@ -319,3 +319,10 @@ dialog p { color: var(--halvany); margin-top: 8px; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+.stat-szamok { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 10px 0 0; }
+.stat-szamok dt { color: var(--halvany); }
+.stat-szamok dd { margin: 0; color: var(--szoveg); font-weight: 600; font-variant-numeric: tabular-nums; }
+.stat-top { margin: 14px 0 0; padding-left: 22px; color: var(--szoveg); }
+.stat-top li { padding: 3px 0; overflow-wrap: anywhere; }
+.stat-top .ures { list-style: none; margin-left: -22px; color: var(--halvany); }

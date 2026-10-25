@@ -15,6 +15,7 @@ __lazy_modules__ = [
     "kozgaz_fm.ui.elemek",
     "kozgaz_fm.ui.kijelzo",
     "kozgaz_fm.ui.naplo_oldal",
+    "kozgaz_fm.ui.statisztika_oldal",
     "kozgaz_fm.ui.naptar_oldal",
     "kozgaz_fm.ui.pin_ablak",
     "kozgaz_fm.ui.sugo_oldal",
@@ -59,6 +60,7 @@ from kozgaz_fm.ui.kijelzo import Kijelzo
 from kozgaz_fm.ui.naplo_oldal import NaploOldal
 from kozgaz_fm.ui.naptar_oldal import NaptarOldal
 from kozgaz_fm.ui.pin_ablak import FeloldoAblak
+from kozgaz_fm.ui.statisztika_oldal import StatisztikaOldal
 from kozgaz_fm.ui.sugo_oldal import SugoOldal
 from kozgaz_fm.ui.tema import SZIN, ikon, logo_ikon, logo_pixmap, szam_betu
 from kozgaz_fm.ui.vezerlopult import Vezerlopult, idotartam
@@ -73,6 +75,7 @@ OLDALAK = [
     ("Naptár", "naptar", NaptarOldal),
     ("Bemondások", "bemondas", BemondasOldal),
     ("Napló", "naplo", NaploOldal),
+    ("Statisztika", "grafikon", StatisztikaOldal),
     ("Beállítások", "beallitas", BeallitasOldal),
     ("Súgó", "nevjegy", SugoOldal),
 ]

@@ -32,7 +32,7 @@ from collections.abc import Callable, Mapping
 from concurrent.futures import Future
 from concurrent.futures import TimeoutError as FutureTimeout
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit
 
@@ -93,6 +93,7 @@ BIZTONSAG = {
 
 UTVONALAK = {
     ("GET", "/api/v1/allapot"): "allapot",
+    ("GET", "/api/v1/statisztika"): "statisztika",
     ("POST", "/api/v1/csengetes"): "csengetes",
     ("POST", "/api/v1/zene/inditas"): "zene_inditas",
     ("POST", "/api/v1/zene/leallitas"): "zene_leallitas",
@@ -470,6 +471,12 @@ class WebMuveletek(_Fosszal):
         hangok = [("becsengo", "Becsengő", b.hang_becsengo), ("kicsengo", "Kicsengő", b.hang_kicsengo),
                   ("jelzo", "Jelzőcsengő", b.hang_jelzo), ("gong", "Gong", b.hang_gong)]
         return hangok + [(h.ertek, h.nev, h.ertek) for h in sajat_hangok.lista()]
+
+    def statisztika(self, _adat: dict | None = None, _ip: str = "") -> dict:
+        if self.v.stat is None:
+            raise WebHiba(503, "unavailable", "A statisztika most nem érhető el.")
+        ma = date.today()
+        return self.v.stat.osszegzes(ma - timedelta(days=6), ma, top=5)
 
     def allapot(self, _adat: dict | None = None, _ip: str = "") -> dict:
         v, b = self.v, self.v.b

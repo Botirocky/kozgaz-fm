@@ -4,9 +4,11 @@ __lazy_modules__ = [
     "PySide6.QtGui",
     "PySide6.QtWidgets",
     "kozgaz_fm.beallitasok",
+    "kozgaz_fm.naptar_import",
     "kozgaz_fm.orarend",
     "kozgaz_fm.ui.elemek",
     "kozgaz_fm.ui.hangvalaszto",
+    "kozgaz_fm.ui.naptar_import_ablak",
     "kozgaz_fm.ui.tema",
     "kozgaz_fm.unnepek",
     "kozgaz_fm.vezerlo",
@@ -33,9 +35,11 @@ from PySide6.QtWidgets import (
 )
 
 from kozgaz_fm.beallitasok import RENDKIVULI_TIPUSOK, Rendkivuli, Szunnap
+from kozgaz_fm.naptar_import import alkalmaz
 from kozgaz_fm.orarend import napi_rend, szunnap_nev
 from kozgaz_fm.ui.elemek import Kartya, Oldal, cimke, gomb, ido_mezo, sor
 from kozgaz_fm.ui.hangvalaszto import HangValaszto
+from kozgaz_fm.ui.naptar_import_ablak import NaptarImportAblak
 from kozgaz_fm.ui.tema import SZIN, ikon
 from kozgaz_fm.unnepek import unnepnapok
 from kozgaz_fm.vezerlo import Vezerlo
@@ -248,8 +252,10 @@ class NaptarOldal(Oldal):
         unnep.clicked.connect(self._unnepek)
         torol = gomb("", "kuka", tipp="Kijelölt törlése")
         torol.clicked.connect(self._szunnap_torol)
+        tanev = gomb("Tanév rendje…", "le", tipp="Az iskola naptárának importálása (.ics fájl vagy naptárlink)")
+        tanev.clicked.connect(self._tanev_import)
         k.add(self.szunnapok)
-        k.add(sor(uj, unnep, None, torol))
+        k.add(sor(uj, unnep, tanev, None, torol))
         return k
 
     def _kivetel_kartya(self) -> Kartya:
@@ -427,6 +433,19 @@ class NaptarOldal(Oldal):
         self.frissit()
         QMessageBox.information(self, "Ünnepnapok", f"{uj} új ünnepnap hozzáadva. A tanítási szüneteket "
                                 "(őszi, téli, tavaszi, nyári) a „Hozzáadás” gombbal add meg.")
+
+    def _tanev_import(self) -> None:
+        ablak = NaptarImportAblak(self, self.v.b)
+        if ablak.exec() != QDialog.DialogCode.Accepted:
+            return
+        szunnap, kivetel, megtartott = alkalmaz(self.v.b, ablak.kivalasztott())
+        self.v.log(f"Tanév rendje importálva: {szunnap} szünnap, {kivetel} kivételnap")
+        self.v.mentes()
+        self.frissit()
+        QMessageBox.information(self, "Tanév rendje", f"{szunnap} új szünnap és {kivetel} kivételnap került "
+                                "a naptárba. A már meglévő szünnapokat nem vettem fel újra."
+                                + (f" {megtartott} napra már volt kézzel beállított kivétel, azokat "
+                                   "nem írtam felül." if megtartott else ""))
 
     def _szunnap_torol(self) -> None:
         i = self.szunnapok.currentRow()

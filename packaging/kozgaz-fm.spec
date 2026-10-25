@@ -27,13 +27,14 @@ adatok = [
     (str(CSOMAG / "sugo.md"), "kozgaz_fm"),
 ]
 adatok += collect_data_files("yt_dlp_ejs")
+adatok += collect_data_files("imageio_ffmpeg", includes=["binaries/*"])
 
 a = Analysis(
     [str(CSOMAG / "__main__.py")],
     pathex=[str(FORRAS)],
     datas=adatok,
     hiddenimports=collect_submodules("kozgaz_fm") + collect_submodules("yt_dlp") + collect_submodules("yt_dlp_ejs")
-    + ["PySide6.QtTextToSpeech", "PySide6.QtMultimedia", "PySide6.QtNetwork", "PySide6.QtSvg"],
+    + ["PySide6.QtTextToSpeech", "PySide6.QtMultimedia", "PySide6.QtNetwork", "PySide6.QtSvg", "imageio_ffmpeg"],
     excludes=KIHAGYOTT,
     noarchive=False,
 )
