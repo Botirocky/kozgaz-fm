@@ -71,6 +71,11 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
 
 ![Frissítés](docs/frissites.png)
 
+## Újdonságok az 1.0.0-ban
+
+Az első stabil kiadás: a 0.x sorozat minden funkciója (csengetés, szünetzene, bemondás, naptár, webes
+vezérlés, zenekérés, tartalékgép, hangzónák, értesítések, statisztika) kipróbálva, egy csomagban.
+
 ## Újdonságok a 0.10.0-ban
 
 - Műsorblokkok: szünetenként és naponként más zeneforrás (pl. reggel nyugodt lista, nagyszünetben slágerek,

@@ -1,5 +1,5 @@
 #ifndef AppVersion
-  #define AppVersion "0.10.0"
+  #define AppVersion "1.0.0"
 #endif
 #define AppName "Közgáz FM"
 #define AppExe "KozgazFM.exe"
