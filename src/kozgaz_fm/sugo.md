@@ -77,6 +77,30 @@ magától csenget, a szünetekben zenét játszik (saját MP3-ak, YouTube vagy S
   riasztó- és bemondáshangok hangereje nem változik. A Spotify a saját kiegyenlítését használja. Az új számok mérése pár
   másodperc; ha egy szám még nincs megmérve, az első másodpercekben áll be a helyes hangerő.
 
+### Műsorblokkok
+
+Szünetenként és naponként más zeneforrás szólhat. Példák: reggel (*Tanítás előtt*) a nyugodt lista, a
+nagyszünetben (pl. *3. szünet*) a slágerek, pénteken egész nap a buli-lista. *Zene → Műsorblokkok → Új blokk*:
+név, forrás, napok, és hogy minden szünetben vagy csak a kijelöltekben szóljon.
+
+- A szünet **sorszáma** számít (az „1. szünet” az 1. óra utáni), így rövidített napokon is ugyanaz a lista szól.
+- Ha több blokk illik, a listában **feljebb álló** nyer (a nyilakkal rendezhető).
+- Ha egyik sem illik, a kiválasztott (*Ez szóljon*) forrás szól.
+- Ha egy szünetben kézzel másik forrást választasz, az a szünet végéig érvényes, utána újra a blokkok döntenek.
+- A program forrásonként megjegyzi, hol tartott (4 órán át), így a visszatérő lista nem az elejéről kezdi.
+
+### Szűrő
+
+A szűrőn fennakadó szám nem kerül a lejátszási sorba, és diák sem kérheti.
+
+- **Beépített lista:** gyakori magyar és angol trágár szavak, valamint az „Explicit” jelölésű címek; a Spotifyon
+  az explicit jelölésű számokat átugorja.
+- **Korhatáros YouTube-videók kihagyása:** a 18+ besorolású videót nem tölti le, hanem a következő számra lép.
+- **Saját tiltólista:** soronként egy szó, előadó vagy cím. Alapból egész szóra illeszkedik („szar” nem szűri ki a
+  „szarvas”-t); csillaggal a végén szókezdetre („bunkó*” → „bunkók”). Kis- és nagybetű, ékezet mindegy.
+- A cím mellett a fájl mappájának neve (pl. előadó szerinti mappák) és Spotifynál az előadó is számít.
+- A *Próba* mezőbe írt címről azonnal látszik, átengedné-e a szűrő.
+
 ### Zenekérés diákoktól
 
 A diákok telefonról kérhetnek számot a szünetekre; a kérés csak jóváhagyás után szól.

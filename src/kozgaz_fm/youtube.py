@@ -10,6 +10,18 @@ HANG_FORMATUM = "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best"
 KITERJESZTESEK = (".m4a", ".webm", ".opus", ".mp3", ".ogg")
 
 
+KORHATAR_JELEK = ("confirm your age", "age-restricted", "age restricted", "inappropriate for some users")
+
+
+class Korhataros(Exception):
+    pass
+
+
+def _korhataros_hiba(hiba: Exception) -> bool:
+    szoveg = str(hiba).lower()
+    return any(j in szoveg for j in KORHATAR_JELEK)
+
+
 @dataclass(frozen=True)
 class YtSzam:
     azonosito: str
@@ -68,8 +80,9 @@ def gyorsitott(azonosito: str, mappa: Path) -> Path | None:
     return None
 
 
-def letoltes(azonosito: str, mappa: Path) -> Path:
+def letoltes(azonosito: str, mappa: Path, korhatar_tiltas: bool = False) -> Path:
     import yt_dlp
+    from yt_dlp.utils import DownloadError
 
     meglevo = gyorsitott(azonosito, mappa)
     if meglevo:
@@ -77,7 +90,15 @@ def letoltes(azonosito: str, mappa: Path) -> Path:
     mappa.mkdir(parents=True, exist_ok=True)
     with yt_dlp.YoutubeDL(_opciok(format=HANG_FORMATUM, outtmpl=str(mappa / "%(id)s.%(ext)s"),
                                   overwrites=False, retries=3)) as ydl:
-        ydl.download([f"https://www.youtube.com/watch?v={azonosito}"])
+        try:
+            info = ydl.extract_info(f"https://www.youtube.com/watch?v={azonosito}", download=False)
+        except DownloadError as hiba:
+            if korhatar_tiltas and _korhataros_hiba(hiba):
+                raise Korhataros(azonosito) from hiba
+            raise
+        if korhatar_tiltas and info and int(info.get("age_limit") or 0) >= 18:
+            raise Korhataros(info.get("title") or azonosito)
+        ydl.process_ie_result(info, download=True)
     ut = gyorsitott(azonosito, mappa)
     if ut is None:
         raise RuntimeError(f"A letöltés nem hozott létre fájlt: {azonosito}")
@@ -94,22 +115,35 @@ def gyorsitotar_urites(mappa: Path) -> None:
             f.unlink(missing_ok=True)
 
 
-def egy_szam(cel: str) -> tuple[str, str, int] | None:
+def egy_szam(cel: str) -> tuple[str, str, int, int] | None:
     import yt_dlp
+    from yt_dlp.utils import DownloadError
 
     kereses = cel.startswith("ytsearch")
     with yt_dlp.YoutubeDL(_opciok(extract_flat="in_playlist", noplaylist=True,
                                   allowed_extractors=["youtube", "youtube:search", "youtube:tab"])) as ydl:
-        info = ydl.extract_info(cel, download=False)
-    if not info:
-        return None
-    elemek = info.get("entries")
-    if elemek is not None:
-        if not kereses:
+        try:
+            info = ydl.extract_info(cel, download=False)
+        except DownloadError as hiba:
+            if _korhataros_hiba(hiba):
+                return None if kereses else ("", "", 0, 18)
+            raise
+        if not info:
             return None
-        info = next((e for e in elemek if e and e.get("id")), None)
-        if info is None:
-            return None
+        elemek = info.get("entries")
+        if elemek is not None:
+            if not kereses:
+                return None
+            talalt = next((e for e in elemek if e and e.get("id")), None)
+            if talalt is None:
+                return None
+            try:
+                info = ydl.extract_info(f"https://www.youtube.com/watch?v={talalt['id']}", download=False) or talalt
+            except DownloadError as hiba:
+                if not _korhataros_hiba(hiba):
+                    raise
+                return talalt["id"], talalt.get("title") or talalt["id"], int(talalt.get("duration") or 0), 18
+    korhatar = int(info.get("age_limit") or 0)
     if info.get("is_live") or info.get("live_status") in ("is_live", "is_upcoming"):
-        return info["id"], info.get("title") or info["id"], 0
-    return info["id"], info.get("title") or info["id"], int(info.get("duration") or 0)
+        return info["id"], info.get("title") or info["id"], 0, korhatar
+    return info["id"], info.get("title") or info["id"], int(info.get("duration") or 0), korhatar

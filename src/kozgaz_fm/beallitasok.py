@@ -100,6 +100,15 @@ class ZeneForras:
 
 
 @dataclass
+class Musorblokk:
+    nev: str
+    forras: str
+    napok: list[int] = field(default_factory=lambda: [0, 1, 2, 3, 4])
+    szunetek: list[int] = field(default_factory=list)
+    aktiv: bool = True
+
+
+@dataclass
 class Beallitasok:
     rendek: list[Csengetesirend] = field(default_factory=list)
     het: list[str] = field(default_factory=lambda: ["Normál"] * 5 + ["", ""])
@@ -128,6 +137,10 @@ class Beallitasok:
     keveres: bool = True
     youtube_gyorsitotar: bool = True
     hangero_kiegyenlites: bool = True
+    musorblokkok: list[Musorblokk] = field(default_factory=list)
+    szuro_alap: bool = True
+    szuro_korhataros: bool = True
+    szuro_szavak: list[str] = field(default_factory=list)
     bemondasok: list[Bemondas] = field(default_factory=list)
     rendkivuli: list[Rendkivuli] = field(default_factory=list)
     bemondas_sablonok: list[str] = field(default_factory=lambda: list(ALAP_SABLONOK))

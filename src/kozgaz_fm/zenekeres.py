@@ -1,10 +1,12 @@
-__lazy_modules__ = ["secrets", "collections.abc", "dataclasses", "datetime", "urllib.parse"]
+__lazy_modules__ = ["secrets", "collections.abc", "dataclasses", "datetime", "urllib.parse", "kozgaz_fm.szuro"]
 
 import secrets
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from urllib.parse import urlsplit
+
+from kozgaz_fm.szuro import KORHATAR, Szuro
 
 MAX_SZOVEG = 150
 MAX_NEV = 30
@@ -98,7 +100,8 @@ class Keresek:
     def fuggo(self) -> list[Keres]:
         return [k for k in self.lista if k.allapot in ("kereses", "varakozik")]
 
-    def uj(self, szoveg: str, nev: str, eszkoz: str, ip: str, napi: int, tiltott: list[str]) -> Keres:
+    def uj(self, szoveg: str, nev: str, eszkoz: str, ip: str, napi: int, tiltott: list[str],
+           szuro: Szuro | None = None) -> Keres:
         self._takarit()
         szoveg = " ".join(str(szoveg or "").split())
         nev = " ".join(str(nev or "").split())
@@ -108,7 +111,7 @@ class Keresek:
             raise KeresHiba("validation_error", f"Legfeljebb {MAX_SZOVEG} karakter lehet a kérés, "
                                                 f"{MAX_NEV} a név.")
         youtube_cel(szoveg)
-        if tiltott_e(szoveg, tiltott) or tiltott_e(nev, tiltott):
+        if tiltott_e(szoveg, tiltott) or tiltott_e(nev, tiltott) or (szuro is not None and szuro.talalat(szoveg, nev)):
             raise KeresHiba("forbidden_word", "Ezt a kérést nem lehet elküldeni.")
         if self.maradek(eszkoz, napi) <= 0:
             raise KeresHiba("daily_limit", f"Ma már nem kérhetsz több számot (napi {napi}).")
@@ -121,12 +124,15 @@ class Keresek:
         self.lista.append(k)
         return k
 
-    def talalat(self, azon: str, yt: str, cim: str, hossz: int, max_perc: int, tiltott: list[str]) -> Keres:
+    def talalat(self, azon: str, yt: str, cim: str, hossz: int, max_perc: int, tiltott: list[str],
+                korhatar: int = 0, szuro: Szuro | None = None, korhatar_tiltas: bool = True) -> Keres:
         k = self.keres(azon)
         if k.allapot != "kereses":
             return k
         k.yt, k.cim, k.hossz = yt, cim, hossz
-        if tiltott_e(cim, tiltott):
+        if korhatar_tiltas and korhatar >= KORHATAR:
+            self._elutasit(k, "Korhatáros videó nem kérhető.")
+        elif tiltott_e(cim, tiltott) or (szuro is not None and szuro.talalat(cim)):
             self._elutasit(k, "A szám nem engedélyezett.")
         elif hossz <= 0:
             self._elutasit(k, "Élő adás vagy ismeretlen hosszú videó nem kérhető.")

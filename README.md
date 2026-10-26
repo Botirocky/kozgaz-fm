@@ -48,6 +48,8 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
   bemondás, külön hangerővel; a riasztás mindig mindenhol szól.
 - **Értesítés a rendszergazdának:** ntfy (telefon) vagy e-mail, ha kimaradt egy csengetés, hiba van, eltűnt
   a hangkimenet, riasztás indult vagy a tartalékgép átvette a csengetést; reggeli önteszt tanítási napokon.
+- **Műsorblokkok:** szünetenként és naponként más zeneforrás, a szünet sorszáma szerint (rövidített napon is).
+- **Szűrő:** trágár szavak, „Explicit” jelölés, saját tiltólista, korhatáros YouTube-videók kihagyása.
 - **Világos és sötét téma**, a mai nap idővonala a Vezérlőpulton.
 - **Automatikus frissítés a GitHubról:** saját frissítő ablak változáslistával; csak tanítási időn kívül
   települ magától, SHA-256-tal ellenőrzött csomagból (Windows-telepítő, Linux-csomag és a Pi is).
@@ -68,6 +70,13 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
 ### Frissítés
 
 ![Frissítés](docs/frissites.png)
+
+## Újdonságok a 0.10.0-ban
+
+- Műsorblokkok: szünetenként és naponként más zeneforrás (pl. reggel nyugodt lista, nagyszünetben slágerek,
+  pénteken buli-lista); a program forrásonként megjegyzi, hol tartott.
+- Szűrő: beépített trágárszó-lista és „Explicit” jelölés, saját tiltólista (egész szó vagy szókezdet), korhatáros
+  YouTube-videók kihagyása; a zenekérésre és a Spotifyra is érvényes.
 
 ## Újdonságok a 0.9.1-ben
 

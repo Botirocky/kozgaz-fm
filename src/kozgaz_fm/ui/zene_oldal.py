@@ -8,6 +8,8 @@ __lazy_modules__ = [
     "kozgaz_fm.hang",
     "kozgaz_fm.spotify",
     "kozgaz_fm.ui.elemek",
+    "kozgaz_fm.ui.musorblokk_kartya",
+    "kozgaz_fm.ui.szuro_kartya",
     "kozgaz_fm.ui.tema",
     "kozgaz_fm.ui.zenekeres_kartya",
     "kozgaz_fm.utvonalak",
@@ -36,6 +38,8 @@ from kozgaz_fm.beallitasok import ZeneForras
 from kozgaz_fm.hang import FORRAS_TIPUSOK, HANGFAJLOK
 from kozgaz_fm.spotify import ATIRANYITAS, SpotifyHiba, spotify_uri
 from kozgaz_fm.ui.elemek import Kartya, Oldal, cimke, gomb, ido_mezo, kapcsolo, sor
+from kozgaz_fm.ui.musorblokk_kartya import MusorblokkKartya
+from kozgaz_fm.ui.szuro_kartya import SzuroKartya
 from kozgaz_fm.ui.tema import SZIN, ikon
 from kozgaz_fm.ui.zenekeres_kartya import ZenekeresKartya
 from kozgaz_fm.utvonalak import gyorsitotar_mappa
@@ -60,7 +64,10 @@ class ZeneOldal(Oldal):
         also.setSpacing(16)
         also.addWidget(self._beallitas_kartya(), 0, 0)
         also.addWidget(self._spotify_kartya(), 0, 1)
-        also.addWidget(ZenekeresKartya(v), 1, 0, 1, 2)
+        self.musorblokk = MusorblokkKartya(v)
+        also.addWidget(self.musorblokk, 1, 0)
+        also.addWidget(SzuroKartya(v), 1, 1)
+        also.addWidget(ZenekeresKartya(v), 2, 0, 1, 2)
         also.setColumnStretch(0, 1)
         also.setColumnStretch(1, 1)
         self.add(also)
@@ -214,7 +221,7 @@ class ZeneOldal(Oldal):
 
     def _forrasok_frissit(self, valasztott: int | None = None) -> None:
         b = self.v.b
-        aktiv = self.v.aktiv_forras()
+        aktiv = self.v.szolo_forras()
         self.forrasok.blockSignals(True)
         self.forrasok.clear()
         for f in b.forrasok:
@@ -236,6 +243,7 @@ class ZeneOldal(Oldal):
             self.v.b.forrasok[i].aktiv = elem.checkState() == Qt.CheckState.Checked
             self.v.mentes()
             self._forrasok_frissit(i)
+            self.musorblokk.frissit()
 
     def _uj(self, tipus: str) -> None:
         forras = self._forras_bekeres(tipus)
@@ -246,6 +254,7 @@ class ZeneOldal(Oldal):
             self.v.b.aktiv_forras = 0
         self.v.mentes()
         self._forrasok_frissit(len(self.v.b.forrasok) - 1)
+        self.musorblokk.frissit()
 
     def _forras_bekeres(self, tipus: str, regi: ZeneForras | None = None) -> ZeneForras | None:
         cim = regi.cim if regi else ""
@@ -306,8 +315,13 @@ class ZeneOldal(Oldal):
         if uj is None:
             return
         self.v.b.forrasok[i] = uj
+        if uj.nev != regi.nev:
+            for m in self.v.b.musorblokkok:
+                if m.forras == regi.nev:
+                    m.forras = uj.nev
         self.v.mentes()
         self._forrasok_frissit(i)
+        self.musorblokk.frissit()
 
     def _mozgat(self, irany: int) -> None:
         i = self._kijelolt()
@@ -334,6 +348,7 @@ class ZeneOldal(Oldal):
         self.v.b.aktiv_forras = f.index(aktiv) if aktiv in f else 0
         self.v.mentes()
         self._forrasok_frissit()
+        self.musorblokk.frissit()
 
     def _lista_frissit(self) -> None:
         z = self.v.zene

@@ -18,6 +18,7 @@ __lazy_modules__ = [
     "kozgaz_fm.orarend",
     "kozgaz_fm.spotify",
     "kozgaz_fm.statisztika",
+    "kozgaz_fm.szuro",
     "kozgaz_fm.tartalek",
     "kozgaz_fm.utvonalak",
     "kozgaz_fm.webpanel",
@@ -37,7 +38,7 @@ from PySide6.QtCore import QObject, QTimer, Signal
 from PySide6.QtMultimedia import QMediaDevices
 
 from kozgaz_fm import __version__, hatter, sajat_hangok, youtube
-from kozgaz_fm.beallitasok import Beallitasok, Bemondas, Rendkivuli
+from kozgaz_fm.beallitasok import Beallitasok, Bemondas, Musorblokk, Rendkivuli, ZeneForras
 from kozgaz_fm.bemondo import Bemondo
 from kozgaz_fm.ertesites import Ertesito, kimaradt_csengetesek, reggeli_jelentes
 from kozgaz_fm.frissito import Frissito
@@ -49,12 +50,16 @@ from kozgaz_fm.orarend import (
     Esemeny,
     Tipus,
     csendes_idoszakok,
+    musorblokk,
     napi_esemenyek,
     napi_rend,
+    szunet_nev,
     zene_ablakban,
+    zene_szunet,
 )
 from kozgaz_fm.spotify import Spotify
 from kozgaz_fm.statisztika import Statisztika
+from kozgaz_fm.szuro import Szuro
 from kozgaz_fm.tartalek import Tartalek
 from kozgaz_fm.utvonalak import adat_mappa, eletjel_fajl, naplo_fajl
 from kozgaz_fm.webpanel import WebPanel
@@ -104,6 +109,9 @@ class Vezerlo(QObject):
         self.naplo: deque[str] = deque(maxlen=1000)
         self.riasztas = False
         self.keresek = Keresek()
+        self.szuro = Szuro()
+        self.musor_blokk: Musorblokk | None = None
+        self._musor_kezi = False
         self._kihagyott: Esemeny | None = None
         self._esemenyek: list[Esemeny] = []
         self._nap: date | None = None
@@ -120,6 +128,7 @@ class Vezerlo(QObject):
         self.zene.allapot_valtozott.connect(lambda _: self.frissult.emit())
         self.zene.allapot_valtozott.connect(self._zene_allapot_stat)
         self.zene.kert_szol.connect(self._kert_szol)
+        self.zene.kiszurve.connect(self.log)
         self._ora = QTimer(self)
         self._ora.setInterval(250)
         self._ora.timeout.connect(self._tick)
@@ -331,7 +340,10 @@ class Vezerlo(QObject):
         elif not b.spotify_client_id:
             self.spotify = None
         self.zene.spotify = self.spotify
-        self.zene.forras_beallitas(self.aktiv_forras())
+        if self.szuro.kulcs != (tuple(s.strip() for s in b.szuro_szavak if s.strip()), b.szuro_alap):
+            self.szuro = Szuro(b.szuro_szavak, b.szuro_alap)
+        self.zene.szuro_beallitas(self.szuro, b.szuro_korhataros)
+        self.zene.forras_beallitas(self.jelenlegi_forras())
         if self._web_indult:
             self.web.alkalmaz()
             self.tartalek.alkalmaz()
@@ -422,6 +434,27 @@ class Vezerlo(QObject):
             return self.b.forrasok[self.b.aktiv_forras]
         return forrasok[0] if forrasok else None
 
+    def _blokk_forras(self, nap: int, szunet: int) -> tuple[ZeneForras | None, Musorblokk | None]:
+        blokk = musorblokk(self.b, nap, szunet)
+        if blokk is not None:
+            forras = next((f for f in self.b.forrasok if f.aktiv and f.nev == blokk.forras), None)
+            if forras is not None:
+                return forras, blokk
+        return self.aktiv_forras(), None
+
+    def jelenlegi_forras(self, most: datetime | None = None) -> ZeneForras | None:
+        most = most or datetime.now()
+        szunet = zene_szunet(self.b, most) if self.b.musorblokkok and not self._musor_kezi else None
+        if szunet is None:
+            self.musor_blokk = None
+            return self.aktiv_forras()
+        forras, self.musor_blokk = self._blokk_forras(most.weekday(), szunet)
+        return forras
+
+    def szolo_forras(self) -> ZeneForras | None:
+        forras = self.zene.forras
+        return forras if forras is not None and forras in self.b.forrasok else self.aktiv_forras()
+
     def mai_esemenyek(self) -> list[Esemeny]:
         self._frissit_nap(datetime.now())
         return list(self._esemenyek)
@@ -479,6 +512,7 @@ class Vezerlo(QObject):
         ablak = zene_ablakban(self.b, most)
         if ablak and not self.zene.szol:
             self._auto_zene = True
+            self.zene.forras_beallitas(self.jelenlegi_forras(most))
             self.zene.indit()
         elif not ablak and self._auto_zene and self.zene.szol:
             self._auto_zene = False
@@ -511,10 +545,14 @@ class Vezerlo(QObject):
                 self.zene.megallit(elhalkitas=False)
             self.csengetes(e.rendkivuli.hang, e.leiras, tervezett=e.ido, tipus=e.tipus.name.lower())
         elif e.tipus is Tipus.ZENE_INDUL:
-            if self.aktiv_forras() is None:
+            self._musor_kezi = False
+            forras, self.musor_blokk = self._blokk_forras(e.ido.weekday(), e.ora)
+            if forras is None:
                 return
-            self.log("Szünetzene indul")
+            blokk = f" – {self.musor_blokk.nev} ({szunet_nev(e.ora)}, {forras.nev})" if self.musor_blokk else ""
+            self.log(f"Szünetzene indul{blokk}")
             self._auto_zene = True
+            self.zene.forras_beallitas(forras)
             self.zene.indit()
         elif e.tipus is Tipus.ZENE_LEALL:
             if self.zene.szol and self._auto_zene:
@@ -644,6 +682,8 @@ class Vezerlo(QObject):
     def forras_valtas(self, index: int) -> None:
         self.b.aktiv_forras = index
         self.b.mentes()
+        self._musor_kezi = self.musor_blokk is not None
+        self.musor_blokk = None
         self.zene.forras_beallitas(self.aktiv_forras())
         self.frissult.emit()
 
@@ -678,17 +718,19 @@ class Vezerlo(QObject):
     def zenekeres_uj(self, szoveg: str, nev: str, eszkoz: str, ip: str) -> Keres:
         if not self.b.zenekeres:
             raise KeresHiba("disabled", "A zenekérés most nincs bekapcsolva.")
-        k = self.keresek.uj(szoveg, nev, eszkoz, ip, self.b.zenekeres_napi, self.b.zenekeres_tiltott)
+        k = self.keresek.uj(szoveg, nev, eszkoz, ip, self.b.zenekeres_napi, self.b.zenekeres_tiltott, self.szuro)
         self.log(f"Zenekérés érkezett ({ip}): {k.szoveg}")
         if self.stat:
             self.stat.keres("erkezett")
         azon, cel = k.azon, youtube_cel(k.szoveg)
 
-        def kesz(talalat: tuple[str, str, int] | None) -> None:
+        def kesz(talalat: tuple[str, str, int, int] | None) -> None:
             if talalat is None:
                 self.keresek.nem_talalt(azon, "Nem található ilyen szám a YouTube-on.")
             else:
-                k = self.keresek.talalat(azon, *talalat, self.b.zenekeres_max_perc, self.b.zenekeres_tiltott)
+                yt, cim, hossz, korhatar = talalat
+                k = self.keresek.talalat(azon, yt, cim, hossz, self.b.zenekeres_max_perc, self.b.zenekeres_tiltott,
+                                         korhatar, self.szuro, self.b.szuro_korhataros)
                 if k.allapot == "varakozik":
                     self.uzenet.emit(f"Új zenekérés: {k.cim}", "info")
             self.keresek_valtoztak.emit()

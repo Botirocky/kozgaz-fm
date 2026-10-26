@@ -169,6 +169,7 @@ function megjelenit(a) {
   const z = a.zene;
   const szam = $("zene-szam");
   szam.textContent = z.szol ? z.cim || "Szünetzene szól" : "Nem szól zene";
+  szam.title = z.szol && z.blokk ? `Műsorblokk: ${z.blokk}` : "";
   szam.classList.toggle("csend", !z.szol);
   $("zene-gomb").textContent = z.szol ? "Zene leállítása" : "Zene indítása";
   $("kovetkezo-gomb").disabled = !z.szol;

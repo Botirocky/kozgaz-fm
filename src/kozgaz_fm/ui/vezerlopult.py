@@ -238,7 +238,7 @@ class Vezerlopult(Oldal):
 
     def _forrasok(self) -> None:
         b = self.v.b
-        aktiv = self.v.aktiv_forras()
+        aktiv = self.v.szolo_forras()
         self.forras_valaszto.blockSignals(True)
         self.forras_valaszto.clear()
         for i, f in enumerate(b.forrasok):
@@ -315,7 +315,8 @@ class Vezerlopult(Oldal):
 
     def _szam(self, cim: str, forras: str) -> None:
         self.szam_cimke.setText(cim)
-        self.forras_cimke.setText(f"Forrás: {forras}")
+        blokk = self.v.musor_blokk
+        self.forras_cimke.setText(f"Forrás: {forras}" + (f" · műsorblokk: {blokk.nev}" if blokk else ""))
 
     def _hangero(self, ertek: int) -> None:
         self.v.b.zene_hangero = ertek

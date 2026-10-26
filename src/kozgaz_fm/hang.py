@@ -13,6 +13,7 @@ __lazy_modules__ = [
     "kozgaz_fm.kimenetek",
     "kozgaz_fm.sajat_hangok",
     "kozgaz_fm.spotify",
+    "kozgaz_fm.szuro",
     "kozgaz_fm.utvonalak",
 ]
 
@@ -32,6 +33,7 @@ from kozgaz_fm.hangossag import Kiegyenlito
 from kozgaz_fm.kimenetek import TobbLejatszo, ZonaKimenet, eszkoz_azonosito, kimeneti_eszkoz
 from kozgaz_fm.sajat_hangok import HANGFAJLOK
 from kozgaz_fm.spotify import Spotify, SpotifyHiba, spotify_uri
+from kozgaz_fm.szuro import Szuro
 from kozgaz_fm.utvonalak import beepitett_hang, gyorsitotar_mappa
 
 naplo = logging.getLogger(__name__)
@@ -39,6 +41,8 @@ naplo = logging.getLogger(__name__)
 FORRAS_TIPUSOK = {"mappa": "Mappa", "fajlok": "Fájlok", "youtube": "YouTube", "spotify": "Spotify"}
 VEDELEM_MS = 350
 KESO_MERES_MS = 8000
+LISTA_MEGORZES_MP = 4 * 3600
+SPOTIFY_MAX_KIHAGYAS = 8
 
 
 def hang_ut(ertek: str) -> Path | None:
@@ -213,6 +217,7 @@ class ZeneLejatszo(QObject):
     allapot_valtozott = Signal(bool)
     hiba = Signal(str)
     lista_valtozott = Signal()
+    kiszurve = Signal(str)
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -262,6 +267,11 @@ class ZeneLejatszo(QObject):
         self._vedelem = _Vedelem()
         self._indito_jel = 0
         self._zona_folytat = False
+        self.szuro: Szuro | None = None
+        self.korhatar_tiltas = False
+        self._korhatarosak: set[str] = set()
+        self._tarolt: dict[tuple[str, str], tuple[list[Szam], int, float]] = {}
+        self._spotify_kihagyas = 0
 
     @property
     def szol(self) -> bool:
@@ -335,19 +345,89 @@ class ZeneLejatszo(QObject):
         self._forrast_indit(QUrl.fromLocalFile(str(szam.helyi)), atusztatas)
         self._elore_letolt()
 
+    def _szuro_ok(self, szam: Szam) -> str | None:
+        if szam.yt and szam.yt in self._korhatarosak:
+            return "korhatáros"
+        if not self.szuro:
+            return None
+        mappa = szam.helyi.parent.name if szam.helyi and not szam.yt else ""
+        talalt = self.szuro.talalat(szam.cim, mappa)
+        return f"tiltott szó: {talalt}" if talalt else None
+
+    def _szurt(self, szamok: list[Szam]) -> tuple[list[Szam], int]:
+        maradt = [s for s in szamok if s.kert or self._szuro_ok(s) is None]
+        return maradt, len(szamok) - len(maradt)
+
+    def szuro_beallitas(self, szuro: Szuro | None, korhatar_tiltas: bool) -> None:
+        regi = self.szuro.kulcs if self.szuro is not None else None
+        uj = szuro.kulcs if szuro is not None else None
+        if regi == uj and korhatar_tiltas == self.korhatar_tiltas:
+            return
+        self.szuro = szuro
+        self.korhatar_tiltas = korhatar_tiltas
+        if not korhatar_tiltas:
+            self._korhatarosak.clear()
+        self._tarolt.clear()
+        if not self.szamok:
+            return
+        regi = self.szamok
+        horgony = regi[self.index] if self.index < len(regi) else None
+        maradt = [s for s in regi if (s is horgony and self._szol) or s.kert or self._szuro_ok(s) is None]
+        kiszurt = len(regi) - len(maradt)
+        if not kiszurt:
+            return
+        elotte = sum(1 for s in regi[:self.index] if any(s is m for m in maradt))
+        self.szamok = maradt
+        self.index = elotte % len(maradt) if maradt else 0
+        self.lista_valtozott.emit()
+        self.kiszurve.emit(f"A szűrő {kiszurt} számot kivett a lejátszási sorból")
+
+    def _tarol(self) -> None:
+        if self.forras is None or self.spotify_mod or not self.szamok:
+            return
+        sajat = [s for s in self.szamok if not s.kert]
+        if not sajat:
+            return
+        lejatszott = sum(1 for s in self.szamok[:self.index + 1] if not s.kert)
+        self._tarolt[(self.forras.tipus, self.forras.cim)] = (sajat, lejatszott % len(sajat), time.monotonic())
+
+    def _visszatolt(self, forras: ZeneForras) -> bool:
+        tarolt = self._tarolt.pop((forras.tipus, forras.cim), None)
+        if tarolt is None or time.monotonic() - tarolt[2] > LISTA_MEGORZES_MP:
+            return False
+        szamok, index, _ = tarolt
+        szamok = [s for s in szamok[index:] + szamok[:index] if self._szuro_ok(s) is None]
+        if not szamok:
+            return False
+        if self.kiegyenlito:
+            for s in szamok:
+                self.kiegyenlito.kell(s.helyi)
+        self.szamok = self._fuggo_kert + szamok
+        self._fuggo_kert = []
+        self.index = 0
+        self.lista_valtozott.emit()
+        self._elore_letolt()
+        return True
+
     def forras_beallitas(self, forras: ZeneForras | None) -> None:
         if forras == self.forras and (self.szamok or self.spotify_mod or self._betoltes_alatt):
             return
         folyt = self._szol
         if folyt:
             self.megallit(elhalkitas=False)
+        self._tarol()
         self.forras = forras
         self._fuggo_kert = [s for s in self.szamok if s.kert] + self._fuggo_kert
         self.szamok = []
         self.index = 0
         self._generacio += 1
+        self._spotify_kihagyas = 0
         self.lista_valtozott.emit()
         if forras is None or forras.tipus == "spotify":
+            return
+        if self._visszatolt(forras):
+            if folyt:
+                self.indit()
             return
         self.betoltes(inditas=folyt)
 
@@ -359,16 +439,21 @@ class ZeneLejatszo(QObject):
         self._indit_betoltes_utan = self._indit_betoltes_utan or inditas
         generacio = self._generacio
 
-        def munka() -> list[Szam]:
+        def munka() -> tuple[list[Szam], int]:
             if forras.tipus == "mappa":
-                return mappa_szamai(Path(forras.cim))
-            if forras.tipus == "fajlok":
-                return fajl_lista(forras.cim)
-            return [Szam(s.cim, yt=s.azonosito) for s in youtube.lista(forras.cim)]
+                szamok = mappa_szamai(Path(forras.cim))
+            elif forras.tipus == "fajlok":
+                szamok = fajl_lista(forras.cim)
+            else:
+                szamok = [Szam(s.cim, yt=s.azonosito) for s in youtube.lista(forras.cim)]
+            return self._szurt(szamok)
 
-        def kesz(szamok: list[Szam]) -> None:
+        def kesz(eredmeny: tuple[list[Szam], int]) -> None:
             if generacio != self._generacio:
                 return
+            szamok, kiszurt = eredmeny
+            if kiszurt:
+                self.kiszurve.emit(f"A szűrő {kiszurt} számot kihagyott a(z) „{forras.nev}” forrásból")
             self._betoltes_alatt = False
             if self.keveres:
                 random.shuffle(szamok)
@@ -451,7 +536,8 @@ class ZeneLejatszo(QObject):
         if szam.yt in self._letoltes_alatt:
             return
         self._letoltes_alatt.add(szam.yt)
-        hatter.futtat(lambda: youtube.letoltes(szam.yt, self._yt_mappa()),
+        korhatar = self.korhatar_tiltas
+        hatter.futtat(lambda: youtube.letoltes(szam.yt, self._yt_mappa(), korhatar),
                       lambda ut: self._letoltve(szam, ut),
                       lambda e: self._letoltes_hiba(szam, e))
 
@@ -526,8 +612,28 @@ class ZeneLejatszo(QObject):
 
     def _letoltes_hiba(self, szam: Szam, e: Exception) -> None:
         self._letoltes_alatt.discard(szam.yt)
+        if isinstance(e, youtube.Korhataros):
+            self._korhatarosat_kivesz(szam)
+            return
         if self._var_ra(szam):
             self._lejatszasi_hiba(None, str(e))
+
+    def _korhatarosat_kivesz(self, szam: Szam) -> None:
+        self._korhatarosak.add(szam.yt)
+        self.kiszurve.emit(f"Korhatáros videó kihagyva: {szam.cim}")
+        varta = self._var_ra(szam)
+        if szam not in self.szamok:
+            return
+        hely = self.szamok.index(szam)
+        self.szamok.pop(hely)
+        if hely < self.index:
+            self.index -= 1
+        self.lista_valtozott.emit()
+        if not self.szamok:
+            self.megallit(elhalkitas=False)
+            self.hiba.emit(f"A(z) „{self.forras.nev if self.forras else ''}” forrásban nincs lejátszható szám.")
+        elif varta:
+            self._jatszd(self.index)
 
     def _beuszas(self, hossz_ms: int | None = None) -> None:
         self._animacio.stop()
@@ -768,12 +874,33 @@ class ZeneLejatszo(QObject):
 
         def kesz(adat: dict | None) -> None:
             if adat and adat["cim"] != self.most_cim:
+                if self._spotify_szurt(adat):
+                    return
                 self.most_cim = adat["cim"]
                 felirat = f"{adat['eloado']} – {adat['cim']}" if adat["eloado"] else adat["cim"]
                 self.szam_valtozott.emit(felirat, self.forras.nev if self.forras else "Spotify")
 
         spotify = self.spotify
         hatter.futtat(spotify.most_szol, kesz)
+
+    def _spotify_szurt(self, adat: dict) -> bool:
+        ok = self.szuro.talalat(adat["cim"], adat["eloado"]) if self.szuro else None
+        if ok is None and self.szuro and self.szuro.alap and adat.get("explicit"):
+            ok = "explicit jelölés"
+        if ok is None:
+            self._spotify_kihagyas = 0
+            return False
+        self._spotify_kihagyas += 1
+        self.kiszurve.emit(f"Spotify-szám átugorva ({ok}): {adat['cim']}")
+        if self._spotify_kihagyas > SPOTIFY_MAX_KIHAGYAS:
+            self._spotify_kihagyas = 0
+            self.megallit(elhalkitas=False)
+            self.hiba.emit("A Spotify-listában egymás után túl sok szám akadt fenn a szűrőn, a zene leállt.")
+            return True
+        self.most_cim = adat["cim"]
+        self._spotify_hivas(lambda s: s.kovetkezo())
+        QTimer.singleShot(1500, self._spotify_frissit)
+        return True
 
     def allj(self) -> None:
         self._zona_folytat = False

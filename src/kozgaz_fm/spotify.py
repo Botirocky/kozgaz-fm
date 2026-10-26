@@ -214,6 +214,7 @@ class Spotify:
         elem = adat["item"]
         eloado = ", ".join(a["name"] for a in elem.get("artists", []))
         return {"cim": elem.get("name", ""), "eloado": eloado, "szol": bool(adat.get("is_playing")),
+                "explicit": bool(elem.get("explicit")),
                 "hossz": elem.get("duration_ms", 0) / 1000, "pozicio": (adat.get("progress_ms") or 0) / 1000}
 
 

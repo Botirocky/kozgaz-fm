@@ -4,7 +4,7 @@ from dataclasses import dataclass, field, replace
 from datetime import date, datetime, time, timedelta
 from enum import StrEnum
 
-from kozgaz_fm.beallitasok import Beallitasok, Bemondas, Csengetesirend, Rendkivuli
+from kozgaz_fm.beallitasok import Beallitasok, Bemondas, Csengetesirend, Musorblokk, Rendkivuli
 
 
 class Tipus(StrEnum):
@@ -248,16 +248,30 @@ def _zene_ablak(b: Beallitasok, elozo_vege: datetime | None,
     return indul, leall
 
 
-def zene_ablakban(b: Beallitasok, most: datetime) -> bool:
-    nyitva = False
+def zene_szunet(b: Beallitasok, most: datetime) -> int | None:
+    szunet = None
     for e in napi_esemenyek(b, most.date()):
         if e.ido > most:
             break
         if e.tipus is Tipus.ZENE_INDUL:
-            nyitva = True
+            szunet = e.ora
         elif e.tipus is Tipus.ZENE_LEALL:
-            nyitva = False
-    return nyitva
+            szunet = None
+    return szunet
+
+
+def zene_ablakban(b: Beallitasok, most: datetime) -> bool:
+    return zene_szunet(b, most) is not None
+
+
+def musorblokk(b: Beallitasok, nap: int, szunet: int) -> Musorblokk | None:
+    forrasok = {f.nev for f in b.forrasok if f.aktiv}
+    return next((m for m in b.musorblokkok if m.aktiv and m.forras in forrasok and nap in m.napok
+                 and (not m.szunetek or szunet in m.szunetek)), None)
+
+
+def szunet_nev(szunet: int) -> str:
+    return "Tanítás előtt" if szunet == 0 else f"{szunet}. szünet"
 
 
 def kovetkezo_esemeny(b: Beallitasok, most: datetime, csak_csengo: bool = True, napok: int = 14) -> Esemeny | None:

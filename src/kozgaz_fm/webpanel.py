@@ -496,7 +496,7 @@ class WebMuveletek(_Fosszal):
                       "tipus": "csengo" if e.tipus in CSENGOK else e.tipus.name.lower(), "mult": e.ido <= most}
                      for e in v.mai_esemenyek()
                      if e.tipus in CSENGOK or e.tipus in KULONLEGES or e.tipus in (Tipus.BEMONDAS, Tipus.ZENE_INDUL)]
-        aktiv = v.aktiv_forras()
+        aktiv = v.szolo_forras()
         ma = date.today().isoformat()
         csend = v.aktiv_csend(most)
         return {
@@ -519,6 +519,7 @@ class WebMuveletek(_Fosszal):
                 "forrasok": [{"index": i, "nev": f.nev, "tipus": f.tipus} for i, f in enumerate(b.forrasok)
                              if f.aktiv],
                 "hangero": b.zene_hangero,
+                "blokk": v.musor_blokk.nev if v.musor_blokk else "",
                 "sor": [{"index": i, "cim": cim} for i, cim in v.zene.kovetkezok()] if v.zene.szol else [],
             },
             "ma": {
