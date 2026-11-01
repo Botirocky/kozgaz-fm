@@ -145,20 +145,21 @@ class ZeneOldal(Oldal):
              "zene_leall_elotte"),
             ("Elhalkítás hossza:", QDoubleSpinBox(minimum=0, maximum=15, singleStep=0.5, suffix=" mp"), "elhalkitas"),
             ("Átúsztatás a számok között:", QDoubleSpinBox(minimum=0, maximum=12, singleStep=0.5, suffix=" mp",
-                                                          specialValueText="nincs (szünet nélkül egymás után)"),
+                                                          specialValueText="nincs"),
              "atusztatas"),
         ]
         for i, (felirat, mezo, nev) in enumerate(mezok):
             mezo.setValue(getattr(b, nev))
             mezo.valueChanged.connect(lambda e, n=nev: self._allit(n, e))
-            racs.addWidget(cimke(felirat), i, 0)
+            racs.addWidget(cimke(felirat, sortores=True), i, 0)
             racs.addWidget(mezo, i, 1)
         racs.setColumnStretch(0, 1)
         k.add(auto)
         k.add(racs)
         k.add(sor(reggeli, reggel_ido, nyujt=True))
         k.add(keveres)
-        gyors = kapcsolo("YouTube-számok előre letöltése (akadásmentes, net nélkül is szól)", b.youtube_gyorsitotar)
+        gyors = kapcsolo("YouTube-számok előre letöltése", b.youtube_gyorsitotar,
+                         "Akadásmentes lejátszás, rövid netkiesésnél is szól")
         gyors.toggled.connect(lambda e: self._allit("youtube_gyorsitotar", e))
         self.gyors_cimke = cimke("", "halvany")
         urit = gomb("Gyorsítótár ürítése", "kuka")
@@ -166,8 +167,8 @@ class ZeneOldal(Oldal):
         k.add(gyors)
         k.add(sor(self.gyors_cimke, None, urit))
         self._gyors_meret()
-        kiegyenlit = kapcsolo("Hangerő-kiegyenlítés (minden zeneszám ugyanolyan hangosan szól)",
-                              b.hangero_kiegyenlites)
+        kiegyenlit = kapcsolo("Hangerő-kiegyenlítés", b.hangero_kiegyenlites,
+                              "Minden zeneszám ugyanolyan hangosan szól")
         kiegyenlit.toggled.connect(lambda e: self._allit("hangero_kiegyenlites", e))
         self.kiegyenlito_cimke = cimke("", "halvany", sortores=True)
         k.add(kiegyenlit)

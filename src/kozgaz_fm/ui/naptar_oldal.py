@@ -257,7 +257,8 @@ class NaptarOldal(Oldal):
         tanev = gomb("Tanév rendje…", "le", tipp="Az iskola naptárának importálása (.ics fájl vagy naptárlink)")
         tanev.clicked.connect(self._tanev_import)
         k.add(self.szunnapok)
-        k.add(sor(uj, unnep, tanev, None, torol))
+        k.add(sor(uj, None, torol))
+        k.add(sor(unnep, tanev, None))
         return k
 
     def _kivetel_kartya(self) -> Kartya:

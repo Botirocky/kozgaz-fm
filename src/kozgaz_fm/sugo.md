@@ -21,6 +21,8 @@ magától csenget, a szünetekben zenét játszik (saját MP3-ak, YouTube vagy S
 
 ## Vezérlőpult
 
+Az oldalak között a *Ctrl+1* … *Ctrl+9* billentyűkkel is lehet váltani.
+
 - **Most:** pontos idő, hányadik óra vagy szünet van, és mennyi van hátra a következő csengetésig.
 - **Szünetzene:** forrásválasztó, lejátszás / szünet, előző / következő szám, leállítás, hangerő.
   A *Ma legyen szünetzene* kapcsolóval csak a mai napra kapcsolható ki az automatikus zene.

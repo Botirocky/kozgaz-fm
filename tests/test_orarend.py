@@ -11,6 +11,7 @@ from kozgaz_fm.orarend import (
     Tipus,
     allapot,
     kovetkezo_esemeny,
+    nap_szoveg,
     napi_esemenyek,
     napi_rend,
     rend_generalas,
@@ -134,3 +135,14 @@ def test_mentes_betoltes(tmp_path, b):
     assert vissza == b
     ut.write_text("{hibás", encoding="utf-8")
     assert Beallitasok.betoltes(ut) == b
+
+
+@pytest.mark.parametrize(("ido", "vart"), [
+    (datetime(2026, 11, 2, 7, 28), "ma"),
+    (datetime(2026, 11, 3, 7, 28), "holnap"),
+    (datetime(2026, 11, 5, 7, 28), "csütörtökön"),
+    (datetime(2026, 11, 8, 7, 28), "vasárnap"),
+    (datetime(2026, 11, 9, 7, 28), "11. 09."),
+])
+def test_nap_szoveg(ido, vart):
+    assert nap_szoveg(ido, datetime(2026, 11, 2, 16, 0)) == vart

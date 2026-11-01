@@ -47,6 +47,9 @@ class Esemeny:
         return self.tipus.value.capitalize()
 
 
+NAP_RAGOS = ("hétfőn", "kedden", "szerdán", "csütörtökön", "pénteken", "szombaton", "vasárnap")
+
+
 class Szakasz(StrEnum):
     ORA = "óra"
     SZUNET = "szünet"
@@ -85,6 +88,17 @@ class Allapot:
         if self.szakasz is Szakasz.SZUNNAP:
             return self.szunnap_nev or "Szünnap"
         return self.szakasz.value.capitalize()
+
+
+def nap_szoveg(ido_: datetime, most: datetime) -> str:
+    kulonbseg = (ido_.date() - most.date()).days
+    if kulonbseg == 0:
+        return "ma"
+    if kulonbseg == 1:
+        return "holnap"
+    if 1 < kulonbseg < 7:
+        return NAP_RAGOS[ido_.weekday()]
+    return f"{ido_:%m. %d.}"
 
 
 def ido(szoveg: str) -> time:

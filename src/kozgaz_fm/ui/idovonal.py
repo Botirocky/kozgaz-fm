@@ -17,16 +17,14 @@ class Idovonal(QWidget):
         self.orak: list[tuple[datetime, datetime]] = []
         self.most = datetime.now()
         self.zene_szol = False
-        self.ures_szoveg = "Ma nincs tanítás"
         self.setMinimumHeight(78)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, False)
 
-    def beallit(self, orak: list[tuple[datetime, datetime]], most: datetime, zene_szol: bool,
-                ures_szoveg: str = "Ma nincs tanítás") -> None:
-        valtozott = (orak != self.orak or zene_szol != self.zene_szol or ures_szoveg != self.ures_szoveg
+    def beallit(self, orak: list[tuple[datetime, datetime]], most: datetime, zene_szol: bool) -> None:
+        valtozott = (orak != self.orak or zene_szol != self.zene_szol
                      or int(most.timestamp()) // 5 != int(self.most.timestamp()) // 5)
-        self.orak, self.most, self.zene_szol, self.ures_szoveg = orak, most, zene_szol, ures_szoveg
+        self.orak, self.most, self.zene_szol = orak, most, zene_szol
         if valtozott:
             self.update()
 
@@ -38,12 +36,8 @@ class Idovonal(QWidget):
     def paintEvent(self, _esemeny) -> None:
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        szel, mag = self.width(), self.height()
+        szel = self.width()
         if not self.orak:
-            p.setPen(QColor(SZIN["halvany"]))
-            p.setFont(szam_betu(10.5))
-            p.drawText(QRectF(0, 0, szel, mag), Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
-                       self.ures_szoveg)
             return
         eleje = self.orak[0][0] - PEREM
         vege = self.orak[-1][1] + PEREM

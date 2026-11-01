@@ -67,6 +67,10 @@ class Oszlopdiagram(QWidget):
         also = self.rect().bottom() - 22
         p.setPen(QColor(SZIN["keret"]))
         p.drawLine(QPointF(4, also + 0.5), QPointF(self.width() - 4, also + 0.5))
+        if not any(n["zene_perc"] for n in self.napok):
+            p.setPen(QColor(SZIN["halvany"]))
+            p.drawText(QRectF(0, 0, self.width(), also), Qt.AlignmentFlag.AlignCenter,
+                       "Ebben az időszakban még nem szólt zene")
         lepes = max(1, len(self.napok) // 8)
         for i, n in enumerate(self.napok):
             r = self._sav(i)
@@ -98,6 +102,7 @@ class Oszlopdiagram(QWidget):
 
 def _szamkartya(cim: str) -> tuple[QWidget, object, object]:
     doboz = QWidget()
+    doboz.setProperty("szerep", "atlatszo")
     elr = QVBoxLayout(doboz)
     elr.setContentsMargins(0, 0, 0, 0)
     elr.setSpacing(2)

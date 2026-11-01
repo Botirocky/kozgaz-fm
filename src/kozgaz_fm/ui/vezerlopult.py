@@ -14,8 +14,8 @@ __lazy_modules__ = [
 
 from datetime import datetime, timedelta
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor
+from PySide6.QtCore import QSize, Qt
+from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import (
     QComboBox,
     QGridLayout,
@@ -30,7 +30,7 @@ from PySide6.QtWidgets import (
 
 from kozgaz_fm import sajat_hangok
 from kozgaz_fm.hang import FORRAS_TIPUSOK
-from kozgaz_fm.orarend import CSENGOK, KULONLEGES, Szakasz, Tipus, allapot, napi_orak
+from kozgaz_fm.orarend import CSENGOK, KULONLEGES, Szakasz, Tipus, allapot, nap_szoveg, napi_orak
 from kozgaz_fm.ui.elemek import Kartya, Oldal, cimke, gomb, ikon_gomb, kapcsolo, sor
 from kozgaz_fm.ui.idovonal import Idovonal
 from kozgaz_fm.ui.tema import SZIN, ikon, szam_betu
@@ -60,8 +60,7 @@ class Vezerlopult(Oldal):
         self._kartyak = [self._gyors_kartya(), self._zene_kartya(), self._mai_kartya()]
         self._szeles: bool | None = None
         self._elrendez(True)
-        self.add(self.racs)
-        self.elrendezes.addStretch(1)
+        self.add(self.racs, 1)
         v.frissult.connect(self.frissit)
         v.zene.szam_valtozott.connect(self._szam)
         v.zene.allapot_valtozott.connect(self._zene_gombok)
@@ -194,7 +193,15 @@ class Vezerlopult(Oldal):
         self.lista = QListWidget()
         self.lista.setMinimumHeight(260)
         self.lista.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        k.add(self.lista)
+        self.lista.setFont(szam_betu(10.5, QFont.Weight.Normal))
+        self.lista.setIconSize(QSize(16, 16))
+        self.lista_ures = cimke("Ma nincs csengetés", "ures", sortores=True)
+        self.lista_ures.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lista_ures.setMinimumHeight(120)
+        self.lista_ures.hide()
+        k.add(self.lista_ures)
+        k.elrendezes.setStretchFactor(self.lista_ures, 1)
+        k.add(self.lista, 1)
         return k
 
     def frissit(self) -> None:
@@ -211,13 +218,15 @@ class Vezerlopult(Oldal):
         else:
             self.hatra_cimke.setText("")
         if a.kovetkezo:
-            nap = "Ma" if a.kovetkezo.ido.date() == most.date() else f"{a.kovetkezo.ido:%m.%d.}"
-            kovetkezo = f"Következő: {nap} {a.kovetkezo.ido:%H:%M}, {a.kovetkezo.leiras}"
+            kovetkezo = (f"Következő: {nap_szoveg(a.kovetkezo.ido, most)} {a.kovetkezo.ido:%H:%M}, "
+                         f"{a.kovetkezo.leiras}")
         else:
             kovetkezo = "A következő két hétben nincs csengetés"
         self.kovetkezo_cimke.setText(f"Csendes időszak: {a.csend} · {kovetkezo}" if a.csend else kovetkezo)
-        ures = a.szunnap_nev or ("Ma nincs csengetés" if a.szakasz is Szakasz.NINCS else "Ma nincs tanítás")
-        self.idovonal.beallit(napi_orak(b, most.date()), most, self.v.zene.szol, ures)
+        orak = napi_orak(b, most.date())
+        self.idovonal.setVisible(bool(orak))
+        self.idovonal.beallit(orak, most, self.v.zene.szol)
+        self._szakasz_jelzes(a)
         if not self.isVisible():
             return
         self._forrasok()
@@ -235,6 +244,20 @@ class Vezerlopult(Oldal):
             self.hangero.blockSignals(False)
             self.hangero_cimke.setText(f"{b.zene_hangero}%")
         self._zene_gombok()
+
+    def _szakasz_jelzes(self, a) -> None:
+        if a.csend:
+            jelzes = "csend"
+        elif a.szakasz is Szakasz.ORA:
+            jelzes = "ora"
+        elif a.szakasz in (Szakasz.SZUNET, Szakasz.REGGEL):
+            jelzes = "szunet"
+        else:
+            jelzes = ""
+        if self.nap_kartya.property("szakasz") != jelzes:
+            self.nap_kartya.setProperty("szakasz", jelzes)
+            self.nap_kartya.style().unpolish(self.nap_kartya)
+            self.nap_kartya.style().polish(self.nap_kartya)
 
     def _forrasok(self) -> None:
         b = self.v.b
@@ -263,8 +286,8 @@ class Vezerlopult(Oldal):
         if getattr(self, "_lista_kulcs", None) != kulcs:
             self._lista_kulcs = kulcs
             self.lista.clear()
-            if not esemenyek:
-                self.lista.addItem("Ma nincs csengetés.")
+            self.lista.setVisible(bool(esemenyek))
+            self.lista_ures.setVisible(not esemenyek)
             for e in esemenyek:
                 szoveg = f"{e.ido:%H:%M}    {e.leiras if e.tipus is not Tipus.ZENE_INDUL else 'Szünetzene'}"
                 elem = QListWidgetItem(ikon(_esemeny_ikon(e.tipus), SZIN["halvany"]), szoveg)
@@ -278,7 +301,11 @@ class Vezerlopult(Oldal):
                 continue
             mult = ido <= most
             elem.setForeground(QColor(SZIN["tiltott"]) if mult else QColor(SZIN["szoveg"]))
-            if not mult and kovetkezo_sor is None:
+            kovetkezo = not mult and kovetkezo_sor is None
+            betu = elem.font()
+            betu.setWeight(QFont.Weight.DemiBold if kovetkezo else QFont.Weight.Normal)
+            elem.setFont(betu)
+            if kovetkezo:
                 kovetkezo_sor = i
         if kovetkezo_sor is not None and getattr(self, "_kovetkezo_sor", None) != kovetkezo_sor:
             self._kovetkezo_sor = kovetkezo_sor

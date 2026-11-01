@@ -28,7 +28,7 @@ __lazy_modules__ = [
 
 import contextlib
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtCore import QEvent, QObject, QSize, Qt, QTimer
@@ -49,7 +49,7 @@ from PySide6.QtWidgets import (
 
 from kozgaz_fm import APP_NEV, __version__, rendszer
 from kozgaz_fm.hang import kimeneti_eszkoz
-from kozgaz_fm.orarend import Szakasz, allapot
+from kozgaz_fm.orarend import Szakasz, allapot, nap_szoveg
 from kozgaz_fm.ui import tema
 from kozgaz_fm.ui.beallitas_oldal import BeallitasOldal
 from kozgaz_fm.ui.bemondas_oldal import BemondasOldal
@@ -79,6 +79,7 @@ OLDALAK = [
     ("Beállítások", "beallitas", BeallitasOldal),
     ("Súgó", "nevjegy", SugoOldal),
 ]
+NAV_CSOPORTOK = {1: "Műsor", 5: "Áttekintés", 7: "Rendszer"}
 VEDETT = (CsengetesOldal, ZeneOldal, NaptarOldal, BemondasOldal, BeallitasOldal)
 ELETJEL = os.environ.get("KOZGAZ_FM_ELETJEL", "")
 TEVEKENYSEG = (QEvent.Type.KeyPress, QEvent.Type.MouseButtonPress, QEvent.Type.Wheel)
@@ -122,6 +123,8 @@ class FoAblak(QMainWindow):
         self._masodperc.timeout.connect(self._tick)
         self._masodperc.start()
         QShortcut(QKeySequence("F11"), self, activated=self._kijelzo_nyit)
+        for i in range(len(OLDALAK)):
+            QShortcut(QKeySequence(f"Ctrl+{i + 1}"), self, activated=lambda i=i: self._lapozas(i))
         app = QApplication.instance()
         app.styleHints().colorSchemeChanged.connect(lambda _s: self._rendszer_tema())
         self._figyelo = _Tevekenyseg(self._tevekenyseg, self)
@@ -177,20 +180,21 @@ class FoAblak(QMainWindow):
         e.setContentsMargins(0, 22, 0, 16)
         e.setSpacing(2)
         logo = cimke()
-        logo.setPixmap(logo_pixmap(116))
+        logo.setPixmap(logo_pixmap(100))
         logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         e.addWidget(logo)
-        e.addSpacing(22)
+        e.addSpacing(12)
         self.nav = QButtonGroup(sav)
         self.nav.setExclusive(True)
         for i, (nev, ikon_nev, _osztaly) in enumerate(OLDALAK):
+            if i in NAV_CSOPORTOK:
+                e.addWidget(cimke(NAV_CSOPORTOK[i], "nav_cim"))
             g = gomb(nev, szerep="nav")
             g.setIcon(ikon(ikon_nev, SZIN["halvany"], SZIN["kek"]))
             g.setIconSize(QSize(18, 18))
             g.setCheckable(True)
             g.setChecked(i == 0)
-            if issubclass(_osztaly, VEDETT):
-                g.setToolTip("PIN-kóddal védhető oldal")
+            g.setToolTip(f"Ctrl+{i + 1}" + (" · PIN-kóddal védhető oldal" if issubclass(_osztaly, VEDETT) else ""))
             self.nav.addButton(g, i)
             e.addWidget(g)
         self.nav.idClicked.connect(self._lapozas)
@@ -233,7 +237,7 @@ class FoAblak(QMainWindow):
         elo_e.addWidget(self.elo_ikon)
         elo_e.addWidget(self.elo_szoveg)
         e.addWidget(self.elo)
-        self.uj_verzio = gomb("", "le", "fo", "Új verzió érhető el – részletek és telepítés", SZIN["kek"])
+        self.uj_verzio = gomb("Új verzió", "le", "fo", "Új verzió érhető el – részletek és telepítés", SZIN["kek"])
         self.uj_verzio.clicked.connect(self.frissites_ablak)
         self.uj_verzio.hide()
         e.addWidget(self.uj_verzio)
@@ -454,8 +458,8 @@ class FoAblak(QMainWindow):
         elif a.szakasz in (Szakasz.SZUNET, Szakasz.REGGEL):
             self.fej_hatra.setText(f"Becsengetésig {idotartam(hatra)}")
         elif a.kovetkezo is not None:
-            nap = "holnap" if a.kovetkezo.ido.date() == most.date() + timedelta(days=1) else f"{a.kovetkezo.ido:%m.%d.}"
-            self.fej_hatra.setText(f"Következő csengetés {nap} {a.kovetkezo.ido:%H:%M}")
+            self.fej_hatra.setText(f"Következő csengetés {nap_szoveg(a.kovetkezo.ido, most)} "
+                                   f"{a.kovetkezo.ido:%H:%M}")
         else:
             self.fej_hatra.setText("A következő két hétben nincs csengetés")
         riaszt = self.v.riasztas
@@ -508,6 +512,8 @@ class FoAblak(QMainWindow):
         kiadas = self.v.frissito.kiadas
         self.as_frissites.setText(f"<span style='color:{SZIN['kek']}'>Új verzió érhető el: {kiadas.verzio}</span>"
                                   if kiadas is not None else "")
+        for c in (self.as_tartalek, self.as_kimenet, self.as_ido, self.as_jelszo, self.as_zar, self.as_frissites):
+            c.setVisible(bool(c.text()))
 
     def _uzenet(self, szoveg: str, szint: str) -> None:
         self.ertesites.mutat(szoveg, szint)

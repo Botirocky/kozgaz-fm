@@ -122,6 +122,15 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
 
+## Újdonságok az 1.4.0-ban
+
+- Áttekinthetőbb Vezérlőpult: színes jelzés mutatja, hogy óra vagy szünet van, a következő csengetés szövegesen látszik
+  (holnap, csütörtökön), szünnapon nem jelenik meg üres idővonal, a Mai menetrend kiemeli a következő eseményt.
+- Csoportosított oldalsáv, *Ctrl+1* … *Ctrl+9* gyorsbillentyűk.
+- Látható nyilak a lenyíló listákon és a számmezőkön, egységes jelölőnégyzetek, nagyobb térköz a gombok ikonja és szövege
+  között, sötét módban is látható naptárnyilak.
+- A Zene és a Naptár oldal kártyái alapméretű ablakban nem lógnak ki a képből.
+
 ## Újdonságok az 1.3.0-ban
 
 - Az iskola adatai a kghsz.hu-ról: a *Tanév rendje…* ablak *Az iskola honlapjáról* gombja letölti a tanítási

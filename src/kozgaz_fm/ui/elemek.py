@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from kozgaz_fm.ui.tema import SZIN, ikon
+from kozgaz_fm.ui.tema import GOMB_IKON, GOMB_RES, SZIN, gomb_ikon, ikon
 
 
 def cimke(szoveg: str = "", szerep: str = "", sortores: bool = False) -> QLabel:
@@ -31,8 +31,12 @@ def gomb(szoveg: str, ikon_nev: str = "", szerep: str = "", tipp: str = "", szin
     if ikon_nev:
         alap = {"fo": "#FFFFFF", "adas": SZIN["kiemelt_szoveg"], "veszely": SZIN["veszely_szoveg"]}.get(szerep,
                                                                                                 SZIN["szoveg"])
-        g.setIcon(ikon(ikon_nev, szin or alap))
-        g.setIconSize(QSize(18, 18))
+        if szoveg:
+            g.setIcon(gomb_ikon(ikon_nev, szin or alap))
+            g.setIconSize(QSize(GOMB_IKON + GOMB_RES, GOMB_IKON))
+        else:
+            g.setIcon(ikon(ikon_nev, szin or alap))
+            g.setIconSize(QSize(GOMB_IKON, GOMB_IKON))
     if szerep:
         g.setProperty("szerep", szerep)
     if tipp:
@@ -65,9 +69,12 @@ class Kartya(QFrame):
             self.elrendezes.addWidget(self.cim)
         self.elrendezes.addStretch(1)
 
-    def add(self, elem) -> None:
+    def add(self, elem, nyujt: int = 0) -> None:
         hely = self.elrendezes.count() - 1
-        if isinstance(elem, QWidget):
+        if nyujt:
+            self.elrendezes.takeAt(hely)
+            self.elrendezes.addWidget(elem, nyujt)
+        elif isinstance(elem, QWidget):
             self.elrendezes.insertWidget(hely, elem)
         else:
             self.elrendezes.insertLayout(hely, elem)
@@ -109,7 +116,7 @@ def ido_mezo(szoveg: str) -> QTimeEdit:
 def gorgeto(belso: QWidget) -> QScrollArea:
     g = QScrollArea()
     g.setWidgetResizable(True)
-    g.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    g.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
     g.setFrameShape(QFrame.Shape.NoFrame)
     g.setWidget(belso)
     return g
