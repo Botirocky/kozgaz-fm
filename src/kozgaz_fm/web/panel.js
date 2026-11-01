@@ -173,6 +173,7 @@ function megjelenit(a) {
   szam.classList.toggle("csend", !z.szol);
   $("zene-gomb").textContent = z.szol ? "Zene leállítása" : "Zene indítása";
   $("kovetkezo-gomb").disabled = !z.szol;
+  $("most-tiltas-gomb").disabled = !z.szol;
   const forrasok = z.forrasok.map((f) => [String(f.index), f.nev]);
   if (!forrasok.length) forrasok.push(["", "Nincs zeneforrás beállítva"]);
   opciok($("forras"), forrasok, z.forras === null ? "" : String(z.forras));
@@ -183,6 +184,7 @@ function megjelenit(a) {
 
   zenesor(z.sor);
   keresek(a.zenekeres);
+  moderalas(a.zenekeres);
   sablonok(a.sablonok);
   $("csend-sav").hidden = !a.csend;
   $("csend-indito").hidden = !!a.csend;
@@ -296,7 +298,8 @@ function zenesor(sor) {
 }
 
 function keresek(zk) {
-  $("keresek-blokk").hidden = !zk.aktiv && !zk.keresek.length;
+  $("keresek-blokk").hidden = !zk.aktiv && !zk.keresek.length && !zk.mai.length && !zk.tiltott_szamok.length
+    && !zk.tiltott_telefonok.length;
   $("keresek-ures").hidden = zk.keresek.length > 0;
   const lista = $("keresek");
   const kulcs = JSON.stringify(zk.keresek);
@@ -345,6 +348,54 @@ function keresek(zk) {
     }
     return li;
   }));
+}
+
+function moderaloGomb(szoveg, muvelet, adat) {
+  const g = document.createElement("button");
+  g.type = "button";
+  g.className = "gomb";
+  g.dataset.muvelet = muvelet;
+  Object.assign(g.dataset, adat);
+  g.textContent = szoveg;
+  return g;
+}
+
+function moderaloElem(cim, meta, gombok) {
+  const li = document.createElement("li");
+  const nev = document.createElement("strong");
+  nev.textContent = cim;
+  const leiras = document.createElement("p");
+  leiras.className = "keres-meta";
+  leiras.textContent = meta;
+  li.append(nev, leiras);
+  if (gombok.length) {
+    const sor = document.createElement("div");
+    sor.className = "sor";
+    sor.append(...gombok);
+    li.append(sor);
+  }
+  return li;
+}
+
+function moderalas(zk) {
+  const kulcs = JSON.stringify([zk.mai, zk.tiltott_szamok, zk.tiltott_telefonok]);
+  if ($("mai-blokk").dataset.kulcs === kulcs) return;
+  $("mai-blokk").dataset.kulcs = kulcs;
+  $("mai-blokk").hidden = !zk.mai.length;
+  $("mai-keresek").replaceChildren(...zk.mai.map((k) => {
+    const gombok = [];
+    if (["elfogadva", "szol"].includes(k.allapot)) gombok.push(moderaloGomb("Levétel a sorból", "levetel", { azon: k.azon }));
+    if (k.yt_van) gombok.push(moderaloGomb("Szám tiltása", "szam-tiltas", { azon: k.azon }));
+    if (!k.telefon_tiltva) gombok.push(moderaloGomb("Telefon tiltása", "telefon-tiltas", { azon: k.azon }));
+    const meta = [k.ido, k.nev, k.allapot_nev, k.ok, k.telefon_tiltva ? "telefon letiltva" : ""].filter(Boolean).join(" · ");
+    return moderaloElem(k.cim || k.szoveg, meta, gombok);
+  }));
+  $("tiltott-szamok-blokk").hidden = !zk.tiltott_szamok.length;
+  $("tiltott-szamok").replaceChildren(...zk.tiltott_szamok.map((t) => moderaloElem(
+    t.cim, t.ido, [moderaloGomb("Feloldás", "szam-feloldas", { azon: t.azon })])));
+  $("tiltott-telefonok-blokk").hidden = !zk.tiltott_telefonok.length;
+  $("tiltott-telefonok").replaceChildren(...zk.tiltott_telefonok.map((t) => moderaloElem(
+    t.nev || "Névtelen telefon", `${t.ig}-ig`, [moderaloGomb("Feloldás", "telefon-feloldas", { kulcs: t.kulcs })])));
 }
 
 function sablonok(lista) {
@@ -399,6 +450,24 @@ document.addEventListener("click", (esemeny) => {
       break;
     case "riasztas-le":
       muvelet("DELETE", "/riasztas", undefined, "Riasztás leállítva");
+      break;
+    case "most-tiltas":
+      muvelet("POST", "/zene/tiltas", undefined, "Szám letiltva");
+      break;
+    case "levetel":
+      muvelet("POST", "/zenekeres/levetel", { azon: gomb.dataset.azon }, "Levéve a sorból");
+      break;
+    case "szam-tiltas":
+      muvelet("POST", "/zenekeres/szam-tiltas", { azon: gomb.dataset.azon }, "Szám letiltva");
+      break;
+    case "telefon-tiltas":
+      muvelet("POST", "/zenekeres/telefon-tiltas", { azon: gomb.dataset.azon }, "Telefon letiltva");
+      break;
+    case "szam-feloldas":
+      muvelet("DELETE", "/zene/tiltas", { azon: gomb.dataset.azon }, "Tiltás feloldva");
+      break;
+    case "telefon-feloldas":
+      muvelet("DELETE", "/zenekeres/telefon-tiltas", { kulcs: gomb.dataset.kulcs }, "Tiltás feloldva");
       break;
     case "dontes": {
       const elfogad = gomb.dataset.elfogad === "true";

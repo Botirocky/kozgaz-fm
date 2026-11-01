@@ -58,6 +58,7 @@ MAX_BEMONDAS = 500
 MAX_SABLON = 30
 CSEND_PERC = (5, 240)
 ALAP_PORT = 8080
+MAI_KERESEK = 30
 
 STATIKUS = {
     "/": ("web/panel.html", "text/html; charset=utf-8"),
@@ -80,7 +81,7 @@ KULCSOS = {
 }
 
 KERES_STATUSZ = {"disabled": 503, "daily_limit": 429, "rate_limited": 429, "queue_full": 429, "not_found": 404,
-                 "conflict": 409, "no_source": 409}
+                 "conflict": 409, "no_source": 409, "device_blocked": 403}
 
 BIZTONSAG = {
     "Content-Security-Policy": "default-src 'self'; img-src 'self'; object-src 'none'; base-uri 'none'; "
@@ -109,6 +110,12 @@ UTVONALAK = {
     ("DELETE", "/api/v1/riasztas"): "riasztas_leallitas",
     ("PATCH", "/api/v1/ma"): "ma_allitas",
     ("POST", "/api/v1/zenekeres/dontes"): "zenekeres_dontes",
+    ("POST", "/api/v1/zenekeres/levetel"): "zenekeres_levetel",
+    ("POST", "/api/v1/zenekeres/szam-tiltas"): "zenekeres_szam_tiltas",
+    ("POST", "/api/v1/zenekeres/telefon-tiltas"): "zenekeres_telefon_tiltas",
+    ("DELETE", "/api/v1/zenekeres/telefon-tiltas"): "zenekeres_telefon_feloldas",
+    ("POST", "/api/v1/zene/tiltas"): "zene_tiltas",
+    ("DELETE", "/api/v1/zene/tiltas"): "zene_tiltas_feloldas",
 }
 
 
@@ -532,7 +539,12 @@ class WebMuveletek(_Fosszal):
             "menetrend": menetrend,
             "sablonok": list(b.bemondas_sablonok),
             "zenekeres": {"aktiv": b.zenekeres, "auto": b.zenekeres_auto,
-                          "keresek": [k.admin() for k in v.keresek.fuggo()]},
+                          "keresek": [k.admin() for k in v.keresek.fuggo()],
+                          "mai": [{**k.admin(), "telefon_tiltva": v.telefon_tiltott(k.eszkoz)}
+                                  for k in v.keresek.mai()[:MAI_KERESEK]],
+                          "tiltott_szamok": [{"azon": t.azon, "cim": t.cim, "ido": t.ido} for t in b.tiltott_szamok],
+                          "tiltott_telefonok": [{"kulcs": t.kulcs, "nev": t.nev, "ig": t.ig}
+                                                for t in b.tiltott_telefonok if t.ig >= ma]},
         }
 
     def _riasztas_kozben(self) -> None:
@@ -663,6 +675,7 @@ class WebMuveletek(_Fosszal):
         b = self.v.b
         return {"aktiv": b.zenekeres, "auto": b.zenekeres_auto, "cim": b.kijelzo_cim, "napi": b.zenekeres_napi,
                 "maradek": self.v.keresek.maradek(eszkoz, b.zenekeres_napi), "max_perc": b.zenekeres_max_perc,
+                "tiltva": self.v.telefon_tiltott(eszkoz),
                 "sajat": [k.nyilvanos() for k in self.v.keresek.sajat(eszkoz)]}
 
     def zenekeres_kuldes(self, adat: dict, ip: str, eszkoz: str) -> dict:
@@ -678,6 +691,37 @@ class WebMuveletek(_Fosszal):
         if not isinstance(azon, str) or elfogad is None:
             raise WebHiba(422, "validation_error", "Hiányzik a kérés azonosítója vagy a döntés.")
         self.v.zenekeres_dontes(azon, elfogad, f"webpanel, {ip}")
+        return self.allapot()
+
+    @staticmethod
+    def _szoveg_mezo(adat: dict, mezo: str) -> str:
+        ertek = adat.get(mezo)
+        if not isinstance(ertek, str) or not ertek:
+            raise WebHiba(422, "validation_error", "Hiányzik a művelet azonosítója.")
+        return ertek
+
+    def zenekeres_levetel(self, adat: dict, ip: str) -> dict:
+        self.v.zenekeres_levesz(self._szoveg_mezo(adat, "azon"), f"webpanel, {ip}")
+        return self.allapot()
+
+    def zenekeres_szam_tiltas(self, adat: dict, ip: str) -> dict:
+        self.v.zenekeres_szam_tiltas(self._szoveg_mezo(adat, "azon"), f"webpanel, {ip}")
+        return self.allapot()
+
+    def zenekeres_telefon_tiltas(self, adat: dict, ip: str) -> dict:
+        self.v.zenekeres_telefon_tiltas(self._szoveg_mezo(adat, "azon"), f"webpanel, {ip}")
+        return self.allapot()
+
+    def zenekeres_telefon_feloldas(self, adat: dict, ip: str) -> dict:
+        self.v.telefon_feloldas(self._szoveg_mezo(adat, "kulcs"), f"webpanel, {ip}")
+        return self.allapot()
+
+    def zene_tiltas(self, _adat: dict, ip: str) -> dict:
+        self.v.most_szolo_tiltasa(f"webpanel, {ip}")
+        return self.allapot()
+
+    def zene_tiltas_feloldas(self, adat: dict, ip: str) -> dict:
+        self.v.szam_feloldas(self._szoveg_mezo(adat, "azon"), f"webpanel, {ip}")
         return self.allapot()
 
     def riasztas_inditas(self, _adat: dict, ip: str) -> dict:

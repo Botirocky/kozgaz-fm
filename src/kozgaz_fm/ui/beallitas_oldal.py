@@ -49,7 +49,7 @@ from kozgaz_fm.vezerlo import Vezerlo
 
 HELYI_MEZOK = ("admin_pin", "web_panel", "web_port", "web_jelszo", "tartalek_mod", "tartalek_cim", "tartalek_kulcs",
                "ertesites_ntfy", "ertesites_ntfy_token", "ertesites_email", "smtp_szerver", "smtp_port", "smtp_mod",
-               "smtp_felhasznalo", "smtp_jelszo", "smtp_felado", "kimenet", "zonak")
+               "smtp_felhasznalo", "smtp_jelszo", "smtp_felado", "kimenet", "zonak", "tiltott_telefonok")
 
 
 class BeallitasOldal(Oldal):

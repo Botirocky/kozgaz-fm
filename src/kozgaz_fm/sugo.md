@@ -141,6 +141,23 @@ Szabályok, amelyeket a program magától betart:
   játszható le (mappa, MP3 vagy YouTube forrás kell).
 - A kérések a program újraindításáig maradnak meg.
 
+### Moderálás
+
+Ha valami mégsem való a folyosóra, a *Zene → Moderálás* kártyán és a webpanel *Zenekérések* részében beavatkozhatsz.
+Minden művelet bekerül a naplóba, a tiltások pedig feloldhatók.
+
+- **A most szóló szám tiltása:** azonnal a következő számra lép, és a szám többé nem szól. A webpanelen a *Szünetzene*
+  résznél van a *Szám tiltása* gomb.
+- **Levétel a sorból:** a kért szám kikerül a lejátszási sorból, ha éppen szól, akkor a következő jön. Ezt a számot utána
+  kb. 12 óráig senki nem kérheti újra, és a diák napi kerete sem nő vissza.
+- **Szám tiltása:** a szám minden forrásból kimarad, és nem kérhető, amíg fel nem oldod. A cím is számít, ezért
+  ugyanannak a számnak egy másik feltöltése is kiesik, ha a címe az előadóval együtt ugyanaz.
+- **Telefon tiltása:** az adott telefon egy hétig nem kérhet, a függő és sorban álló kérései törlődnek.
+
+A telefon tiltása a böngészőben tárolt azonosítón alapul, ezért a sütik törlésével vagy privát ablakkal megkerülhető. A
+hálózati címenkénti óránkénti korlát ettől még él. A tiltás feloldása után a már kivett szám a következő betöltéskor
+kerül vissza a listába. A tartalékgép átveszi a letiltott számokat, a letiltott telefonokat nem.
+
 ### Spotify összekapcsolása (egyszer kell)
 
 1. Nyisd meg a [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard) oldalt, és lépj be

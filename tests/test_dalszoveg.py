@@ -146,7 +146,7 @@ def test_tar_serult_fajl(tmp_path: Path):
 def zene(monkeypatch) -> ZeneLejatszo:
     monkeypatch.setattr(hang.hatter, "futtat", lambda fv, siker=None, hiba=None: siker and siker(fv()))
     z = ZeneLejatszo()
-    z.forras = ZeneForras("Teszt", "mappa", "x")
+    z.forras = ZeneForras("mappa", "Teszt", "x")
     return z
 
 

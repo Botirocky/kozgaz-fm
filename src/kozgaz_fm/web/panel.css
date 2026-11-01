@@ -273,7 +273,7 @@ output { color: var(--szoveg); font-weight: 600; margin-left: 4px; }
 .keres-elem.elfogadva, .keres-elem.szol { border-left-color: var(--szol); }
 .keres-elem.szol .keres-allapot { color: var(--szol); font-weight: 600; }
 .keres-elem.elutasitva { border-left-color: var(--hiba); }
-.keres-elem.elutasitva .keres-allapot { color: var(--hiba); }
+.keres-elem.elutasitva .keres-allapot, .keres-elem.levett .keres-allapot { color: var(--hiba); }
 .halvany-szoveg { color: var(--halvany); }
 .keresek-blokk { order: 2; }
 .keresek { list-style: none; margin: 0; padding: 0; }

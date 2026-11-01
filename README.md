@@ -52,6 +52,8 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
 - **Műsorblokkok:** szünetenként és naponként más zeneforrás, a szünet sorszáma szerint (rövidített napon is).
 - **Szűrő:** trágár szavak (a csillagozott és számokkal írt alakok is), „Explicit” jelölés, saját tiltólista,
   korhatáros YouTube-videók kihagyása.
+- **Moderálás:** a most szóló szám egy gombbal letiltható, a kért szám levehető a sorból, a visszaélő telefon egy
+  hétre kizárható, a programból és a webpanelről is.
 - **Dalszöveg-szűrő:** letölti a szám szövegét, pontozza a trágár szavakat, és a nagyon trágár számot kiveszi a
   sorból; három érzékenységi fokozat, MP3-ra, YouTube-ra, Spotifyra és a kért számokra is érvényes.
 - **Világos és sötét téma**, a mai nap idővonala a Vezérlőpulton.
@@ -119,6 +121,12 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
+
+## Újdonságok az 1.2.0-ban
+
+- Moderálás a programban és a webpanelen: a most szóló szám tiltása egy gombbal, kért szám levétele a sorból, telefon
+  kizárása egy hétre, mindez feloldható és naplózva van.
+- A letiltott szám minden forrásból kimarad (más feltöltésben is, ha a címe ugyanaz), és nem kérhető újra.
 
 ## Újdonságok az 1.1-ben
 

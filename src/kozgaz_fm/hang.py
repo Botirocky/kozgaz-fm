@@ -13,6 +13,7 @@ __lazy_modules__ = [
     "kozgaz_fm.kimenetek",
     "kozgaz_fm.sajat_hangok",
     "kozgaz_fm.spotify",
+    "kozgaz_fm.dalszoveg",
     "kozgaz_fm.szuro",
     "kozgaz_fm.utvonalak",
 ]
@@ -29,6 +30,7 @@ from PySide6.QtMultimedia import QMediaPlayer
 
 from kozgaz_fm import hatter, sajat_hangok, youtube
 from kozgaz_fm.beallitasok import BEEPITETT_HANGOK, ZeneForras
+from kozgaz_fm.dalszoveg import DalszovegTar
 from kozgaz_fm.hangossag import Kiegyenlito
 from kozgaz_fm.kimenetek import TobbLejatszo, ZonaKimenet, eszkoz_azonosito, kimeneti_eszkoz
 from kozgaz_fm.sajat_hangok import HANGFAJLOK
@@ -271,6 +273,9 @@ class ZeneLejatszo(QObject):
         self.korhatar_tiltas = False
         self._korhatarosak: set[str] = set()
         self._tragarak: set[str] = set()
+        self._tiltott_ytok: frozenset[str] = frozenset()
+        self._tiltott_kulcsok: frozenset[str] = frozenset()
+        self._spotify_felirat = ""
         self.szoveg_or = None
         self._tarolt: dict[tuple[str, str], tuple[list[Szam], int, float]] = {}
         self._spotify_kihagyas = 0
@@ -352,6 +357,8 @@ class ZeneLejatszo(QObject):
             return "korhatáros"
         if szam.cim in self._tragarak:
             return "trágár szöveg"
+        if self.tiltott_e(szam.yt, szam.cim):
+            return "letiltott szám"
         if not self.szuro:
             return None
         mappa = szam.helyi.parent.name if szam.helyi and not szam.yt else ""
@@ -403,6 +410,51 @@ class ZeneLejatszo(QObject):
         if szam.kert or not any(s is szam for s in self.szamok):
             return
         self.kiszurve.emit(f"Trágár szövegű szám kihagyva: {szam.cim} ({reszlet})")
+        self._sorbol_kivesz(szam)
+
+    def tiltott_e(self, yt: str, cim: str) -> bool:
+        if yt and yt in self._tiltott_ytok:
+            return True
+        return bool(self._tiltott_kulcsok) and DalszovegTar.kulcs(cim) in self._tiltott_kulcsok
+
+    def tiltott_beallitas(self, ytok: set[str], cimek: list[str]) -> None:
+        kulcsok = (DalszovegTar.kulcs(c) for c in cimek)
+        self._tiltott_ytok = frozenset(ytok)
+        self._tiltott_kulcsok = frozenset(k for k in kulcsok if k.strip(" |"))
+        self._tarolt.clear()
+
+    def most_szolo(self) -> tuple[str, str] | None:
+        if not self._szol:
+            return None
+        if self.spotify_mod:
+            return (self._spotify_felirat, "") if self._spotify_felirat else None
+        if not self.szamok:
+            return None
+        szam = self.szamok[self.index]
+        return szam.cim, szam.yt
+
+    def tiltottakat_kivesz(self) -> None:
+        self._fuggo_kert = [s for s in self._fuggo_kert if not self.tiltott_e(s.yt, s.cim)]
+        if self.spotify_mod:
+            if self._szol and self.tiltott_e("", self._spotify_felirat):
+                self.kovetkezo()
+            return
+        jelenlegi = self.szamok[self.index] if self.index < len(self.szamok) else None
+        tiltottak = [s for s in self.szamok if self.tiltott_e(s.yt, s.cim)]
+        for szam in sorted(tiltottak, key=lambda s: s is jelenlegi):
+            self._sorbol_kivesz(szam)
+
+    def yt_kivesz(self, yt: str) -> None:
+        if not yt:
+            return
+        self._fuggo_kert = [s for s in self._fuggo_kert if s.yt != yt]
+        jelenlegi = self.szamok[self.index] if self.index < len(self.szamok) else None
+        talalatok = [s for s in self.szamok if s.yt == yt]
+        for szam in sorted(talalatok, key=lambda s: s is jelenlegi):
+            self._sorbol_kivesz(szam)
+        self._tarolt.clear()
+
+    def _sorbol_kivesz(self, szam: Szam) -> None:
         hely = next(i for i, s in enumerate(self.szamok) if s is szam)
         most_szol = hely == self.index and self._szol
         self.szamok.pop(hely)
@@ -912,6 +964,7 @@ class ZeneLejatszo(QObject):
                 if self._spotify_szurt(adat):
                     return
                 self.most_cim = adat["cim"]
+                self._spotify_felirat = f"{adat['eloado']} - {adat['cim']}" if adat["eloado"] else adat["cim"]
                 felirat = f"{adat['eloado']} – {adat['cim']}" if adat["eloado"] else adat["cim"]
                 self.szam_valtozott.emit(felirat, self.forras.nev if self.forras else "Spotify")
                 if self.szoveg_or is not None:
@@ -924,6 +977,8 @@ class ZeneLejatszo(QObject):
         ok = self.szuro.talalat(adat["cim"], adat["eloado"]) if self.szuro else None
         if ok is None and self.szuro and self.szuro.alap and adat.get("explicit"):
             ok = "explicit jelölés"
+        if ok is None and self.tiltott_e("", f"{adat['eloado']} - {adat['cim']}" if adat["eloado"] else adat["cim"]):
+            ok = "letiltott szám"
         if ok is None:
             self._spotify_kihagyas = 0
             return False

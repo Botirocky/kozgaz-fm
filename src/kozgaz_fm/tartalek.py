@@ -41,6 +41,7 @@ SZINKRON_MEZOK = (
     "jelzo", "jelzo_perc", "kicsengo", "zene_szunetben", "zene_min_szunet", "zene_kesleltetes",
     "zene_leall_elotte", "reggeli_zene", "reggeli_zene_tol", "ma_nincs_csengetes", "ma_nincs_zene",
     "szuro_alap", "szuro_korhataros", "szuro_szavak", "szuro_dalszoveg", "szuro_erzekenyseg",
+    "tiltott_szamok",
 )
 
 

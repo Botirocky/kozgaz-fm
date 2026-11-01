@@ -1,5 +1,7 @@
-__lazy_modules__ = ["secrets", "collections.abc", "dataclasses", "datetime", "urllib.parse", "kozgaz_fm.szuro"]
+__lazy_modules__ = ["hashlib", "secrets", "collections.abc", "dataclasses", "datetime", "urllib.parse",
+                    "kozgaz_fm.szuro"]
 
+import hashlib
 import secrets
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -13,6 +15,7 @@ MAX_NEV = 30
 MAX_VARAKOZO = 40
 IP_ORANKENT = 20
 AUTO_MAX_SOR = 10
+TELEFON_TILTAS_NAP = 7
 MEGORZES = timedelta(hours=12)
 YOUTUBE_GAZDAK = {"youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be"}
 
@@ -22,6 +25,7 @@ ALLAPOT_NEVEK = {
     "elfogadva": "Elfogadva, hamarosan szól",
     "szol": "Most szól",
     "elutasitva": "Elutasítva",
+    "levett": "Levették a sorból",
 }
 
 
@@ -53,7 +57,12 @@ class Keres:
 
     def admin(self) -> dict:
         return {**self.nyilvanos(), "nev": self.nev, "hossz": self.hossz, "ip": self.ip, "megjegyzes": self.megjegyzes,
+                "yt_van": bool(self.yt),
                 "link": f"https://www.youtube.com/watch?v={self.yt}" if self.yt else ""}
+
+
+def telefon_kulcs(eszkoz: str) -> str:
+    return hashlib.sha256(eszkoz.encode()).hexdigest()[:32]
 
 
 def youtube_cel(szoveg: str) -> str:
@@ -109,6 +118,10 @@ class Keresek:
         ma = self._ido().date()
         return [k for k in reversed(self.lista) if k.eszkoz == eszkoz and k.ido.date() == ma]
 
+    def mai(self) -> list[Keres]:
+        ma = self._ido().date()
+        return [k for k in reversed(self.lista) if k.ido.date() == ma]
+
     def fuggo(self) -> list[Keres]:
         return [k for k in self.lista if k.allapot in ("kereses", "varakozik")]
 
@@ -138,12 +151,14 @@ class Keresek:
 
     def talalat(self, azon: str, yt: str, cim: str, hossz: int, max_perc: int, tiltott: list[str],
                 korhatar: int = 0, szuro: Szuro | None = None, korhatar_tiltas: bool = True,
-                tragar_szoveg: bool = False) -> Keres:
+                tragar_szoveg: bool = False, tiltott_szam: bool = False) -> Keres:
         k = self.keres(azon)
         if k.allapot != "kereses":
             return k
         k.yt, k.cim, k.hossz = yt, cim, hossz
-        if korhatar_tiltas and korhatar >= KORHATAR:
+        if tiltott_szam:
+            self._elutasit(k, "Ezt a számot a rendszergazda letiltotta.")
+        elif korhatar_tiltas and korhatar >= KORHATAR:
             self._elutasit(k, "Korhatáros videó nem kérhető.")
         elif tiltott_e(cim, tiltott) or (szuro is not None and szuro.talalat(cim)):
             self._elutasit(k, "A szám nem engedélyezett.")
@@ -157,6 +172,8 @@ class Keresek:
             self._elutasit(k, "Ezt a számot már kérték, hamarosan szólhat.")
         elif any(m is not k and m.yt == yt and m.allapot == "szol" for m in self.lista):
             self._elutasit(k, "Ez a szám nemrég már szólt.")
+        elif any(m is not k and m.yt == yt and m.allapot == "levett" for m in self.lista):
+            self._elutasit(k, "Ezt a számot nemrég levették a sorból.")
         else:
             k.allapot = "varakozik"
         return k
@@ -177,6 +194,14 @@ class Keresek:
         if elfogad:
             k.allapot = "elfogadva"
         else:
+            self._elutasit(k, "")
+        return k
+
+    def levesz(self, azon: str) -> Keres:
+        k = self.keres(azon)
+        if k.allapot in ("elfogadva", "szol"):
+            k.allapot = "levett"
+        elif k.allapot in ("kereses", "varakozik"):
             self._elutasit(k, "")
         return k
 

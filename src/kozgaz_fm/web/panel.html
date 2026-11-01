@@ -93,6 +93,7 @@
       <div class="sor">
         <button type="button" id="zene-gomb" class="gomb fo" data-muvelet="zene">Zene indítása</button>
         <button type="button" class="gomb" data-muvelet="kovetkezo" id="kovetkezo-gomb">Következő szám</button>
+        <button type="button" class="gomb" data-muvelet="most-tiltas" id="most-tiltas-gomb">Szám tiltása</button>
       </div>
       <div id="zenesor-blokk" hidden>
         <h3 class="alcim">Következik</h3>
@@ -108,6 +109,18 @@
       <h2 id="keresek-cim">Zenekérések</h2>
       <p id="keresek-ures" class="halvany-szoveg">Nincs jóváhagyásra váró kérés.</p>
       <ul id="keresek" class="keresek"></ul>
+      <div id="mai-blokk" hidden>
+        <h3 class="alcim">Mai kérések</h3>
+        <ul id="mai-keresek" class="keresek"></ul>
+      </div>
+      <div id="tiltott-szamok-blokk" hidden>
+        <h3 class="alcim">Letiltott számok</h3>
+        <ul id="tiltott-szamok" class="keresek"></ul>
+      </div>
+      <div id="tiltott-telefonok-blokk" hidden>
+        <h3 class="alcim">Letiltott telefonok</h3>
+        <ul id="tiltott-telefonok" class="keresek"></ul>
+      </div>
     </section>
 
     <section class="blokk ma" aria-labelledby="ma-cim">

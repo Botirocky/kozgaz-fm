@@ -43,7 +43,8 @@ function megjelenit(a) {
   $("maradek").textContent = a.maradek
     ? `Ma még ${a.maradek} számot kérhetsz. Legfeljebb ${a.max_perc} perces szám kérhető.`
     : "Mára elfogytak a kéréseid, holnap újra kérhetsz.";
-  $("urlap").querySelector("button").disabled = !a.maradek;
+  if (a.tiltva) $("maradek").textContent = "Erről a telefonról most nem kérhetsz számot.";
+  $("urlap").querySelector("button").disabled = !a.maradek || a.tiltva;
   $("sajat-blokk").hidden = !a.sajat.length;
   $("sajat").replaceChildren(...a.sajat.map((k) => {
     const li = document.createElement("li");

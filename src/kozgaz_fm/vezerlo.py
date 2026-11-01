@@ -1,6 +1,7 @@
 __lazy_modules__ = [
     "contextlib",
     "logging",
+    "secrets",
     "shutil",
     "collections",
     "dataclasses",
@@ -30,6 +31,7 @@ __lazy_modules__ = [
 
 import contextlib
 import logging
+import secrets
 import shutil
 from collections import deque
 from dataclasses import dataclass, fields
@@ -40,7 +42,15 @@ from PySide6.QtCore import QObject, QTimer, Signal
 from PySide6.QtMultimedia import QMediaDevices
 
 from kozgaz_fm import __version__, dalszoveg, hatter, sajat_hangok, youtube
-from kozgaz_fm.beallitasok import Beallitasok, Bemondas, Musorblokk, Rendkivuli, ZeneForras
+from kozgaz_fm.beallitasok import (
+    Beallitasok,
+    Bemondas,
+    Musorblokk,
+    Rendkivuli,
+    TiltottSzam,
+    TiltottTelefon,
+    ZeneForras,
+)
 from kozgaz_fm.bemondo import Bemondo
 from kozgaz_fm.dalszoveg import DalszovegHiba, DalszovegTar, Eredmeny
 from kozgaz_fm.dalszoveg_or import DalszovegOr
@@ -67,7 +77,7 @@ from kozgaz_fm.szuro import Szuro
 from kozgaz_fm.tartalek import Tartalek
 from kozgaz_fm.utvonalak import adat_mappa, eletjel_fajl, gyorsitotar_mappa, naplo_fajl
 from kozgaz_fm.webpanel import WebPanel
-from kozgaz_fm.zenekeres import Keres, Keresek, KeresHiba, youtube_cel
+from kozgaz_fm.zenekeres import TELEFON_TILTAS_NAP, Keres, Keresek, KeresHiba, telefon_kulcs, youtube_cel
 
 naplo = logging.getLogger(__name__)
 
@@ -117,6 +127,7 @@ class Vezerlo(QObject):
         self.dalszoveg_tar = DalszovegTar(gyorsitotar_mappa() / "dalszoveg.json")
         self.dalszoveg_or = DalszovegOr(self.zene, self.dalszoveg_tar, self)
         self.zene.szoveg_or = self.dalszoveg_or
+        self._tiltas_frissit()
         self.musor_blokk: Musorblokk | None = None
         self._musor_kezi = False
         self._kihagyott: Esemeny | None = None
@@ -351,6 +362,7 @@ class Vezerlo(QObject):
             self.szuro = Szuro(b.szuro_szavak, b.szuro_alap)
         self.zene.szuro_beallitas(self.szuro, b.szuro_korhataros)
         self.dalszoveg_or.beallit(b.szuro_dalszoveg, b.szuro_erzekenyseg)
+        self._tiltas_frissit()
         self.zene.forras_beallitas(self.jelenlegi_forras())
         if self._web_indult:
             self.web.alkalmaz()
@@ -726,6 +738,8 @@ class Vezerlo(QObject):
     def zenekeres_uj(self, szoveg: str, nev: str, eszkoz: str, ip: str) -> Keres:
         if not self.b.zenekeres:
             raise KeresHiba("disabled", "A zenekérés most nincs bekapcsolva.")
+        if self.telefon_tiltott(eszkoz):
+            raise KeresHiba("device_blocked", "Erről a telefonról most nem kérhetsz számot.")
         k = self.keresek.uj(szoveg, nev, eszkoz, ip, self.b.zenekeres_napi, self.b.zenekeres_tiltott, self.szuro)
         self.log(f"Zenekérés érkezett ({ip}): {k.szoveg}")
         if self.stat:
@@ -748,7 +762,8 @@ class Vezerlo(QObject):
                 yt, cim, hossz, korhatar = talalat
                 tragar = self.dalszoveg_or.tragar(szoveg)
                 k = self.keresek.talalat(azon, yt, cim, hossz, self.b.zenekeres_max_perc, self.b.zenekeres_tiltott,
-                                         korhatar, self.szuro, self.b.szuro_korhataros, tragar)
+                                         korhatar, self.szuro, self.b.szuro_korhataros, tragar,
+                                         self.zene.tiltott_e(yt, cim))
                 if tragar:
                     self.log(f"Zenekérés elutasítva, trágár szöveg: {cim} ({szoveg.ertekeles.szoveg()})")
                 if k.allapot == "varakozik":
@@ -802,6 +817,83 @@ class Vezerlo(QObject):
             self.stat.keres("elfogadva" if elfogad else "elutasitva")
         self.keresek_valtoztak.emit()
         return k
+
+    def _tiltas_frissit(self) -> None:
+        tiltott = self.b.tiltott_szamok
+        self.zene.tiltott_beallitas({t.yt for t in tiltott if t.yt}, [t.cim for t in tiltott])
+
+    def telefon_tiltott(self, eszkoz: str) -> bool:
+        ma = date.today().isoformat()
+        kulcs = telefon_kulcs(eszkoz)
+        return any(t.kulcs == kulcs and t.ig >= ma for t in self.b.tiltott_telefonok)
+
+    def _szam_tiltas(self, cim: str, yt: str, ki: str) -> None:
+        if not self.zene.tiltott_e(yt, cim):
+            self.b.tiltott_szamok.append(TiltottSzam(secrets.token_hex(6), cim, yt, date.today().isoformat()))
+            self._tiltas_frissit()
+            self.mentes()
+        self.log(f"Szám letiltva{f' ({ki})' if ki else ''}: {cim}")
+        self.zene.tiltottakat_kivesz()
+        if yt:
+            for k in self.keresek.lista:
+                if k.yt == yt:
+                    self.keresek.levesz(k.azon)
+        self.keresek_valtoztak.emit()
+
+    def most_szolo_tiltasa(self, ki: str = "") -> None:
+        szam = self.zene.most_szolo()
+        if szam is None:
+            raise KeresHiba("conflict", "Most nem szól zene.")
+        self._szam_tiltas(*szam, ki)
+
+    def zenekeres_szam_tiltas(self, azon: str, ki: str = "") -> None:
+        k = self.keresek.keres(azon)
+        if not k.yt:
+            raise KeresHiba("conflict", "Ehhez a kéréshez még nincs talált szám.")
+        self._szam_tiltas(k.cim, k.yt, ki)
+
+    def szam_feloldas(self, azon: str, ki: str = "") -> None:
+        tiltott = next((t for t in self.b.tiltott_szamok if t.azon == azon), None)
+        if tiltott is None:
+            raise KeresHiba("not_found", "Nincs ilyen letiltott szám.")
+        self.b.tiltott_szamok.remove(tiltott)
+        self._tiltas_frissit()
+        self.log(f"Szám tiltása feloldva{f' ({ki})' if ki else ''}: {tiltott.cim}")
+        self.mentes()
+        self.keresek_valtoztak.emit()
+
+    def zenekeres_levesz(self, azon: str, ki: str = "") -> None:
+        k = self.keresek.keres(azon)
+        if k.allapot not in ("elfogadva", "szol"):
+            raise KeresHiba("conflict", "Ez a kérés már nincs a sorban.")
+        self.zene.yt_kivesz(k.yt)
+        self.keresek.levesz(azon)
+        self.log(f"Kért szám levéve a sorból{f' ({ki})' if ki else ''}: {k.cim}")
+        self.keresek_valtoztak.emit()
+
+    def zenekeres_telefon_tiltas(self, azon: str, ki: str = "") -> None:
+        k = self.keresek.keres(azon)
+        kulcs = telefon_kulcs(k.eszkoz)
+        ig = (date.today() + timedelta(days=TELEFON_TILTAS_NAP)).isoformat()
+        ma = date.today().isoformat()
+        self.b.tiltott_telefonok = [t for t in self.b.tiltott_telefonok if t.kulcs != kulcs and t.ig >= ma]
+        self.b.tiltott_telefonok.append(TiltottTelefon(kulcs, k.nev, ig))
+        for m in self.keresek.lista:
+            if m.eszkoz == k.eszkoz:
+                if m.allapot in ("elfogadva", "szol"):
+                    self.zene.yt_kivesz(m.yt)
+                self.keresek.levesz(m.azon)
+        self.log(f"Telefon letiltva {ig}-ig{f' ({ki})' if ki else ''}: {k.ip}")
+        self.mentes()
+        self.keresek_valtoztak.emit()
+
+    def telefon_feloldas(self, kulcs: str, ki: str = "") -> None:
+        if not any(t.kulcs == kulcs for t in self.b.tiltott_telefonok):
+            raise KeresHiba("not_found", "Nincs ilyen letiltott telefon.")
+        self.b.tiltott_telefonok = [t for t in self.b.tiltott_telefonok if t.kulcs != kulcs]
+        self.log(f"Telefon tiltása feloldva{f' ({ki})' if ki else ''}")
+        self.mentes()
+        self.keresek_valtoztak.emit()
 
     def _kert_szol(self, yt: str) -> None:
         self._kovetkezo_kert = True

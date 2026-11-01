@@ -82,6 +82,21 @@ RENDKIVULI_TIPUSOK = {
 
 
 @dataclass
+class TiltottSzam:
+    azon: str
+    cim: str
+    yt: str = ""
+    ido: str = ""
+
+
+@dataclass
+class TiltottTelefon:
+    kulcs: str
+    nev: str = ""
+    ig: str = ""
+
+
+@dataclass
 class Zona:
     nev: str
     kimenet: str = ""
@@ -164,6 +179,8 @@ class Beallitasok:
     zenekeres_napi: int = 3
     zenekeres_max_perc: int = 7
     zenekeres_tiltott: list[str] = field(default_factory=list)
+    tiltott_szamok: list[TiltottSzam] = field(default_factory=list)
+    tiltott_telefonok: list[TiltottTelefon] = field(default_factory=list)
     tartalek_mod: str = ""
     tartalek_cim: str = ""
     tartalek_kulcs: str = ""
