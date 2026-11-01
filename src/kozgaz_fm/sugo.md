@@ -102,7 +102,7 @@ A szűrőn fennakadó szám nem kerül a lejátszási sorba, és diák sem kérh
 - A *Próba* mezőbe írt címről azonnal látszik, átengedné-e a szűrő.
 - **Nagyon trágár dalszövegek kiszűrése:** a program a szám címe alapján letölti a dalszöveget az LRCLIB
   szolgáltatásról, és pontozza a trágár szavakat. A trágárnak ítélt szám kikerül a sorból, Spotifyon átugorja. Csak a
-  szám címe megy ki az internetre, és csak a pontszámot tárolja, a szöveget nem. A címet „előadó - cím” formában
+  szám címe és a beírt keresőszó megy ki az internetre, és csak a pontszámot tárolja, a szöveget nem. A címet „előadó - cím” formában
   érdemes megadni, különben nem biztos, hogy megtalálja.
 - **Érzékenység:** *Szigorú* (már két erős szó is elég), *Normál* (öt erős szó, vagy sok közepes), *Laza* (csak a
   végig káromkodó számok). A *Dalszöveg ellenőrzése* gomb megmutatja, mit szólna egy számhoz.

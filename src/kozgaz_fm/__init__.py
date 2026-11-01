@@ -1,4 +1,4 @@
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 APP_NEV = "Közgáz FM"
 APP_ID = "kozgaz-fm"
 KESZITO = "Botirocky és a Közgáz FM csapata"

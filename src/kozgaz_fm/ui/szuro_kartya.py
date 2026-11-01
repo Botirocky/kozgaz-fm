@@ -24,7 +24,8 @@ class SzuroKartya(Kartya):
         b = v.b
         self.add(cimke("A szűrőn fennakadó szám nem kerül a lejátszási sorba, és diák sem kérheti. A cím, a fájl "
                        "mappája és (Spotifynál) az előadó számít; a kis- és nagybetű, valamint az ékezet mindegy. A "
-                       "dalszöveg-szűrő a cím alapján letölti a szöveget az LRCLIB-ről, és a trágár szavak szerint dönt.",
+                       "dalszöveg-szűrő a cím alapján letölti a szöveget az LRCLIB-ről, és a trágár szavak alapján "
+                       "dönt.",
                        "halvany", sortores=True))
         alap = kapcsolo("Beépített lista: trágár szavak és az „Explicit” jelölésű számok", b.szuro_alap,
                         "Néhány gyakori magyar és angol trágár szó, a Spotifyon az explicit jelölésű számok")
