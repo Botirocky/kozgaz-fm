@@ -317,6 +317,12 @@ function keresek(zk) {
     meta.textContent = [k.ido, k.nev, hossz, k.cim && k.cim !== k.szoveg ? `kérés: „${k.szoveg}”` : ""]
       .filter(Boolean).join(" · ");
     li.append(cim, meta);
+    if (k.megjegyzes) {
+      const megjegyzes = document.createElement("p");
+      megjegyzes.className = "keres-meta";
+      megjegyzes.textContent = k.megjegyzes;
+      li.append(megjegyzes);
+    }
     if (k.allapot === "kereses") {
       const var_ = document.createElement("p");
       var_.className = "keres-meta";

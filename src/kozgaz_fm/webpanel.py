@@ -531,7 +531,8 @@ class WebMuveletek(_Fosszal):
             "hangok": [{"azonosito": azon, "nev": nev} for azon, nev, _e in self._hangok()],
             "menetrend": menetrend,
             "sablonok": list(b.bemondas_sablonok),
-            "zenekeres": {"aktiv": b.zenekeres, "keresek": [k.admin() for k in v.keresek.fuggo()]},
+            "zenekeres": {"aktiv": b.zenekeres, "auto": b.zenekeres_auto,
+                          "keresek": [k.admin() for k in v.keresek.fuggo()]},
         }
 
     def _riasztas_kozben(self) -> None:
@@ -660,7 +661,7 @@ class WebMuveletek(_Fosszal):
 
     def zenekeres_allapot(self, _adat: dict, _ip: str, eszkoz: str) -> dict:
         b = self.v.b
-        return {"aktiv": b.zenekeres, "cim": b.kijelzo_cim, "napi": b.zenekeres_napi,
+        return {"aktiv": b.zenekeres, "auto": b.zenekeres_auto, "cim": b.kijelzo_cim, "napi": b.zenekeres_napi,
                 "maradek": self.v.keresek.maradek(eszkoz, b.zenekeres_napi), "max_perc": b.zenekeres_max_perc,
                 "sajat": [k.nyilvanos() for k in self.v.keresek.sajat(eszkoz)]}
 

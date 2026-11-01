@@ -32,9 +32,10 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
 - **Webes vezérlés telefonról:** csengetés, zene (a következő számok listájával, ugrással), bemondás
   szerkeszthető sablonokkal, mai kapcsolók, csendes időszak egy gombbal és riasztás böngészőből az iskolai
   hálózaton, jelszóval; a telefon kezdőképernyőjére is kitehető. Minden webes művelet naplózva.
-- **Zenekérés diákoktól:** QR-kód a folyosói kijelzőn → a diák telefonról kér számot (cím vagy
-  YouTube-link), a rendszergazda jóváhagyja, és a szám a szünetzene következő helyére kerül. Napi korlát
-  telefononként, hosszkorlát, tiltólista, duplikátum-szűrés.
+- **Zenekérés QR-kóddal, automatikusan:** a diák beolvassa a QR-kódot, beírja a számot (vagy egy szám saját
+  QR-kódját olvassa be), és ha a szám átmegy az ellenőrzésen, magától a szünetzene következő helyére kerül.
+  Amit nem sikerül ellenőrizni, az a rendszergazdához kerül jóváhagyásra. Napi korlát telefononként,
+  hosszkorlát, tiltólista, duplikátum-szűrés; a jóváhagyás kérése egy kapcsolóval visszaállítható.
 - **Tartalékgép:** két gép (pl. a hangosító Windows-gép és egy Pi) figyeli egymást; ha a fő gép kiesik, a
   tartalék kb. 15 másodpercen belül átveszi a csengetést, és visszaadja, amint a fő gép újra működik. A
   csengetési rendet és a naptárt a tartalék magától átveszi.
@@ -49,7 +50,10 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
 - **Értesítés a rendszergazdának:** ntfy (telefon) vagy e-mail, ha kimaradt egy csengetés, hiba van, eltűnt
   a hangkimenet, riasztás indult vagy a tartalékgép átvette a csengetést; reggeli önteszt tanítási napokon.
 - **Műsorblokkok:** szünetenként és naponként más zeneforrás, a szünet sorszáma szerint (rövidített napon is).
-- **Szűrő:** trágár szavak, „Explicit” jelölés, saját tiltólista, korhatáros YouTube-videók kihagyása.
+- **Szűrő:** trágár szavak (a csillagozott és számokkal írt alakok is), „Explicit” jelölés, saját tiltólista,
+  korhatáros YouTube-videók kihagyása.
+- **Dalszöveg-szűrő:** letölti a szám szövegét, pontozza a trágár szavakat, és a nagyon trágár számot kiveszi a
+  sorból; három érzékenységi fokozat, MP3-ra, YouTube-ra, Spotifyra és a kért számokra is érvényes.
 - **Világos és sötét téma**, a mai nap idővonala a Vezérlőpulton.
 - **Automatikus frissítés a GitHubról:** saját frissítő ablak változáslistával; csak tanítási időn kívül
   települ magától, SHA-256-tal ellenőrzött csomagból (Windows-telepítő, Linux-csomag és a Pi is).
@@ -70,6 +74,59 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
 ### Frissítés
 
 ![Frissítés](docs/frissites.png)
+
+## Hogyan működik a dalszöveg-szűrő
+
+1. A cím megtisztítása: a program leveszi a „(Official Video)”, „ft. …” és hasonló toldalékokat, és szétválasztja az
+   előadót és a számot.
+2. Dalszöveg-keresés az [LRCLIB](https://lrclib.net) nyilvános API-ján. Csak a szám címe és a diák által beírt keresőszó
+   megy ki, a diák neve és a telefonja nem. Egy találat csak akkor számít, ha a cím, az előadó és a hossz is illik. Több
+   változat (pl. rádiós és eredeti) közül a legtrágárabb dönt.
+3. Pontozás: az erős szavak 5, a közepesek 3, az enyhék 1 pontot érnek. A program felismeri a toldalékos, ékezet
+   nélküli, csillagozott és számokkal írt alakokat (`f*ck`, `sh1t`, `kurvára`), a hasonló ártatlan szavakat viszont nem
+   bántja (`szarvas`, `baszk`, `pocsolya`).
+4. Döntés: a szám trágár, ha elér egy adott számú erős szót, vagy túllép egy pontsűrűséget (pont / 100 szó).
+
+| Érzékenység | Erős szó legfeljebb | Pontsűrűség legfeljebb |
+| --- | --- | --- |
+| Szigorú | 1 | 3 alatt |
+| Normál (alap) | 4 | 5 alatt |
+| Laza | 14 | 20 alatt |
+
+Az eredményeket a program a gépen tárolja (csak a pontokat, a dalszöveget nem), ezért egy számot csak egyszer kérdez le.
+
+**Korlátok.** Ez nem tökéletes szűrő. A szolgáltatás sok magyar számot nem ismer, és néha túlterhelt. Ha nincs meg a
+szöveg, a saját listákban lévő szám a cím- és a korhatár-szűrés után lejátszható, a kért szám viszont nem kerül be
+magától, hanem jóváhagyásra vár. A program azt vizsgálja, amit a videó címe állít: egy félrecímkézett videót nem
+ismer fel. Az enyhén káromkodó szám normál fokozaton átmehet.
+
+## Zenekérés API
+
+A QR-kód a `http://<gép>:8080/keres` oldalra visz. Egy adott számot így lehet egyből kérni (ezt tartalmazza *A szám
+QR-kódja* gombbal készült kód is), a telefon megnyitáskor rögtön elküldi a kérést:
+
+```
+http://<gép>:8080/keres?szam=Queen%20Don't%20Stop%20Me%20Now
+```
+
+Saját felületből az API is hívható, bejelentkezés nélkül, az iskolai hálózaton. A készüléket a `kfm_eszkoz` süti
+azonosítja, ezt az első válasz állítja be:
+
+```
+GET  /api/v1/zenekeres    a kérés-oldal állapota és a saját mai kérések
+POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev": "10.B"}
+```
+
+A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
+`varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
+
+## Újdonságok az 1.1.0-ban
+
+- Dalszöveg-szűrő: a nagyon trágár számok kiszűrése a szöveg pontozásával, három érzékenységgel, minden forrásra.
+- Automatikus zenekérés: a QR-kóddal kért, ellenőrzött szám jóváhagyás nélkül a sorba kerül (kikapcsolható).
+- Egy konkrét szám saját QR-kódja: beolvasásra rögtön elküldi a kérést.
+- A cím-szűrő a csillagozott és számokkal írt trágár szavakat is felismeri.
+- Ami nemrég szólt, azt egy ideig nem lehet újra kérni.
 
 ## Újdonságok az 1.0.0-ban
 

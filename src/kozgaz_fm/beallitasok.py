@@ -141,6 +141,8 @@ class Beallitasok:
     szuro_alap: bool = True
     szuro_korhataros: bool = True
     szuro_szavak: list[str] = field(default_factory=list)
+    szuro_dalszoveg: bool = True
+    szuro_erzekenyseg: str = "normal"
     bemondasok: list[Bemondas] = field(default_factory=list)
     rendkivuli: list[Rendkivuli] = field(default_factory=list)
     bemondas_sablonok: list[str] = field(default_factory=lambda: list(ALAP_SABLONOK))
@@ -158,6 +160,7 @@ class Beallitasok:
     web_port: int = 8080
     web_jelszo: str = ""
     zenekeres: bool = False
+    zenekeres_auto: bool = True
     zenekeres_napi: int = 3
     zenekeres_max_perc: int = 7
     zenekeres_tiltott: list[str] = field(default_factory=list)

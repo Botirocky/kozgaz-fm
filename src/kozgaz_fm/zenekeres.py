@@ -4,7 +4,7 @@ import secrets
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
 from kozgaz_fm.szuro import KORHATAR, Szuro
 
@@ -12,11 +12,12 @@ MAX_SZOVEG = 150
 MAX_NEV = 30
 MAX_VARAKOZO = 40
 IP_ORANKENT = 20
+AUTO_MAX_SOR = 10
 MEGORZES = timedelta(hours=12)
 YOUTUBE_GAZDAK = {"youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be"}
 
 ALLAPOT_NEVEK = {
-    "kereses": "Keresés…",
+    "kereses": "Keresés és ellenőrzés…",
     "varakozik": "Jóváhagyásra vár",
     "elfogadva": "Elfogadva, hamarosan szól",
     "szol": "Most szól",
@@ -43,6 +44,7 @@ class Keres:
     yt: str = ""
     hossz: int = 0
     ok: str = ""
+    megjegyzes: str = ""
 
     def nyilvanos(self) -> dict:
         return {"azon": self.azon, "szoveg": self.szoveg, "cim": self.cim, "allapot": self.allapot,
@@ -50,7 +52,7 @@ class Keres:
                 "ido": f"{self.ido:%H:%M}"}
 
     def admin(self) -> dict:
-        return {**self.nyilvanos(), "nev": self.nev, "hossz": self.hossz, "ip": self.ip,
+        return {**self.nyilvanos(), "nev": self.nev, "hossz": self.hossz, "ip": self.ip, "megjegyzes": self.megjegyzes,
                 "link": f"https://www.youtube.com/watch?v={self.yt}" if self.yt else ""}
 
 
@@ -63,6 +65,16 @@ def youtube_cel(szoveg: str) -> str:
     if reszek.scheme not in ("http", "https") or (reszek.hostname or "").lower() not in YOUTUBE_GAZDAK:
         raise KeresHiba("bad_link", "Csak YouTube-link vagy a szám címe adható meg.")
     return cim
+
+
+def szam_cim(alap: str, szoveg: str) -> str:
+    szoveg = " ".join(szoveg.split())
+    if not alap:
+        raise KeresHiba("disabled", "Ehhez a zenekérés és a webes vezérlés is legyen bekapcsolva.")
+    if not szoveg or len(szoveg) > MAX_SZOVEG:
+        raise KeresHiba("validation_error", f"Adj meg egy számcímet vagy YouTube-linket ({MAX_SZOVEG} karakterig).")
+    youtube_cel(szoveg)
+    return f"{alap}?szam={quote(szoveg, safe='')}"
 
 
 def tiltott_e(szoveg: str, tiltott: list[str]) -> bool:
@@ -125,7 +137,8 @@ class Keresek:
         return k
 
     def talalat(self, azon: str, yt: str, cim: str, hossz: int, max_perc: int, tiltott: list[str],
-                korhatar: int = 0, szuro: Szuro | None = None, korhatar_tiltas: bool = True) -> Keres:
+                korhatar: int = 0, szuro: Szuro | None = None, korhatar_tiltas: bool = True,
+                tragar_szoveg: bool = False) -> Keres:
         k = self.keres(azon)
         if k.allapot != "kereses":
             return k
@@ -134,15 +147,22 @@ class Keresek:
             self._elutasit(k, "Korhatáros videó nem kérhető.")
         elif tiltott_e(cim, tiltott) or (szuro is not None and szuro.talalat(cim)):
             self._elutasit(k, "A szám nem engedélyezett.")
+        elif tragar_szoveg:
+            self._elutasit(k, "A szám szövege túl trágár a szünetzenéhez.")
         elif hossz <= 0:
             self._elutasit(k, "Élő adás vagy ismeretlen hosszú videó nem kérhető.")
         elif hossz > max_perc * 60:
             self._elutasit(k, f"Túl hosszú (legfeljebb {max_perc} perc lehet).")
         elif any(m is not k and m.yt == yt and m.allapot in ("varakozik", "elfogadva") for m in self.lista):
             self._elutasit(k, "Ezt a számot már kérték, hamarosan szólhat.")
+        elif any(m is not k and m.yt == yt and m.allapot == "szol" for m in self.lista):
+            self._elutasit(k, "Ez a szám nemrég már szólt.")
         else:
             k.allapot = "varakozik"
         return k
+
+    def automatikus_helye(self) -> bool:
+        return sum(1 for k in self.lista if k.allapot == "elfogadva") < AUTO_MAX_SOR
 
     def nem_talalt(self, azon: str, ok: str) -> Keres:
         k = self.keres(azon)

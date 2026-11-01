@@ -100,26 +100,43 @@ A szűrőn fennakadó szám nem kerül a lejátszási sorba, és diák sem kérh
   „szarvas”-t); csillaggal a végén szókezdetre („bunkó*” → „bunkók”). Kis- és nagybetű, ékezet mindegy.
 - A cím mellett a fájl mappájának neve (pl. előadó szerinti mappák) és Spotifynál az előadó is számít.
 - A *Próba* mezőbe írt címről azonnal látszik, átengedné-e a szűrő.
+- **Nagyon trágár dalszövegek kiszűrése:** a program a szám címe alapján letölti a dalszöveget az LRCLIB
+  szolgáltatásról, és pontozza a trágár szavakat. A trágárnak ítélt szám kikerül a sorból, Spotifyon átugorja. Csak a
+  szám címe megy ki az internetre, és csak a pontszámot tárolja, a szöveget nem. A címet „előadó - cím” formában
+  érdemes megadni, különben nem biztos, hogy megtalálja.
+- **Érzékenység:** *Szigorú* (már két erős szó is elég), *Normál* (öt erős szó, vagy sok közepes), *Laza* (csak a
+  végig káromkodó számok). A *Dalszöveg ellenőrzése* gomb megmutatja, mit szólna egy számhoz.
+- Ha egy szám szövege nincs meg, vagy a szolgáltatás nem érhető el, a saját listák száma lejátszható (a cím- és
+  korhatár-szűrés ettől még él). A szűrő nem tévedhetetlen: a sok magyar számnak nincs meg a szövege, és egy
+  félrecímkézett videót nem ismer fel.
 
 ### Zenekérés diákoktól
 
-A diákok telefonról kérhetnek számot a szünetekre; a kérés csak jóváhagyás után szól.
+A diákok telefonról kérhetnek számot a szünetekre. Az ellenőrzésen átment szám magától a sorba kerül, ha az
+*Automatikus hozzáadás* be van kapcsolva (alapból igen); kikapcsolva minden kérés jóváhagyásra vár.
 
 1. Kapcsold be a webes vezérlést (*Beállítások → Webes vezérlés*), mert a telefonok ezen keresztül érik el a gépet.
 2. *Zene → Zenekérés diákoktól → Zenekérés bekapcsolása.* Megjelenik a kérés-oldal címe (pl.
    `http://192.168.1.50:8080/keres`) és a QR-kódja. A QR-kód a folyosói kijelzőn is látszik, és a
    *QR-kód mentése* gombbal nagy felbontásban kinyomtatható plakátnak.
 3. A diák beírja az előadót és a címet (vagy bemásolja a YouTube-linket), a program megkeresi a YouTube-on.
-4. A kérés a *Jóváhagyásra váró kérések* listájába kerül (a programban és a webpanelen is), a talált címmel és
-   hosszal. *Elfogadás* után a szám a szünetzene következő helyére kerül; a diák a telefonján látja, hogy
-   elfogadták, majd hogy szól.
+4. A program ellenőrzi a címet, a korhatárt, a hosszt és a dalszöveget. Ha minden rendben, a szám a szünetzene
+   következő helyére kerül; a diák a telefonján látja, hogy elfogadták, majd hogy szól.
+5. A *Jóváhagyásra váró kérések* listájába (a programban és a webpanelen is) az kerül, amit nem sikerült
+   ellenőrizni: nincs meg a dalszövege, nem érhető el a szolgáltatás, vagy már 10 elfogadott szám vár a sorra. A sorban
+   látszik az ok; *Elfogadás* után ugyanúgy a sorba kerül.
+
+**Egy konkrét szám QR-kódja:** írd be a számot a QR-kód alatti mezőbe, és mentsd el *A szám QR-kódja* gombbal. Aki ezt
+beolvassa, annak a telefonja rögtön elküldi a kérést; a kérésre ugyanazok a szabályok vonatkoznak.
 
 Szabályok, amelyeket a program magától betart:
 
 - **Napi korlát** telefononként (alapból 3 szám), és óránként legfeljebb 20 kérés egy hálózati címről.
 - **Hosszkorlát** (alapból 7 perc); élő adás és lejátszási lista nem kérhető.
 - **Tiltólista:** soronként egy szó vagy előadó; ha a kérésben vagy a talált címben szerepel, a kérés nem megy át.
-- Ugyanazt a számot nem lehet kétszer kérni, amíg az előző vár vagy szólni fog.
+- Ugyanazt a számot nem lehet kétszer kérni, amíg az előző vár vagy szólni fog, és a már lejátszottat is csak
+  legalább 12 óra múlva.
+- **Trágár szöveg:** a dalszöveg-szűrőn fennakadó szám nem kérhető, és nem fogy vele a napi keret.
 - Csak YouTube-ról keres; más weboldal linkjét nem fogadja el. Spotify forrás mellett a kért szám nem
   játszható le (mappa, MP3 vagy YouTube forrás kell).
 - A kérések a program újraindításáig maradnak meg.

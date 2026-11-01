@@ -12,6 +12,7 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QFileDialog,
     QGridLayout,
+    QLineEdit,
     QListWidget,
     QListWidgetItem,
     QMessageBox,
@@ -23,7 +24,7 @@ from kozgaz_fm.ui.elemek import Kartya, cimke, gomb, kapcsolo, sor
 from kozgaz_fm.ui.qr import qr_pixmap, qr_png
 from kozgaz_fm.ui.tema import SZIN, ikon
 from kozgaz_fm.vezerlo import Vezerlo
-from kozgaz_fm.zenekeres import KeresHiba
+from kozgaz_fm.zenekeres import KeresHiba, szam_cim
 
 QR_MERET = 180
 
@@ -34,11 +35,15 @@ class ZenekeresKartya(Kartya):
         self.v = v
         b = v.b
         self.add(cimke("A diákok telefonról kérhetnek számot a QR-kóddal (a folyosói kijelzőn is megjelenik). "
-                       "A kérés csak jóváhagyás után szól: itt vagy a webpanelen fogadhatod el. A webes vezérlésnek "
-                       "bekapcsolva kell lennie, és a telefonoknak el kell érniük ezt a gépet a hálózaton.",
+                       "Automatikus módban az ellenőrzött szám azonnal a sorba kerül; amit nem sikerült ellenőrizni, "
+                       "az itt vár jóváhagyásra. A webes vezérlésnek bekapcsolva kell lennie, és a telefonoknak el "
+                       "kell érniük ezt a gépet a hálózaton.",
                        "halvany", sortores=True))
         self.be = kapcsolo("Zenekérés bekapcsolása", b.zenekeres)
         self.be.toggled.connect(self._bekapcsol)
+        self.auto = kapcsolo("Automatikus hozzáadás jóváhagyás nélkül", b.zenekeres_auto,
+                             "A cím-, korhatár- és dalszöveg-szűrőn átment szám azonnal a lejátszási sorba kerül")
+        self.auto.toggled.connect(lambda e: self._allit("zenekeres_auto", e))
         self.napi = QSpinBox(minimum=1, maximum=20, suffix=" szám")
         self.napi.setValue(b.zenekeres_napi)
         self.napi.valueChanged.connect(lambda e: self._allit("zenekeres_napi", e))
@@ -71,12 +76,18 @@ class ZenekeresKartya(Kartya):
         self.qr_mentes.clicked.connect(self._qr_mentes)
         bal = QGridLayout()
         bal.addWidget(self.be, 0, 0)
-        bal.addLayout(racs, 1, 0)
-        bal.addWidget(self.qr, 0, 1, 2, 1, Qt.AlignmentFlag.AlignTop)
+        bal.addWidget(self.auto, 1, 0)
+        bal.addLayout(racs, 2, 0)
+        bal.addWidget(self.qr, 0, 1, 3, 1, Qt.AlignmentFlag.AlignTop)
         bal.setColumnStretch(0, 1)
         bal.setHorizontalSpacing(24)
         self.add(bal)
         self.add(sor(self.cim, None, self.qr_mentes))
+        self.szam = QLineEdit()
+        self.szam.setPlaceholderText("Egy konkrét szám címe vagy YouTube-linkje")
+        szam_qr = gomb("A szám QR-kódja", "le", tipp="Ezt beolvasva a telefon rögtön kéri ezt a számot")
+        szam_qr.clicked.connect(self._szam_qr_mentes)
+        self.add(sor(self.szam, szam_qr))
         self.lista = QListWidget()
         self.lista.setMinimumHeight(150)
         self.lista.itemDoubleClicked.connect(lambda _: self._dont(True))
@@ -130,7 +141,8 @@ class ZenekeresKartya(Kartya):
         self.lista.clear()
         for k in self.v.keresek.fuggo():
             hossz = f"{k.hossz // 60}:{k.hossz % 60:02d}" if k.hossz else ""
-            reszletek = " · ".join(x for x in (k.ido.strftime("%H:%M"), k.nev, hossz, f"kérés: „{k.szoveg}”") if x)
+            reszletek = " · ".join(x for x in (k.ido.strftime("%H:%M"), k.nev, hossz, f"kérés: „{k.szoveg}”",
+                                               k.megjegyzes) if x)
             szoveg = "Keresés a YouTube-on…" if k.allapot == "kereses" else k.cim
             elem = QListWidgetItem(ikon("youtube", SZIN["szoveg"]), f"{szoveg}\n{reszletek}")
             elem.setData(Qt.ItemDataRole.UserRole, k.azon)
@@ -154,6 +166,17 @@ class ZenekeresKartya(Kartya):
             self.v.zenekeres_dontes(azon, elfogad, "a programból")
         except KeresHiba as e:
             QMessageBox.warning(self, "Zenekérés", str(e))
+
+    def _szam_qr_mentes(self) -> None:
+        try:
+            cim = szam_cim(self.v.web.keres_cim(), self.szam.text())
+        except KeresHiba as e:
+            QMessageBox.warning(self, "Zenekérés", str(e))
+            return
+        ut, _ = QFileDialog.getSaveFileName(self, "A szám QR-kódja", "szam-qr.png", "PNG-kép (*.png)")
+        if ut:
+            with open(ut, "wb") as f:
+                f.write(qr_png(cim, 24))
 
     def _qr_mentes(self) -> None:
         cim = self.v.web.keres_cim()

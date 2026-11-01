@@ -4,6 +4,7 @@ const API = "/api/v1/zenekeres";
 const $ = (id) => document.getElementById(id);
 let uzenetIdozito = null;
 let idozito = null;
+let autoMod = false;
 
 async function keres(metodus, adat) {
   const opciok = { method: metodus, headers: { "X-Kozgaz-FM": "1" }, credentials: "same-origin", cache: "no-store" };
@@ -33,6 +34,10 @@ function uzenet(szoveg, hibas = false) {
 
 function megjelenit(a) {
   $("cim").textContent = a.cim || "Közgáz FM";
+  autoMod = a.auto;
+  $("leiras").textContent = a.auto
+    ? "Írd be a szám előadóját és címét, vagy másold be a YouTube-linkjét. Ha a szöveg rendben van, automatikusan bekerül a szünetzenébe."
+    : "Írd be a szám előadóját és címét, vagy másold be a YouTube-linkjét. A kérést jóváhagyás után játsszuk le, a következő szünetek egyikében.";
   $("kikapcsolva").hidden = a.aktiv;
   $("urlap").hidden = !a.aktiv;
   $("maradek").textContent = a.maradek
@@ -78,7 +83,7 @@ $("urlap").addEventListener("submit", async (esemeny) => {
   try {
     megjelenit(await keres("POST", { szoveg, nev: $("nev").value.trim() }));
     $("szoveg").value = "";
-    uzenet("Kérés elküldve, jóváhagyásra vár.");
+    uzenet(autoMod ? "Kérés elküldve, ellenőrizzük a számot." : "Kérés elküldve, jóváhagyásra vár.");
   } catch (e) {
     uzenet(e.message, true);
     gomb.disabled = false;
@@ -89,4 +94,14 @@ document.addEventListener("visibilitychange", () => {
   if (!document.hidden) frissit();
 });
 
-frissit();
+async function indul() {
+  const parameterek = new URLSearchParams(location.search);
+  const szam = parameterek.get("szam");
+  await frissit();
+  if (!szam) return;
+  history.replaceState(null, "", location.pathname);
+  $("szoveg").value = szam.slice(0, 150);
+  if (!$("urlap").hidden && !$("urlap").querySelector("button").disabled) $("urlap").requestSubmit();
+}
+
+indul();

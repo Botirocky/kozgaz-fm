@@ -10,13 +10,27 @@ __lazy_modules__ = [
 
 import json
 from datetime import datetime, timedelta
+from types import SimpleNamespace
 
 import pytest
 from PySide6.QtMultimedia import QMediaPlayer
 
+from kozgaz_fm.dalszoveg import Eredmeny
 from kozgaz_fm.hang import Szam, ZeneLejatszo
+from kozgaz_fm.szuro import Ertekeles
+from kozgaz_fm.vezerlo import Vezerlo
 from kozgaz_fm.webpanel import ESZKOZ_SUTI, Panel
-from kozgaz_fm.zenekeres import IP_ORANKENT, MAX_VARAKOZO, Keresek, KeresHiba, tiltott_e, youtube_cel
+from kozgaz_fm.zenekeres import (
+    AUTO_MAX_SOR,
+    IP_ORANKENT,
+    MAX_VARAKOZO,
+    Keres,
+    Keresek,
+    KeresHiba,
+    szam_cim,
+    tiltott_e,
+    youtube_cel,
+)
 
 CSRF = {"x-kozgaz-fm": "1", "host": "panel.local:8080"}
 
@@ -269,3 +283,123 @@ def test_automatikus_elutasitas_nem_fogy_a_keretbol(k):
     k.talalat(masik.azon, "yt2", "Jó", 100, 7, [])
     k.dont(masik.azon, False)
     assert k.maradek("e1", 1) == 0
+
+
+def test_tragar_szoveg_elutasit(k):
+    keres = k.uj("valami", "", "e", "ip", 3, [])
+    k.talalat(keres.azon, "yt", "Cím", 200, 7, [], tragar_szoveg=True)
+    assert keres.allapot == "elutasitva" and "trágár" in keres.ok
+    assert k.mai_szam("e") == 0
+
+
+def test_nemreg_szolt_szam_nem_kerheto_ujra(k):
+    elso = k.uj("a", "", "e1", "ip", 3, [])
+    k.talalat(elso.azon, "yt", "Cím", 100, 7, [])
+    k.dont(elso.azon, True)
+    k.szol("yt")
+    masodik = k.uj("b", "", "e2", "ip", 3, [])
+    k.talalat(masodik.azon, "yt", "Cím", 100, 7, [])
+    assert masodik.allapot == "elutasitva" and "már szólt" in masodik.ok
+
+
+def test_automatikus_helye_korlatos(k):
+    for i in range(AUTO_MAX_SOR):
+        assert k.automatikus_helye()
+        x = k.uj(f"a{i}", "", f"e{i}", f"ip{i}", 3, [])
+        k.talalat(x.azon, f"yt{i}", "Cím", 100, 7, [])
+        k.dont(x.azon, True)
+    assert not k.automatikus_helye()
+
+
+def test_szam_cim():
+    alap = "http://192.168.1.5:8080/keres"
+    assert szam_cim(alap, "Queen  Bohemian") == f"{alap}?szam=Queen%20Bohemian"
+    assert szam_cim(alap, "https://youtu.be/abc") == f"{alap}?szam=https%3A%2F%2Fyoutu.be%2Fabc"
+    for rossz in ("", "x" * 151, "https://evil.example/x"):
+        with pytest.raises(KeresHiba):
+            szam_cim(alap, rossz)
+    with pytest.raises(KeresHiba):
+        szam_cim("", "Queen")
+
+
+def test_keres_oldal_parameterrel_is_elerheto(panel):
+    p, _ = panel
+    valasz = p.kezel("GET", "/keres?szam=Queen", {}, b"", "ip")
+    assert valasz.statusz == 200
+
+
+class AutoVezerlo:
+    _kert_szam_kesz = Vezerlo._kert_szam_kesz
+
+    def __init__(self, k: Keresek, auto: bool = True, beszur: bool = True) -> None:
+        self.keresek = k
+        self.b = SimpleNamespace(zenekeres_auto=auto)
+        self.elfogadott: list[str] = []
+        self.uzenetek: list[str] = []
+        self.uzenet = SimpleNamespace(emit=lambda szoveg, _tipus: self.uzenetek.append(szoveg))
+        self._beszur = beszur
+
+    def zenekeres_dontes(self, azon: str, elfogad: bool, ki: str = "") -> None:
+        if not self._beszur:
+            raise KeresHiba("no_source", "Spotify mellett nem játszható.")
+        self.elfogadott.append(ki)
+        self.keresek.dont(azon, elfogad)
+
+
+def _varakozo(k: Keresek) -> Keres:
+    x = k.uj("szám", "", "e", "ip", 3, [])
+    k.talalat(x.azon, "yt", "Cím", 100, 7, [])
+    return x
+
+
+RENDBEN = Eredmeny(True, Ertekeles(200, 0, 0, 0))
+
+
+def test_auto_ellenorzott_szam_rogton_bekerul(k):
+    v = AutoVezerlo(k)
+    x = _varakozo(k)
+    v._kert_szam_kesz(x, RENDBEN, True)
+    assert x.allapot == "elfogadva" and v.elfogadott == ["automatikus"] and "Dalszöveg" in x.megjegyzes
+
+
+@pytest.mark.parametrize(("szoveg", "megjegyzes"), [
+    (Eredmeny(False), "Nincs meg a dalszövege"),
+    (None, "nem érhető el"),
+])
+def test_auto_ellenorizetlen_szam_jovahagyasra_var(k, szoveg, megjegyzes):
+    v = AutoVezerlo(k)
+    x = _varakozo(k)
+    v._kert_szam_kesz(x, szoveg, True)
+    assert x.allapot == "varakozik" and not v.elfogadott and megjegyzes in x.megjegyzes
+
+
+def test_auto_kikapcsolva_mindig_jovahagyas(k):
+    v = AutoVezerlo(k, auto=False)
+    x = _varakozo(k)
+    v._kert_szam_kesz(x, RENDBEN, True)
+    assert x.allapot == "varakozik" and not v.elfogadott
+
+
+def test_auto_dalszovegszuro_nelkul_is_bekerul(k):
+    v = AutoVezerlo(k)
+    x = _varakozo(k)
+    v._kert_szam_kesz(x, None, False)
+    assert x.allapot == "elfogadva"
+
+
+def test_auto_tele_sornal_jovahagyasra_var(k):
+    v = AutoVezerlo(k)
+    for i in range(AUTO_MAX_SOR):
+        y = k.uj(f"a{i}", "", f"e{i}", f"ip{i}", 3, [])
+        k.talalat(y.azon, f"yt{i}", "Cím", 100, 7, [])
+        k.dont(y.azon, True)
+    x = _varakozo(k)
+    v._kert_szam_kesz(x, RENDBEN, True)
+    assert x.allapot == "varakozik"
+
+
+def test_auto_spotify_forrasnal_jovahagyasra_var(k):
+    v = AutoVezerlo(k, beszur=False)
+    x = _varakozo(k)
+    v._kert_szam_kesz(x, RENDBEN, True)
+    assert x.allapot == "varakozik" and "Spotify" in x.megjegyzes

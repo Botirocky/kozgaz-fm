@@ -9,7 +9,7 @@ from PySide6.QtCore import QCoreApplication
 from kozgaz_fm import hang, youtube
 from kozgaz_fm.beallitasok import ZeneForras
 from kozgaz_fm.hang import Szam, ZeneLejatszo
-from kozgaz_fm.szuro import Szuro
+from kozgaz_fm.szuro import Szuro, ertekel
 from kozgaz_fm.zenekeres import Keresek, KeresHiba
 
 
@@ -139,3 +139,55 @@ def test_korhataros_keres_elutasitva():
     masik = k.uj("valami más", "", "e", "ip", 3, [])
     k.talalat(masik.azon, "yt2", "Valami más", 200, 7, [], 18, korhatar_tiltas=False)
     assert masik.allapot == "varakozik"
+
+
+@pytest.mark.parametrize(("cim", "vart"), [
+    ("F*ck this song", "fuck"),
+    ("sh1t happens", "shit"),
+    ("Fuuuck you", "fuck"),
+    ("K*rva jó", "kurva"),
+    ("Top 10 slágerek 2025", None),
+])
+def test_cenzurazott_cimek(cim, vart):
+    assert Szuro().talalat(cim) == vart
+
+
+def _szoveg(tragar: str, darab: int, szavak: int = 300) -> str:
+    return " ".join([tragar] * darab + ["dal"] * (szavak - darab))
+
+
+def test_ertekel_fokozatok_es_alakok():
+    e = ertekel("Fuck, f*ck kurvára shit! damn kiskutya szarvas Baszk fasza")
+    assert (e.eros, e.kozepes, e.enyhe) == (3, 1, 2)
+    assert e.szavak == 9
+
+
+@pytest.mark.parametrize("szoveg", [
+    "We will rock you, Baszk népdal, a szarvas a pocsolyában, cocktail party, what's new pussycat",
+    "Video killed the radio star 1979",
+])
+def test_ertekel_nincs_tevesen_trágár(szoveg):
+    e = ertekel(szoveg)
+    assert e.pont == 0 and not e.tragar("szigoru")
+
+
+@pytest.mark.parametrize(("szoveg", "szigoru", "normal", "laza"), [
+    (_szoveg("damn", 1), False, False, False),
+    (_szoveg("fuck", 2), True, False, False),
+    (_szoveg("fuck", 5), True, True, False),
+    (_szoveg("shit", 6), True, True, False),
+    (_szoveg("fuck", 16), True, True, True),
+    (_szoveg("damn", 70), True, True, True),
+])
+def test_erzekenyseg_hatarok(szoveg, szigoru, normal, laza):
+    e = ertekel(szoveg)
+    assert (e.tragar("szigoru"), e.tragar("normal"), e.tragar("laza")) == (szigoru, normal, laza)
+
+
+def test_rovid_szoveg_nem_billenti_at_a_surusegi_hatart():
+    assert not ertekel("damn").tragar("normal")
+    assert ertekel("fuck fuck fuck fuck fuck").tragar("normal")
+
+
+def test_ismeretlen_erzekenyseg_normalkent_mukodik():
+    assert ertekel(_szoveg("fuck", 5)).tragar("ilyen nincs")

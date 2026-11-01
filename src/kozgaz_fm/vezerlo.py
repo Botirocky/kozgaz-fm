@@ -18,6 +18,8 @@ __lazy_modules__ = [
     "kozgaz_fm.orarend",
     "kozgaz_fm.spotify",
     "kozgaz_fm.statisztika",
+    "kozgaz_fm.dalszoveg",
+    "kozgaz_fm.dalszoveg_or",
     "kozgaz_fm.szuro",
     "kozgaz_fm.tartalek",
     "kozgaz_fm.utvonalak",
@@ -37,9 +39,11 @@ from pathlib import Path
 from PySide6.QtCore import QObject, QTimer, Signal
 from PySide6.QtMultimedia import QMediaDevices
 
-from kozgaz_fm import __version__, hatter, sajat_hangok, youtube
+from kozgaz_fm import __version__, dalszoveg, hatter, sajat_hangok, youtube
 from kozgaz_fm.beallitasok import Beallitasok, Bemondas, Musorblokk, Rendkivuli, ZeneForras
 from kozgaz_fm.bemondo import Bemondo
+from kozgaz_fm.dalszoveg import DalszovegHiba, DalszovegTar, Eredmeny
+from kozgaz_fm.dalszoveg_or import DalszovegOr
 from kozgaz_fm.ertesites import Ertesito, kimaradt_csengetesek, reggeli_jelentes
 from kozgaz_fm.frissito import Frissito
 from kozgaz_fm.hang import CsengoLejatszo, Szam, ZeneLejatszo, eszkoz_azonosito
@@ -61,7 +65,7 @@ from kozgaz_fm.spotify import Spotify
 from kozgaz_fm.statisztika import Statisztika
 from kozgaz_fm.szuro import Szuro
 from kozgaz_fm.tartalek import Tartalek
-from kozgaz_fm.utvonalak import adat_mappa, eletjel_fajl, naplo_fajl
+from kozgaz_fm.utvonalak import adat_mappa, eletjel_fajl, gyorsitotar_mappa, naplo_fajl
 from kozgaz_fm.webpanel import WebPanel
 from kozgaz_fm.zenekeres import Keres, Keresek, KeresHiba, youtube_cel
 
@@ -110,6 +114,9 @@ class Vezerlo(QObject):
         self.riasztas = False
         self.keresek = Keresek()
         self.szuro = Szuro()
+        self.dalszoveg_tar = DalszovegTar(gyorsitotar_mappa() / "dalszoveg.json")
+        self.dalszoveg_or = DalszovegOr(self.zene, self.dalszoveg_tar, self)
+        self.zene.szoveg_or = self.dalszoveg_or
         self.musor_blokk: Musorblokk | None = None
         self._musor_kezi = False
         self._kihagyott: Esemeny | None = None
@@ -343,6 +350,7 @@ class Vezerlo(QObject):
         if self.szuro.kulcs != (tuple(s.strip() for s in b.szuro_szavak if s.strip()), b.szuro_alap):
             self.szuro = Szuro(b.szuro_szavak, b.szuro_alap)
         self.zene.szuro_beallitas(self.szuro, b.szuro_korhataros)
+        self.dalszoveg_or.beallit(b.szuro_dalszoveg, b.szuro_erzekenyseg)
         self.zene.forras_beallitas(self.jelenlegi_forras())
         if self._web_indult:
             self.web.alkalmaz()
@@ -723,25 +731,65 @@ class Vezerlo(QObject):
         if self.stat:
             self.stat.keres("erkezett")
         azon, cel = k.azon, youtube_cel(k.szoveg)
+        tobblet = k.szoveg if cel.startswith("ytsearch") else ""
+        szoveg_kell = self.b.szuro_dalszoveg
 
-        def kesz(talalat: tuple[str, str, int, int] | None) -> None:
+        def munka() -> tuple[tuple[str, str, int, int] | None, Eredmeny | None]:
+            talalat = youtube.egy_szam(cel)
+            if talalat is None or not szoveg_kell or not talalat[0]:
+                return talalat, None
+            return talalat, self._dalszoveg_lekeres(talalat[1], talalat[2], tobblet)
+
+        def kesz(eredmeny: tuple[tuple[str, str, int, int] | None, Eredmeny | None]) -> None:
+            talalat, szoveg = eredmeny
             if talalat is None:
                 self.keresek.nem_talalt(azon, "Nem található ilyen szám a YouTube-on.")
             else:
                 yt, cim, hossz, korhatar = talalat
+                tragar = self.dalszoveg_or.tragar(szoveg)
                 k = self.keresek.talalat(azon, yt, cim, hossz, self.b.zenekeres_max_perc, self.b.zenekeres_tiltott,
-                                         korhatar, self.szuro, self.b.szuro_korhataros)
+                                         korhatar, self.szuro, self.b.szuro_korhataros, tragar)
+                if tragar:
+                    self.log(f"Zenekérés elutasítva, trágár szöveg: {cim} ({szoveg.ertekeles.szoveg()})")
                 if k.allapot == "varakozik":
-                    self.uzenet.emit(f"Új zenekérés: {k.cim}", "info")
+                    self._kert_szam_kesz(k, szoveg, szoveg_kell)
             self.keresek_valtoztak.emit()
 
         def hiba(_e: Exception) -> None:
             self.keresek.nem_talalt(azon, "A keresés nem sikerült, próbáld újra később.")
             self.keresek_valtoztak.emit()
 
-        hatter.futtat(lambda: youtube.egy_szam(cel), kesz, hiba)
+        hatter.futtat(munka, kesz, hiba)
         self.keresek_valtoztak.emit()
         return k
+
+    def _dalszoveg_lekeres(self, cim: str, hossz: int, tobblet: str) -> Eredmeny | None:
+        ismert = self.dalszoveg_tar.keres(cim)
+        if ismert is not None and ismert.talalt:
+            return ismert
+        try:
+            eredmeny = dalszoveg.vizsgal(cim, hossz, tobblet)
+        except DalszovegHiba:
+            return None
+        self.dalszoveg_tar.beir(cim, eredmeny)
+        return eredmeny
+
+    def _kert_szam_kesz(self, k: Keres, szoveg: Eredmeny | None, szoveg_kell: bool) -> None:
+        if szoveg_kell and (szoveg is None or not szoveg.talalt):
+            k.megjegyzes = ("A dalszöveg-szolgáltatás nem érhető el, kézzel ellenőrizd." if szoveg is None
+                            else "Nincs meg a dalszövege, kézzel ellenőrizd.")
+        elif szoveg is not None:
+            k.megjegyzes = f"Dalszöveg: {szoveg.ertekeles.szoveg()}" if not szoveg.instrumental else "Instrumentális"
+        ellenorzott = not szoveg_kell or (szoveg is not None and szoveg.talalt)
+        if self.b.zenekeres_auto and ellenorzott and self.keresek.automatikus_helye():
+            try:
+                self.zenekeres_dontes(k.azon, True, "automatikus")
+            except KeresHiba as e:
+                k.megjegyzes = str(e)
+            else:
+                self.uzenet.emit(f"Kért szám a sorban: {k.cim}", "info")
+                return
+        self.uzenet.emit(f"Új zenekérés: {k.cim}", "info")
 
     def zenekeres_dontes(self, azon: str, elfogad: bool, ki: str = "") -> Keres:
         k = self.keresek.keres(azon)

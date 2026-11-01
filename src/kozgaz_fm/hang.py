@@ -270,6 +270,8 @@ class ZeneLejatszo(QObject):
         self.szuro: Szuro | None = None
         self.korhatar_tiltas = False
         self._korhatarosak: set[str] = set()
+        self._tragarak: set[str] = set()
+        self.szoveg_or = None
         self._tarolt: dict[tuple[str, str], tuple[list[Szam], int, float]] = {}
         self._spotify_kihagyas = 0
 
@@ -348,6 +350,8 @@ class ZeneLejatszo(QObject):
     def _szuro_ok(self, szam: Szam) -> str | None:
         if szam.yt and szam.yt in self._korhatarosak:
             return "korhatáros"
+        if szam.cim in self._tragarak:
+            return "trágár szöveg"
         if not self.szuro:
             return None
         mappa = szam.helyi.parent.name if szam.helyi and not szam.yt else ""
@@ -381,6 +385,37 @@ class ZeneLejatszo(QObject):
         self.index = elotte % len(maradt) if maradt else 0
         self.lista_valtozott.emit()
         self.kiszurve.emit(f"A szűrő {kiszurt} számot kivett a lejátszási sorból")
+
+    def vizsgalando(self) -> list[Szam]:
+        if self.spotify_mod or not self.szamok:
+            return []
+        hossz = len(self.szamok)
+        sorrend = (self.szamok[(self.index + i) % hossz] for i in range(hossz))
+        return [s for s in sorrend if not s.kert]
+
+    def tragarak_torlese(self) -> None:
+        self._tragarak.clear()
+        self._tarolt.clear()
+
+    def tragarat_kivesz(self, szam: Szam, reszlet: str) -> None:
+        self._tragarak.add(szam.cim)
+        self._tarolt.clear()
+        if szam.kert or not any(s is szam for s in self.szamok):
+            return
+        self.kiszurve.emit(f"Trágár szövegű szám kihagyva: {szam.cim} ({reszlet})")
+        hely = next(i for i, s in enumerate(self.szamok) if s is szam)
+        most_szol = hely == self.index and self._szol
+        self.szamok.pop(hely)
+        if hely < self.index:
+            self.index -= 1
+        self.lista_valtozott.emit()
+        if not self.szamok:
+            self.megallit(elhalkitas=False)
+            self.hiba.emit(f"A(z) „{self.forras.nev if self.forras else ''}” forrásban nincs lejátszható szám.")
+        elif most_szol:
+            self._jatszd(self.index)
+        else:
+            self.index %= len(self.szamok)
 
     def _tarol(self) -> None:
         if self.forras is None or self.spotify_mod or not self.szamok:
@@ -879,6 +914,8 @@ class ZeneLejatszo(QObject):
                 self.most_cim = adat["cim"]
                 felirat = f"{adat['eloado']} – {adat['cim']}" if adat["eloado"] else adat["cim"]
                 self.szam_valtozott.emit(felirat, self.forras.nev if self.forras else "Spotify")
+                if self.szoveg_or is not None:
+                    self._spotify_szoveg(adat)
 
         spotify = self.spotify
         hatter.futtat(spotify.most_szol, kesz)
@@ -890,6 +927,18 @@ class ZeneLejatszo(QObject):
         if ok is None:
             self._spotify_kihagyas = 0
             return False
+        return self._spotify_atugrik(adat, ok)
+
+    def _spotify_szoveg(self, adat: dict) -> None:
+        felirat = f"{adat['eloado']} - {adat['cim']}" if adat["eloado"] else adat["cim"]
+
+        def kesz(eredmeny) -> None:
+            if self.spotify_mod and self.most_cim == adat["cim"] and self.szoveg_or.tragar(eredmeny):
+                self._spotify_atugrik(adat, "trágár szöveg")
+
+        self.szoveg_or.spotify_vizsgal(felirat, kesz)
+
+    def _spotify_atugrik(self, adat: dict, ok: str) -> bool:
         self._spotify_kihagyas += 1
         self.kiszurve.emit(f"Spotify-szám átugorva ({ok}): {adat['cim']}")
         if self._spotify_kihagyas > SPOTIFY_MAX_KIHAGYAS:
