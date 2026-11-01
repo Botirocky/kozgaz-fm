@@ -180,9 +180,9 @@ A Spotify a saját alkalmazásában beállított hangkimenetet használja – az
 
 ### Tanév rendje importálása
 
-A **Szünnapok** kártyán a *Tanév rendje…* gombbal az iskola naptára egyszerre betölthető: `.ics` fájlból vagy
-naptárlinkről (Google Naptárban: a naptár beállításai → *Titkos cím iCal formátumban*; webcal:// link is jó).
-Az előnézetben látszik, mi mivé válik:
+A **Szünnapok** kártyán a *Tanév rendje…* gombbal az iskola naptára egyszerre betölthető: *Az iskola honlapjáról*
+(kghsz.hu), `.ics` fájlból vagy naptárlinkről (Google Naptárban: a naptár beállításai → *Titkos cím iCal
+formátumban*; webcal:// link is jó). Az előnézetben látszik, mi mivé válik:
 
 - a **szünetek**, tanítás nélküli munkanapok és ünnepek **szünnapok** lesznek;
 - a **rövidített órás** napok kivételnapok a „Rövidített” renddel (ha van ilyen nevű rend);
@@ -190,6 +190,11 @@ Az előnézetben látszik, mi mivé válik:
 - a többi esemény (ünnepség, szülői értekezlet) nem érinti a csengetést, csak a listában látszik.
 
 Amit nem szeretnél, arról vedd le a pipát. A már meglévő szünnapokat nem veszi fel újra.
+
+A honlapról a **csengetési rend** is átvehető: ha eltér a jelenlegitől, külön pipa jelenik meg az előnézet fölött,
+rajta a két rend összevetésével. A *Normál* rend a házirend csengetési órarendjéből jön (9 óra), ha az nem olvasható,
+a honlap csengetési rendjéből. A *Rövidített* rendet csak akkor írja felül, ha a honlapon valóban eltér a normáltól.
+A nemzeti ünnepek nincsenek a honlapon, azokat az *Ünnepnapok betöltése* gomb veszi fel.
 
 ### Rendkívüli események
 

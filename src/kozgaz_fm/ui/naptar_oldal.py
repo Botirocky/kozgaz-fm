@@ -4,6 +4,7 @@ __lazy_modules__ = [
     "PySide6.QtGui",
     "PySide6.QtWidgets",
     "kozgaz_fm.beallitasok",
+    "kozgaz_fm.kghsz",
     "kozgaz_fm.naptar_import",
     "kozgaz_fm.orarend",
     "kozgaz_fm.ui.elemek",
@@ -34,6 +35,7 @@ from PySide6.QtWidgets import (
     QSpinBox,
 )
 
+from kozgaz_fm import kghsz
 from kozgaz_fm.beallitasok import RENDKIVULI_TIPUSOK, Rendkivuli, Szunnap
 from kozgaz_fm.naptar_import import alkalmaz
 from kozgaz_fm.orarend import napi_rend, szunnap_nev
@@ -438,12 +440,15 @@ class NaptarOldal(Oldal):
         ablak = NaptarImportAblak(self, self.v.b)
         if ablak.exec() != QDialog.DialogCode.Accepted:
             return
+        rendek = kghsz.rend_alkalmaz(self.v.b, ablak.iskolai) if ablak.rend_is_kell() else []
         szunnap, kivetel, megtartott = alkalmaz(self.v.b, ablak.kivalasztott())
-        self.v.log(f"Tanév rendje importálva: {szunnap} szünnap, {kivetel} kivételnap")
+        self.v.log(f"Tanév rendje importálva: {szunnap} szünnap, {kivetel} kivételnap"
+                   + (f", csengetési rend: {', '.join(rendek)}" if rendek else ""))
         self.v.mentes()
         self.frissit()
         QMessageBox.information(self, "Tanév rendje", f"{szunnap} új szünnap és {kivetel} kivételnap került "
                                 "a naptárba. A már meglévő szünnapokat nem vettem fel újra."
+                                + (f" A csengetési rend frissült: {', '.join(rendek)}." if rendek else "")
                                 + (f" {megtartott} napra már volt kézzel beállított kivétel, azokat "
                                    "nem írtam felül." if megtartott else ""))
 

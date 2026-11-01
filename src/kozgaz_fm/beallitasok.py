@@ -268,11 +268,20 @@ def ora_lista(*parok: tuple[str, str]) -> list[Ora]:
 
 def alapertelmezett() -> Beallitasok:
     normal = Csengetesirend("Normál", ora_lista(
-        ("08:00", "08:45"), ("08:55", "09:40"), ("09:50", "10:35"), ("10:50", "11:35"),
-        ("11:45", "12:30"), ("12:40", "13:25"), ("13:35", "14:20"), ("14:25", "15:10"),
+        ("07:30", "08:15"), ("08:25", "09:10"), ("09:25", "10:10"), ("10:20", "11:05"), ("11:20", "12:05"),
+        ("12:15", "13:00"), ("13:20", "14:05"), ("14:15", "15:00"), ("15:10", "15:55"),
     ))
     rovid = Csengetesirend("Rövidített", ora_lista(
-        ("08:00", "08:30"), ("08:40", "09:10"), ("09:20", "09:50"), ("10:00", "10:30"),
-        ("10:40", "11:10"), ("11:20", "11:50"), ("12:00", "12:30"), ("12:35", "13:05"),
+        ("07:30", "08:00"), ("08:10", "08:40"), ("08:50", "09:20"), ("09:30", "10:00"),
+        ("10:10", "10:40"), ("10:50", "11:20"), ("11:30", "12:00"), ("12:05", "12:35"),
     ))
-    return Beallitasok(rendek=[normal, rovid])
+    szunnapok = [
+        Szunnap("2026-11-30", "2026-11-30", "Tanításmentes munkanap: Pályaorientációs nap"),
+        Szunnap("2026-12-12", "2026-12-12", "Tanításmentes munkanap: Nevelési értekezlet"),
+        Szunnap("2026-12-19", "2027-01-03", "Téli szünet"),
+        Szunnap("2027-03-24", "2027-03-24", "Tanításmentes munkanap: Diákönkormányzati nap"),
+        Szunnap("2027-03-25", "2027-04-04", "Tavaszi szünet"),
+        Szunnap("2027-04-30", "2027-04-30", "Tanításmentes munkanap: Ballagás"),
+        Szunnap("2027-06-16", "2027-08-31", "Nyári szünet"),
+    ]
+    return Beallitasok(rendek=[normal, rovid], szunnapok=szunnapok)

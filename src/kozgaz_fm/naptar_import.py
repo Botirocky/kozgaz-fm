@@ -26,7 +26,7 @@ MUVELET_NEV = {
 
 _BETU = "a-záéíóöőúüű"
 _SZUNNAP_MINTA = re.compile(
-    rf"tanítás\s*nélküli|tanitas\s*nelkuli|szünet|szunet|szünidő|munkaszüneti|pihenőnap|ünnepnap"
+    rf"tanítás\s*nélküli|tanitas\s*nelkuli|tanításmentes|tanitasmentes|szünet|szunet|szünidő|munkaszüneti|pihenőnap|ünnepnap"
     rf"|ünnep(?![{_BETU}])|igazgatói\s*nap", re.I)
 _ROVID_MINTA = re.compile(r"rövidített|rovidített|rovidítet|rövid\s+órá", re.I)
 _MUNKANAP_MINTA = re.compile(r"munkanap|tanítási\s*nap|tanitasi\s*nap", re.I)
@@ -153,9 +153,13 @@ def napok(e: IcsEsemeny) -> list[date]:
     return [e.tol + timedelta(days=i) for i in range((e.ig - e.tol).days + 1)]
 
 
-def javaslatok(szoveg: str, b: Beallitasok, tol: date | None = None) -> list[Javaslat]:
+def esemeny_javaslatok(esemenyek: list[IcsEsemeny], b: Beallitasok, tol: date | None = None) -> list[Javaslat]:
     tol = tol or date.today() - timedelta(days=1)
-    return [besorol(e, b) for e in ics_beolvas(szoveg) if e.ig >= tol]
+    return [besorol(e, b) for e in esemenyek if e.ig >= tol]
+
+
+def javaslatok(szoveg: str, b: Beallitasok, tol: date | None = None) -> list[Javaslat]:
+    return esemeny_javaslatok(ics_beolvas(szoveg), b, tol)
 
 
 def alkalmaz(b: Beallitasok, kivalasztott: list[Javaslat]) -> tuple[int, int, int]:

@@ -5,9 +5,10 @@ from datetime import date, datetime
 
 import pytest
 from PySide6.QtCore import QCoreApplication
+from rend_minta import minta_beallitas
 
 from kozgaz_fm import hang
-from kozgaz_fm.beallitasok import Beallitasok, Musorblokk, ZeneForras, alapertelmezett
+from kozgaz_fm.beallitasok import Beallitasok, Musorblokk, ZeneForras
 from kozgaz_fm.hang import Szam, ZeneLejatszo
 from kozgaz_fm.orarend import Esemeny, Tipus, musorblokk, zene_szunet
 from kozgaz_fm.vezerlo import Vezerlo
@@ -23,7 +24,7 @@ def app():
 
 @pytest.fixture
 def b() -> Beallitasok:
-    b = alapertelmezett()
+    b = minta_beallitas()
     b.forrasok = [ZeneForras("mappa", "Alap", "/a"), ZeneForras("mappa", "Nyugi", "/n"),
                   ZeneForras("youtube", "Buli", "x")]
     b.musorblokkok = [

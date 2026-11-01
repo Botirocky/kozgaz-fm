@@ -3,8 +3,9 @@ __lazy_modules__ = ["datetime", "pytest", "kozgaz_fm.beallitasok", "kozgaz_fm.or
 from datetime import date, datetime
 
 import pytest
+from rend_minta import minta_beallitas
 
-from kozgaz_fm.beallitasok import Beallitasok, Bemondas, Rendkivuli, Szunnap, alapertelmezett
+from kozgaz_fm.beallitasok import Beallitasok, Bemondas, Rendkivuli, Szunnap
 from kozgaz_fm.orarend import (
     CSENGOK,
     Esemeny,
@@ -22,7 +23,7 @@ HETFO = date(2026, 10, 19)
 
 @pytest.fixture
 def b() -> Beallitasok:
-    return alapertelmezett()
+    return minta_beallitas()
 
 
 def dt(nap: date, ido: str) -> datetime:
@@ -167,7 +168,7 @@ def test_vezerlo_kezi_riasztast_nem_allitja_le_a_gyakorlat_vege():
 
 def test_vezerlo_halk_csengetes():
     v = AlVezerlo()
-    v.b = alapertelmezett()
+    v.b = minta_beallitas()
     v.zene = type("Zene", (), {"szol": False})()
     v._kezel(Esemeny(dt(HETFO, "09:40"), Tipus.KICSENGO, 2, hangero=20))
     assert v.csengetesek == [("beepitett:csengo", "2. óra – kicsengő (halkan)", 20)]

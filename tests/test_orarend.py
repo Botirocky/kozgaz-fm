@@ -3,8 +3,9 @@ __lazy_modules__ = ["datetime", "pytest", "kozgaz_fm.beallitasok", "kozgaz_fm.or
 from datetime import date, datetime
 
 import pytest
+from rend_minta import minta_beallitas
 
-from kozgaz_fm.beallitasok import Beallitasok, Bemondas, Szunnap, alapertelmezett
+from kozgaz_fm.beallitasok import Beallitasok, Bemondas, Szunnap
 from kozgaz_fm.orarend import (
     Szakasz,
     Tipus,
@@ -22,7 +23,7 @@ HETFO = date(2026, 10, 19)
 
 @pytest.fixture
 def b() -> Beallitasok:
-    return alapertelmezett()
+    return minta_beallitas()
 
 
 def dt(nap: date, ido: str) -> datetime:

@@ -43,8 +43,8 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
   háttérben); a csengő- és riasztóhangok hangereje nem változik.
 - **Statisztika:** mi szólt, hányszor, mennyi kért szám, mennyire pontosak a csengetések; napi zeneidő,
   toplista, CSV-export (pl. jogdíj-elszámoláshoz), heti összefoglaló a webpanelen.
-- **Tanév rendje importálása:** az iskola naptára (.ics fájl vagy Google Naptár/webcal link) egy kattintással:
-  szünetek szünnapként, rövidített és szombati munkanapok kivételnapként, előnézettel.
+- **Tanév rendje importálása:** az iskola honlapjáról (kghsz.hu, a csengetési renddel együtt), .ics fájlból vagy
+  Google Naptár/webcal linkről egy kattintással: szünetek szünnapként, rövidített és szombati munkanapok kivételnapként, előnézettel.
 - **Hangzónák:** több hangkimenet (pl. folyosó, udvar, tanári), zónánként kapcsolható csengő, zene és
   bemondás, külön hangerővel; a riasztás mindig mindenhol szól.
 - **Értesítés a rendszergazdának:** ntfy (telefon) vagy e-mail, ha kimaradt egy csengetés, hiba van, eltűnt
@@ -122,6 +122,13 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
 
+## Újdonságok az 1.3.0-ban
+
+- Az iskola adatai a kghsz.hu-ról: a *Tanév rendje…* ablak *Az iskola honlapjáról* gombja letölti a tanítási
+  szüneteket, a tanításmentes munkanapokat és a csengetési rendet, előnézettel; a pipával választható, mi kerül át.
+- Új telepítés már a valódi csengetési renddel indul (07:30–15:55, 9 óra) és a 2026/27-es szünetekkel; a meglévő
+  beállításokat a frissítés nem írja át.
+
 ## Újdonságok az 1.2.0-ban
 
 - Moderálás a programban és a webpanelen: a most szóló szám tiltása egy gombbal, kért szám levétele a sorból, telefon
@@ -164,7 +171,7 @@ vezérlés, zenekérés, tartalékgép, hangzónák, értesítések, statisztika
 - Hangerő-kiegyenlítés: nincs többé túl halk vagy túl hangos szám a folyosón.
 - Statisztika oldal: zeneidő, toplista, kért számok, csengetési pontosság, CSV-export; heti összefoglaló a
   webpanelen.
-- Tanév rendje importálása .ics fájlból vagy naptárlinkről, előnézettel.
+- Tanév rendje importálása az iskola honlapjáról, .ics fájlból vagy naptárlinkről, előnézettel.
 - A párbeszédablakok gombjai magyarul jelennek meg (Mégse, Igen, Nem).
 
 ## Újdonságok a 0.6.0-ban
