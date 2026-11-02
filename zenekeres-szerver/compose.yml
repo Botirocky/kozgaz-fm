@@ -1,0 +1,14 @@
+services:
+  zenekeres:
+    build: .
+    image: kozgazfm-zenekeres:helyi
+    container_name: kozgazfm-zenekeres
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${ZENEKERES_PORT:-8100}:80"
+    volumes:
+      - ${ZENEKERES_ADAT:-./adat}:/data
+    environment:
+      TZ: Europe/Budapest
+      KFM_GEP_KULCS: ${KFM_GEP_KULCS:?KFM_GEP_KULCS kell}
+    mem_limit: 256m

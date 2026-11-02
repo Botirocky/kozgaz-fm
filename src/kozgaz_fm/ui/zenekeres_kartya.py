@@ -238,8 +238,7 @@ class ZenekeresKartya(Kartya):
             return
         ut, _ = QFileDialog.getSaveFileName(self, "Zenekérés plakát", "zenekeres-plakat.pdf", "PDF (*.pdf)")
         if ut:
-            b = self.v.b
-            zenekeres_plakat(ut, cim, b.kijelzo_cim or "Közgáz FM", b.zenekeres_napi, b.zenekeres_max_perc)
+            zenekeres_plakat(ut, cim, self.v.b.kijelzo_cim or "Közgáz FM")
 
     def _qr_mentes(self) -> None:
         cim = self.v.web.keres_cim()

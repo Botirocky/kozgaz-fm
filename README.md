@@ -35,7 +35,7 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
   Amit nem sikerül ellenőrizni, az a rendszergazdához kerül jóváhagyásra. Napi korlát telefononként,
   hosszkorlát, tiltólista, duplikátum-szűrés; a jóváhagyás kérése egy kapcsolóval visszaállítható.
   Külön zenekérő szerverrel a kérő oldal mobilnetről is elérhető (a program lekéri onnan a kéréseket), és
-  nyomtatható A4-es plakát (PDF) is menthető a QR-kóddal.
+  nyomtatható A4-es plakát (PDF) is menthető a QR-kóddal. A szerver PHP-forrása a `zenekeres-szerver/` mappában van (Docker).
 - **Tartalékgép:** két gép (pl. a hangosító Windows-gép és egy Pi) figyeli egymást; ha a fő gép kiesik, a
   tartalék kb. 15 másodpercen belül átveszi a csengetést, és visszaadja, amint a fő gép újra működik. A
   csengetési rendet és a naptárt a tartalék magától átveszi.

@@ -11,7 +11,6 @@ from kozgaz_fm.utvonalak import csomag_mappa
 KEK = QColor("#4085C0")
 SARGA = QColor("#DCBD31")
 TINTA = QColor("#1B2430")
-HALVANY = QColor("#5B6573")
 DPI = 300
 
 
@@ -27,17 +26,15 @@ def _betu(meret: float, vastag: bool = False) -> QFont:
     return f
 
 
-def lepesek(napi: int, max_perc: int) -> list[str]:
+def lepesek() -> list[str]:
     return [
         "Olvasd be a QR-kódot a telefonod kamerájával.",
         "Írd be az előadót és a szám címét, vagy másold be a YouTube-linkjét.",
         "Ha a szám rendben van, a következő szünetek egyikében szól.",
-        f"Naponta {napi} számot kérhetsz, legfeljebb {max_perc} perceset. Trágár vagy korhatáros szám "
-        "nem kerül adásba.",
     ]
 
 
-def zenekeres_plakat(ut: str | Path, cim: str, nev: str = "Közgáz FM", napi: int = 3, max_perc: int = 7) -> None:
+def zenekeres_plakat(ut: str | Path, cim: str, nev: str = "Közgáz FM") -> None:
     iro = QPdfWriter(str(ut))
     iro.setResolution(DPI)
     iro.setPageLayout(QPageLayout(QPageSize(QPageSize.PageSizeId.A4), QPageLayout.Orientation.Portrait,
@@ -46,12 +43,12 @@ def zenekeres_plakat(ut: str | Path, cim: str, nev: str = "Közgáz FM", napi: i
     iro.setCreator("Közgáz FM")
     p = QPainter(iro)
     try:
-        _rajzol(p, iro.width(), iro.height(), cim, nev, napi, max_perc)
+        _rajzol(p, iro.width(), iro.height(), cim, nev)
     finally:
         p.end()
 
 
-def _rajzol(p: QPainter, szel: float, mag: float, cim: str, nev: str, napi: int, max_perc: int) -> None:
+def _rajzol(p: QPainter, szel: float, mag: float, cim: str, nev: str) -> None:
     p.setRenderHint(QPainter.RenderHint.Antialiasing)
     p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
     p.fillRect(QRectF(0, 0, szel, mag), Qt.GlobalColor.white)
@@ -99,15 +96,15 @@ def _rajzol(p: QPainter, szel: float, mag: float, cim: str, nev: str, napi: int,
 
     p.setFont(_betu(13))
     sor_szel = szel - 2 * margo - _mm(14)
-    for i, szoveg in enumerate(lepesek(napi, max_perc), start=1):
+    for i, szoveg in enumerate(lepesek(), start=1):
         p.setPen(Qt.PenStyle.NoPen)
-        p.setBrush(SARGA if i == 4 else KEK)
+        p.setBrush(KEK)
         p.drawEllipse(QRectF(margo, y, _mm(9), _mm(9)))
-        p.setPen(TINTA if i == 4 else Qt.GlobalColor.white)
+        p.setPen(Qt.GlobalColor.white)
         p.setFont(_betu(12, True))
-        p.drawText(QRectF(margo, y, _mm(9), _mm(9)), Qt.AlignmentFlag.AlignCenter, "!" if i == 4 else str(i))
-        p.setPen(TINTA if i < 4 else HALVANY)
-        p.setFont(_betu(13 if i < 4 else 11.5))
+        p.drawText(QRectF(margo, y, _mm(9), _mm(9)), Qt.AlignmentFlag.AlignCenter, str(i))
+        p.setPen(TINTA)
+        p.setFont(_betu(13))
         doboz = p.boundingRect(QRectF(margo + _mm(14), y, sor_szel, _mm(40)),
                                Qt.AlignmentFlag.AlignLeft | Qt.TextFlag.TextWordWrap, szoveg)
         p.drawText(QRectF(margo + _mm(14), y + max(0.0, (_mm(9) - doboz.height()) / 2), sor_szel, doboz.height()),
