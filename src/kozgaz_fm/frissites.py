@@ -213,9 +213,8 @@ def ujraindit(parancs: list[str]) -> None:
     os.execv(parancs[0], parancs)
 
 
-def biztonsagos_ido(szakasz: str, kovetkezo: datetime | None, most: datetime, zene_szol: bool,
-                    riasztas: bool) -> bool:
-    if riasztas or zene_szol:
+def biztonsagos_ido(szakasz: str, kovetkezo: datetime | None, most: datetime, zene_szol: bool) -> bool:
+    if zene_szol:
         return False
     if szakasz not in ("tanítás után", "szünnap", "nincs csengetés"):
         return False

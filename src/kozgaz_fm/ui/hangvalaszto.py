@@ -35,7 +35,7 @@ from kozgaz_fm.vezerlo import Vezerlo
 
 HOZZAADAS = "__hozzaadas__"
 MEZO_NEVEK = {"hang_becsengo": "becsengő", "hang_kicsengo": "kicsengő", "hang_jelzo": "jelzőcsengő",
-              "hang_gong": "bemondás előtti gong", "hang_riasztas": "riasztás"}
+              "hang_gong": "bemondás előtti gong"}
 
 
 def _szuro() -> str:

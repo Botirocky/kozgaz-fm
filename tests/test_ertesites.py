@@ -126,9 +126,9 @@ def test_ertesito_szures_es_ismetles(monkeypatch):
     assert e.kuld("hiba", "A", "x") is True
     assert e.kuld("hiba", "A", "x") is False
     assert e.kuld("hiba", "A", "y") is True
-    b.ertesites_esemenyek = ["riasztas"]
+    b.ertesites_esemenyek = ["tartalek"]
     assert e.kuld("hiba", "B", "z") is False
-    assert e.kuld("riasztas", "R", "z", ismetles_mp=0) and e.kuld("riasztas", "R", "z", ismetles_mp=0)
+    assert e.kuld("tartalek", "R", "z", ismetles_mp=0) and e.kuld("tartalek", "R", "z", ismetles_mp=0)
     assert kuldesek == ["A", "A", "R", "R"] and naplo[0] == "Értesítés nem ment el – ntfy: rossz"
 
 

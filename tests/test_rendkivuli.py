@@ -1,5 +1,6 @@
 __lazy_modules__ = ["datetime", "pytest", "kozgaz_fm.beallitasok", "kozgaz_fm.orarend", "kozgaz_fm.vezerlo"]
 
+import json
 from datetime import date, datetime
 
 import pytest
@@ -12,7 +13,6 @@ from kozgaz_fm.orarend import (
     Szakasz,
     Tipus,
     allapot,
-    kovetkezo_esemeny,
     napi_esemenyek,
     zene_ablakban,
 )
@@ -45,26 +45,7 @@ def test_rendkivuli_csengetes_szunnapon_is(b):
 def test_masik_nap_es_kikapcsolt_nem_szamit(b):
     b.rendkivuli.append(Rendkivuli("Holnap", "2026-10-20", "10:00"))
     b.rendkivuli.append(Rendkivuli("Ki", HETFO.isoformat(), "10:00", aktiv=False))
-    assert tipusok(b, HETFO, Tipus.RENDKIVULI, Tipus.RIADO, Tipus.CSEND) == []
-
-
-def test_riado_magatol_leall(b):
-    b.rendkivuli.append(Rendkivuli("Tűzriadó", HETFO.isoformat(), "10:05", tipus="riado", riado_perc=4))
-    riado = tipusok(b, HETFO, Tipus.RIADO, Tipus.RIADO_VEGE)
-    assert [(e.tipus, e.ido) for e in riado] == [(Tipus.RIADO, dt(HETFO, "10:05")),
-                                                 (Tipus.RIADO_VEGE, dt(HETFO, "10:09"))]
-    assert riado[1].leiras == "Tűzriadó – vége"
-
-
-def test_kezi_leallitasig_tarto_riadonak_nincs_vege(b):
-    b.rendkivuli.append(Rendkivuli("Tűzriadó", HETFO.isoformat(), "10:05", tipus="riado", riado_perc=0))
-    assert [e.tipus for e in tipusok(b, HETFO, Tipus.RIADO, Tipus.RIADO_VEGE)] == [Tipus.RIADO]
-
-
-def test_riado_nem_latszik_kovetkezo_csengokent(b):
-    b.rendkivuli.append(Rendkivuli("Tűzriadó", HETFO.isoformat(), "08:20", tipus="riado"))
-    kovetkezo = kovetkezo_esemeny(b, dt(HETFO, "08:10"))
-    assert kovetkezo is not None and kovetkezo.tipus in CSENGOK and kovetkezo.ido == dt(HETFO, "08:45")
+    assert tipusok(b, HETFO, Tipus.RENDKIVULI, Tipus.CSEND) == []
 
 
 def test_csendes_idoszak_nema_csengo_zene_es_bemondas_nelkul(b):
@@ -115,7 +96,7 @@ def test_allapot_mutatja_a_csendes_idoszakot(b):
 
 
 def test_mentes_es_betoltes(tmp_path, b):
-    b.rendkivuli.append(Rendkivuli("Tűzriadó", HETFO.isoformat(), "10:05", tipus="riado", riado_perc=2))
+    b.rendkivuli.append(Rendkivuli("Érettségi", HETFO.isoformat(), "08:00", tipus="csend", ig="12:00"))
     ut = tmp_path / "beallitasok.json"
     b.mentes(ut)
     assert Beallitasok.betoltes(ut).rendkivuli == b.rendkivuli
@@ -126,20 +107,11 @@ class AlVezerlo:
     tartalek = type("Tartalek", (), {"passziv": False})()
 
     def __init__(self) -> None:
-        self.riasztas = False
-        self._auto_riado = False
         self.naplo: list[str] = []
         self.csengetesek: list[tuple[str, str, int | None]] = []
 
     def log(self, szoveg: str) -> None:
         self.naplo.append(szoveg)
-
-    def riasztas_indit(self) -> None:
-        self.riasztas = True
-        self._auto_riado = False
-
-    def riasztas_leallit(self) -> None:
-        self.riasztas = False
 
     def csengetes(self, hang: str, leiras: str = "", hangero: int | None = None, **_kw) -> None:
         self.csengetesek.append((hang, leiras, hangero))
@@ -149,26 +121,25 @@ class AlVezerlo:
         return type("Jel", (), {"emit": staticmethod(lambda: None)})
 
 
-def test_vezerlo_riado_indul_es_magatol_leall():
-    r = Rendkivuli("Tűzriadó", HETFO.isoformat(), "10:05", tipus="riado", riado_perc=3)
-    v = AlVezerlo()
-    v._kezel(Esemeny(dt(HETFO, "10:05"), Tipus.RIADO, rendkivuli=r))
-    assert v.riasztas and v._auto_riado
-    v._kezel(Esemeny(dt(HETFO, "10:08"), Tipus.RIADO_VEGE, rendkivuli=r))
-    assert not v.riasztas
-
-
-def test_vezerlo_kezi_riasztast_nem_allitja_le_a_gyakorlat_vege():
-    r = Rendkivuli("Tűzriadó", HETFO.isoformat(), "10:05", tipus="riado", riado_perc=3)
-    v = AlVezerlo()
-    v.riasztas_indit()
-    v._kezel(Esemeny(dt(HETFO, "10:08"), Tipus.RIADO_VEGE, rendkivuli=r))
-    assert v.riasztas
-
-
 def test_vezerlo_halk_csengetes():
     v = AlVezerlo()
     v.b = minta_beallitas()
     v.zene = type("Zene", (), {"szol": False})()
     v._kezel(Esemeny(dt(HETFO, "09:40"), Tipus.KICSENGO, 2, hangero=20))
     assert v.csengetesek == [("beepitett:csengo", "2. óra – kicsengő (halkan)", 20)]
+
+
+def test_regi_riado_betolteskor_kiesik(tmp_path, b):
+    b.rendkivuli.append(Rendkivuli("Ünnepség", HETFO.isoformat(), "10:00"))
+    b.hang_becsengo = "beepitett:riasztas"
+    b.ertesites_esemenyek = ["hiba", "riasztas"]
+    ut = tmp_path / "beallitasok.json"
+    b.mentes(ut)
+    adat = json.loads(ut.read_text(encoding="utf-8"))
+    adat["rendkivuli"].append({"nev": "Tűzriadó", "datum": HETFO.isoformat(), "tol": "10:05", "tipus": "riado",
+                               "riado_perc": 3})
+    adat["hang_riasztas"] = "beepitett:riasztas"
+    ut.write_text(json.dumps(adat), encoding="utf-8")
+    uj = Beallitasok.betoltes(ut)
+    assert all(r.tipus != "riado" for r in uj.rendkivuli) and "Ünnepség" in [r.nev for r in uj.rendkivuli]
+    assert uj.hang_becsengo == "beepitett:csengo" and uj.ertesites_esemenyek == ["hiba"]

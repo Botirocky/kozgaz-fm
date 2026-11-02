@@ -38,10 +38,10 @@ def test_fejlesztoi_mod():
 
 def test_biztonsagos_ido():
     most = datetime(2026, 10, 22, 16, 0)
-    assert frissites.biztonsagos_ido("tanítás után", most + timedelta(hours=15), most, False, False)
-    assert not frissites.biztonsagos_ido("óra", None, most, False, False)
-    assert not frissites.biztonsagos_ido("szünnap", None, most, True, False)
-    assert not frissites.biztonsagos_ido("tanítás után", most + timedelta(minutes=20), most, False, False)
+    assert frissites.biztonsagos_ido("tanítás után", most + timedelta(hours=15), most, False)
+    assert not frissites.biztonsagos_ido("óra", None, most, False)
+    assert not frissites.biztonsagos_ido("szünnap", None, most, True)
+    assert not frissites.biztonsagos_ido("tanítás után", most + timedelta(minutes=20), most, False)
 
 
 class _Valasz(io.BytesIO):

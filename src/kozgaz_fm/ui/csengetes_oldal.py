@@ -161,8 +161,7 @@ class CsengetesOldal(Oldal):
         racs.addWidget(cimke("Jelzőcsengő ideje:"), 0, 0)
         racs.addWidget(self.jelzo, 0, 1)
         sorok = [("Becsengő hangja:", "hang_becsengo"), ("Kicsengő hangja:", "hang_kicsengo"),
-                 ("Jelzőcsengő hangja:", "hang_jelzo"), ("Bemondás előtti gong:", "hang_gong"),
-                 ("Riasztás hangja:", "hang_riasztas")]
+                 ("Jelzőcsengő hangja:", "hang_jelzo"), ("Bemondás előtti gong:", "hang_gong")]
         for i, (felirat, mezo) in enumerate(sorok, start=1):
             valaszto = HangValaszto(self.v, getattr(b, mezo), mezo)
             valaszto.valtozott.connect(lambda e, m=mezo: self._allit(m, e))

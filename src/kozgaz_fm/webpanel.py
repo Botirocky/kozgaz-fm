@@ -106,8 +106,6 @@ UTVONALAK = {
     ("PUT", "/api/v1/bemondas/sablonok"): "sablonok_mentese",
     ("POST", "/api/v1/csend"): "csend_inditas",
     ("DELETE", "/api/v1/csend"): "csend_leallitas",
-    ("POST", "/api/v1/riasztas"): "riasztas_inditas",
-    ("DELETE", "/api/v1/riasztas"): "riasztas_leallitas",
     ("PATCH", "/api/v1/ma"): "ma_allitas",
     ("POST", "/api/v1/zenekeres/dontes"): "zenekeres_dontes",
     ("POST", "/api/v1/zenekeres/levetel"): "zenekeres_levetel",
@@ -516,7 +514,6 @@ class WebMuveletek(_Fosszal):
             "hatra_mire": mire,
             "hossz_mp": int((a.vege - a.kezdet).total_seconds()) if mire and a.kezdet and a.vege else None,
             "kovetkezo": kovetkezo,
-            "riasztas": v.riasztas,
             "csengo_szol": v.csengo.szol,
             "bemondas_szol": v.bemondo.beszel,
             "zene": {
@@ -547,12 +544,7 @@ class WebMuveletek(_Fosszal):
                                                 for t in b.tiltott_telefonok if t.ig >= ma]},
         }
 
-    def _riasztas_kozben(self) -> None:
-        if self.v.riasztas:
-            raise WebHiba(409, "alarm_active", "Riasztás közben ez nem lehetséges.")
-
     def csengetes(self, adat: dict, ip: str) -> dict:
-        self._riasztas_kozben()
         azon = adat.get("hang", "becsengo")
         talalat = next(((nev, ertek) for a, nev, ertek in self._hangok() if a == azon), None)
         if talalat is None:
@@ -562,7 +554,6 @@ class WebMuveletek(_Fosszal):
         return self.allapot()
 
     def zene_inditas(self, _adat: dict, ip: str) -> dict:
-        self._riasztas_kozben()
         if self.v.aktiv_forras() is None:
             raise WebHiba(409, "no_source", "Nincs kiválasztott zeneforrás.")
         self.v.log(f"Webpanel ({ip}): zene indítása")
@@ -581,7 +572,6 @@ class WebMuveletek(_Fosszal):
         return self.allapot()
 
     def zene_ugras(self, adat: dict, ip: str) -> dict:
-        self._riasztas_kozben()
         szamok = self.v.zene.szamok
         index = _egesz(adat, "index", 0, max(0, len(szamok) - 1))
         cim = adat.get("cim")
@@ -610,7 +600,6 @@ class WebMuveletek(_Fosszal):
         return self.allapot()
 
     def bemondas(self, adat: dict, ip: str) -> dict:
-        self._riasztas_kozben()
         szoveg = adat.get("szoveg")
         gong = _logikai(adat, "gong")
         if not isinstance(szoveg, str) or not szoveg.strip():
@@ -643,7 +632,6 @@ class WebMuveletek(_Fosszal):
         return self.allapot()
 
     def csend_inditas(self, adat: dict, ip: str) -> dict:
-        self._riasztas_kozben()
         perc = _egesz(adat, "perc", *CSEND_PERC)
         hangero = _egesz(adat, "hangero", 0, 100)
         if perc is None:
@@ -664,7 +652,7 @@ class WebMuveletek(_Fosszal):
         return self.allapot()
 
     def tartalek_eletjel(self, _adat: dict, _ip: str) -> dict:
-        return eletjel(self.v.b, self.v.tartalek.allapot.atvett, self.v.riasztas)
+        return eletjel(self.v.b, self.v.tartalek.allapot.atvett)
 
     def tartalek_beallitasok(self, _adat: dict, _ip: str) -> dict:
         if self.v.b.tartalek_mod != "fo":
@@ -724,16 +712,6 @@ class WebMuveletek(_Fosszal):
         self.v.szam_feloldas(self._szoveg_mezo(adat, "azon"), f"webpanel, {ip}")
         return self.allapot()
 
-    def riasztas_inditas(self, _adat: dict, ip: str) -> dict:
-        self.v.log(f"Webpanel ({ip}): riasztás indítása")
-        self.v.riasztas_indit()
-        return self.allapot()
-
-    def riasztas_leallitas(self, _adat: dict, ip: str) -> dict:
-        self.v.log(f"Webpanel ({ip}): riasztás leállítása")
-        self.v.riasztas_leallit()
-        return self.allapot()
-
     def ma_allitas(self, adat: dict, ip: str) -> dict:
         b = self.v.b
         csengetes = _logikai(adat, "csengetes")
@@ -778,6 +756,8 @@ class WebPanel:
         return cimek
 
     def keres_cim(self) -> str:
+        if self.v.keres_szerver.beallitva:
+            return self.v.keres_szerver.oldal()
         cimek = self.cimek()
         return f"{cimek[0]}/keres" if cimek else ""
 

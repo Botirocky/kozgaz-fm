@@ -133,7 +133,7 @@ function opciok(select, elemek, kivalasztott) {
 function megjelenit(a) {
   allapot = a;
   allapotIdeje = Date.now();
-  document.title = a.riasztas ? "RIASZTÁS – Közgáz FM" : `${a.szakasz} – Közgáz FM`;
+  document.title = `${a.szakasz} – Közgáz FM`;
   $("cim").textContent = a.cim || "Közgáz FM";
   $("verzio").textContent = `Közgáz FM ${a.verzio}`;
   $("szakasz").textContent = a.szakasz;
@@ -141,13 +141,9 @@ function megjelenit(a) {
   $("kovetkezo").textContent = a.kovetkezo
     ? `Következő: ${a.kovetkezo.nap} ${a.kovetkezo.ido}, ${a.kovetkezo.leiras}`
     : "A következő két hétben nincs csengetés";
-  $("riasztas-sav").hidden = !a.riasztas;
-  const riasztoGomb = $("riasztas-gomb");
-  riasztoGomb.dataset.muvelet = a.riasztas ? "riasztas-le" : "riasztas";
-  riasztoGomb.textContent = a.riasztas ? "Riasztás leállítása" : "Riasztás indítása";
 
   const elo = $("elo");
-  const eloSzoveg = a.riasztas ? "" : a.bemondas_szol ? "Bemondás szól" : a.csengo_szol ? "Csengő szól" : "";
+  const eloSzoveg = a.bemondas_szol ? "Bemondás szól" : a.csengo_szol ? "Csengő szól" : "";
   elo.hidden = !eloSzoveg;
   elo.textContent = eloSzoveg;
 
@@ -419,15 +415,6 @@ function sablonok(lista) {
   }));
 }
 
-function riasztasKerdes() {
-  const ablak = $("megerosites");
-  ablak.returnValue = "";
-  ablak.showModal();
-  ablak.addEventListener("close", () => {
-    if (ablak.returnValue === "igen") muvelet("POST", "/riasztas", undefined, "Riasztás elindítva");
-  }, { once: true });
-}
-
 document.addEventListener("click", (esemeny) => {
   const gomb = esemeny.target.closest("[data-muvelet]");
   if (!gomb) return;
@@ -444,12 +431,6 @@ document.addEventListener("click", (esemeny) => {
       break;
     case "bemondas-le":
       muvelet("DELETE", "/bemondas", undefined, "Bemondás leállítva");
-      break;
-    case "riasztas":
-      riasztasKerdes();
-      break;
-    case "riasztas-le":
-      muvelet("DELETE", "/riasztas", undefined, "Riasztás leállítva");
       break;
     case "most-tiltas":
       muvelet("POST", "/zene/tiltas", undefined, "Szám letiltva");

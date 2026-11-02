@@ -185,7 +185,7 @@ class ZeneOldal(Oldal):
         var = ke.varakozik()
         szoveg = f"{ke.tar.darab()} szám hangossága ismert"
         self.kiegyenlito_cimke.setText(szoveg + (f", {var} mérése folyamatban." if var else ".")
-                                       + " A csengő- és riasztóhangokat nem változtatja; a Spotify saját "
+                                       + " A csengőhangokat nem változtatja; a Spotify saját "
                                          "kiegyenlítést használ.")
 
     def _spotify_kartya(self) -> Kartya:

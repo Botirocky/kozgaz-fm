@@ -15,14 +15,12 @@ class Tipus(StrEnum):
     ZENE_LEALL = "zene leáll"
     BEMONDAS = "bemondás"
     RENDKIVULI = "rendkívüli csengetés"
-    RIADO = "riadó"
-    RIADO_VEGE = "riadó vége"
     CSEND = "csendes időszak"
     CSEND_VEGE = "csendes időszak vége"
 
 
 CSENGOK = (Tipus.JELZO, Tipus.BECSENGO, Tipus.KICSENGO)
-KULONLEGES = (Tipus.RENDKIVULI, Tipus.RIADO, Tipus.CSEND)
+KULONLEGES = (Tipus.RENDKIVULI, Tipus.CSEND)
 
 
 @dataclass(frozen=True, order=True)
@@ -39,7 +37,7 @@ class Esemeny:
         if self.tipus is Tipus.BEMONDAS and self.bemondas:
             return f"Bemondás: {self.bemondas.nev}"
         if self.rendkivuli:
-            if self.tipus in (Tipus.RIADO_VEGE, Tipus.CSEND_VEGE):
+            if self.tipus is Tipus.CSEND_VEGE:
                 return f"{self.rendkivuli.nev} – vége"
             return self.rendkivuli.nev
         if self.tipus in CSENGOK:
@@ -186,10 +184,6 @@ def _rendkivuli_esemenyek(b: Beallitasok, nap: date) -> list[Esemeny]:
         kezdet = datetime.combine(nap, ido(r.tol))
         if r.tipus == "csengetes":
             esemenyek.append(Esemeny(kezdet, Tipus.RENDKIVULI, rendkivuli=r))
-        elif r.tipus == "riado":
-            esemenyek.append(Esemeny(kezdet, Tipus.RIADO, rendkivuli=r))
-            if r.riado_perc > 0:
-                esemenyek.append(Esemeny(kezdet + timedelta(minutes=r.riado_perc), Tipus.RIADO_VEGE, rendkivuli=r))
     for kezdet, vege, r in csendes_idoszakok(b, nap):
         esemenyek.append(Esemeny(kezdet, Tipus.CSEND, rendkivuli=r))
         esemenyek.append(Esemeny(vege, Tipus.CSEND_VEGE, rendkivuli=r))
@@ -243,7 +237,7 @@ def napi_esemenyek(b: Beallitasok, nap: date) -> list[Esemeny]:
 
 def _sorrend(tipus: Tipus) -> int:
     return [Tipus.ZENE_LEALL, Tipus.CSEND, Tipus.KICSENGO, Tipus.JELZO, Tipus.BECSENGO, Tipus.RENDKIVULI,
-            Tipus.RIADO_VEGE, Tipus.RIADO, Tipus.BEMONDAS, Tipus.CSEND_VEGE, Tipus.ZENE_INDUL].index(tipus)
+            Tipus.BEMONDAS, Tipus.CSEND_VEGE, Tipus.ZENE_INDUL].index(tipus)
 
 
 def _zene_ablak(b: Beallitasok, elozo_vege: datetime | None,

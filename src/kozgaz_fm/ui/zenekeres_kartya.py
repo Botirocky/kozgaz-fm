@@ -1,11 +1,13 @@
 __lazy_modules__ = [
     "PySide6.QtCore",
     "PySide6.QtWidgets",
+    "kozgaz_fm.plakat",
     "kozgaz_fm.ui.elemek",
     "kozgaz_fm.ui.qr",
     "kozgaz_fm.ui.tema",
     "kozgaz_fm.vezerlo",
     "kozgaz_fm.zenekeres",
+    "kozgaz_fm.zenekeres_szerver",
 ]
 
 from PySide6.QtCore import Qt, QTimer
@@ -20,11 +22,13 @@ from PySide6.QtWidgets import (
     QSpinBox,
 )
 
+from kozgaz_fm.plakat import zenekeres_plakat
 from kozgaz_fm.ui.elemek import Kartya, cimke, gomb, kapcsolo, sor
 from kozgaz_fm.ui.qr import qr_pixmap, qr_png
 from kozgaz_fm.ui.tema import SZIN, ikon
 from kozgaz_fm.vezerlo import Vezerlo
 from kozgaz_fm.zenekeres import KeresHiba, szam_cim
+from kozgaz_fm.zenekeres_szerver import SzerverHiba, szerver_cim
 
 QR_MERET = 180
 
@@ -34,10 +38,10 @@ class ZenekeresKartya(Kartya):
         super().__init__("Zenekérés diákoktól")
         self.v = v
         b = v.b
-        self.add(cimke("A diákok telefonról kérhetnek számot a QR-kóddal (a folyosói kijelzőn is megjelenik). "
-                       "Automatikus módban az ellenőrzött szám azonnal a sorba kerül; amit nem sikerült ellenőrizni, "
-                       "az itt vár jóváhagyásra. A webes vezérlésnek bekapcsolva kell lennie, és a telefonoknak el "
-                       "kell érniük ezt a gépet a hálózaton.",
+        self.add(cimke("A diákok telefonról kérhetnek számot a QR-kóddal (a folyosói kijelzőn és a nyomtatható "
+                       "plakáton is rajta van). Automatikus módban az ellenőrzött szám azonnal a sorba kerül; amit "
+                       "nem sikerült ellenőrizni, az itt vár jóváhagyásra. Zenekérő szerverrel a telefonok "
+                       "mobilnetről is elérik az oldalt; nélküle csak az iskolai hálózatról, a webes vezérlésen át.",
                        "halvany", sortores=True))
         self.be = kapcsolo("Zenekérés bekapcsolása", b.zenekeres)
         self.be.toggled.connect(self._bekapcsol)
@@ -58,6 +62,14 @@ class ZenekeresKartya(Kartya):
         self._tiltott_mento.setInterval(800)
         self._tiltott_mento.timeout.connect(self._tiltott_mentes)
         self.tiltott.textChanged.connect(self._tiltott_mento.start)
+        self.szerver = QLineEdit(b.zenekeres_szerver)
+        self.szerver.setPlaceholderText("pl. https://zene.iskola.hu – üresen az iskolai hálózaton át")
+        self.szerver.editingFinished.connect(self._szerver_mentes)
+        self.kulcs = QLineEdit(b.zenekeres_szerver_kulcs)
+        self.kulcs.setEchoMode(QLineEdit.EchoMode.Password)
+        self.kulcs.setPlaceholderText("A szerver telepítésekor megadott titkos kulcs")
+        self.kulcs.editingFinished.connect(self._szerver_mentes)
+        self.szerver_allapot = cimke("", "halvany", sortores=True)
         racs = QGridLayout()
         racs.setVerticalSpacing(10)
         racs.addWidget(cimke("Naponta ennyit kérhet egy telefon:"), 0, 0)
@@ -66,14 +78,21 @@ class ZenekeresKartya(Kartya):
         racs.addWidget(self.max_perc, 1, 1)
         racs.addWidget(cimke("Tiltólista (cím, előadó, szó):"), 2, 0, 1, 2)
         racs.addWidget(self.tiltott, 3, 0, 1, 2)
+        racs.addWidget(cimke("Zenekérő szerver:"), 4, 0, 1, 2)
+        racs.addWidget(self.szerver, 5, 0, 1, 2)
+        racs.addWidget(cimke("Szerver kulcsa:"), 6, 0, 1, 2)
+        racs.addWidget(self.kulcs, 7, 0, 1, 2)
+        racs.addWidget(self.szerver_allapot, 8, 0, 1, 2)
         racs.setColumnStretch(0, 1)
         self.qr = cimke()
         self.qr.setFixedSize(QR_MERET, QR_MERET)
         self.qr.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.cim = cimke("", "halvany")
         self.cim.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        self.qr_mentes = gomb("QR-kód mentése", "le", tipp="Nagy felbontású PNG plakáthoz")
+        self.qr_mentes = gomb("QR-kód mentése", "le", tipp="Nagy felbontású PNG")
         self.qr_mentes.clicked.connect(self._qr_mentes)
+        self.plakat = gomb("Plakát (PDF)", "le", tipp="Nyomtatható A4-es plakát a QR-kóddal és a tudnivalókkal")
+        self.plakat.clicked.connect(self._plakat_mentes)
         bal = QGridLayout()
         bal.addWidget(self.be, 0, 0)
         bal.addWidget(self.auto, 1, 0)
@@ -82,7 +101,7 @@ class ZenekeresKartya(Kartya):
         bal.setColumnStretch(0, 1)
         bal.setHorizontalSpacing(24)
         self.add(bal)
-        self.add(sor(self.cim, None, self.qr_mentes))
+        self.add(sor(self.cim, None, self.qr_mentes, self.plakat))
         self.szam = QLineEdit()
         self.szam.setPlaceholderText("Egy konkrét szám címe vagy YouTube-linkje")
         szam_qr = gomb("A szám QR-kódja", "le", tipp="Ezt beolvasva a telefon rögtön kéri ezt a számot")
@@ -100,8 +119,10 @@ class ZenekeresKartya(Kartya):
         self.add(sor(elfogad, elutasit, None))
         v.keresek_valtoztak.connect(self.frissit)
         v.frissult.connect(self._cim_frissit)
+        v.keres_szerver.valtozott.connect(self._szerver_frissit)
         self._utolso_cim: str | None = None
         self.frissit()
+        self._szerver_frissit()
 
     def _allit(self, mezo: str, ertek) -> None:
         setattr(self.v.b, mezo, ertek)
@@ -111,7 +132,7 @@ class ZenekeresKartya(Kartya):
         self.v.b.zenekeres = be
         self.v.log(f"Zenekérés {'bekapcsolva' if be else 'kikapcsolva'}")
         self.v.mentes()
-        if be and not self.v.web.fut:
+        if be and not self.v.web.fut and not self.v.keres_szerver.beallitva:
             QMessageBox.information(self, "Zenekérés", "A zenekéréshez kapcsold be a webes vezérlést is "
                                     "(Beállítások → Webes vezérlés), különben a telefonok nem érik el a gépet.")
         self.frissit()
@@ -126,14 +147,47 @@ class ZenekeresKartya(Kartya):
             return
         self._utolso_cim = cim
         self.qr_mentes.setEnabled(bool(cim))
+        self.plakat.setEnabled(bool(cim))
         if cim:
             self.qr.setPixmap(qr_pixmap(cim, QR_MERET))
             self.cim.setText(f"Kérés oldala: <b>{cim}</b>")
         else:
             self.qr.clear()
             self.qr.setText("")
-            self.cim.setText("A QR-kód a zenekérés és a webes vezérlés bekapcsolása után jelenik meg."
-                             if not self.v.b.zenekeres or not self.v.web.fut else "")
+            self.cim.setText("" if self.v.b.zenekeres and (self.v.web.fut or self.v.keres_szerver.beallitva) else
+                             "A QR-kód a zenekérés bekapcsolása után jelenik meg (szerver nélkül a webes "
+                             "vezérlés is kell).")
+
+    def _szerver_mentes(self) -> None:
+        b = self.v.b
+        try:
+            cim = szerver_cim(self.szerver.text())
+        except SzerverHiba as e:
+            QMessageBox.warning(self, "Zenekérés", str(e))
+            return
+        kulcs = self.kulcs.text().strip()
+        if cim == b.zenekeres_szerver and kulcs == b.zenekeres_szerver_kulcs:
+            return
+        self.szerver.setText(cim)
+        b.zenekeres_szerver, b.zenekeres_szerver_kulcs = cim, kulcs
+        self.v.log(f"Zenekérő szerver: {cim or 'nincs (iskolai hálózat)'}")
+        self.v.mentes()
+        self.v.keres_szerver.ujraindit()
+        self._cim_frissit()
+
+    def _szerver_frissit(self) -> None:
+        sz = self.v.keres_szerver
+        if not sz.beallitva:
+            szoveg = "Nincs szerver: a kérések az iskolai hálózaton, a webes vezérlésen át érkeznek."
+        elif self.v.tartalek.passziv:
+            szoveg = "Tartalékgép: a szerverrel csak átvétel után kapcsolódik."
+        elif sz.hiba:
+            szoveg = f"<span style='color:{SZIN['hiba']}'>{sz.hiba}</span>"
+        elif sz.utolso:
+            szoveg = f"<span style='color:{SZIN['szol']}'>Kapcsolódva</span> · utolsó egyeztetés {sz.utolso:%H:%M:%S}"
+        else:
+            szoveg = "Kapcsolódás…"
+        self.szerver_allapot.setText(szoveg)
 
     def frissit(self) -> None:
         self._cim_frissit()
@@ -177,6 +231,15 @@ class ZenekeresKartya(Kartya):
         if ut:
             with open(ut, "wb") as f:
                 f.write(qr_png(cim, 24))
+
+    def _plakat_mentes(self) -> None:
+        cim = self.v.web.keres_cim()
+        if not cim:
+            return
+        ut, _ = QFileDialog.getSaveFileName(self, "Zenekérés plakát", "zenekeres-plakat.pdf", "PDF (*.pdf)")
+        if ut:
+            b = self.v.b
+            zenekeres_plakat(ut, cim, b.kijelzo_cim or "Közgáz FM", b.zenekeres_napi, b.zenekeres_max_perc)
 
     def _qr_mentes(self) -> None:
         cim = self.v.web.keres_cim()

@@ -81,7 +81,6 @@ class AlVezerlo:
 
     def __init__(self, b: Beallitasok) -> None:
         self.b = b
-        self.riasztas = False
         self.naplo: list[str] = []
         self.musor_blokk = None
         self._musor_kezi = False

@@ -126,7 +126,7 @@ class Keresek:
         return [k for k in self.lista if k.allapot in ("kereses", "varakozik")]
 
     def uj(self, szoveg: str, nev: str, eszkoz: str, ip: str, napi: int, tiltott: list[str],
-           szuro: Szuro | None = None) -> Keres:
+           szuro: Szuro | None = None, azon: str = "") -> Keres:
         self._takarit()
         szoveg = " ".join(str(szoveg or "").split())
         nev = " ".join(str(nev or "").split())
@@ -145,7 +145,9 @@ class Keresek:
             raise KeresHiba("rate_limited", "Erről a hálózatról most túl sok kérés jött, próbáld később.")
         if len(self.fuggo()) >= MAX_VARAKOZO:
             raise KeresHiba("queue_full", "Most túl sok kérés vár jóváhagyásra, próbáld később.")
-        k = Keres(secrets.token_urlsafe(8), szoveg, nev, eszkoz, ip, self._ido())
+        if azon and any(k.azon == azon for k in self.lista):
+            raise KeresHiba("conflict", "Ez a kérés már megérkezett.")
+        k = Keres(azon or secrets.token_urlsafe(8), szoveg, nev, eszkoz, ip, self._ido())
         self.lista.append(k)
         return k
 

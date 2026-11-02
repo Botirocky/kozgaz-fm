@@ -82,7 +82,7 @@ class Frissito(QObject):
         most = datetime.now()
         a = allapot(self.v.b, most)
         kovetkezo = a.kovetkezo.ido if a.kovetkezo else None
-        if frissites.biztonsagos_ido(a.szakasz.value, kovetkezo, most, self.v.zene.szol, self.v.riasztas):
+        if frissites.biztonsagos_ido(a.szakasz.value, kovetkezo, most, self.v.zene.szol):
             self.v.log(f"Automatikus frissítés: {self.kiadas.verzio}")
             self.telepites()
 

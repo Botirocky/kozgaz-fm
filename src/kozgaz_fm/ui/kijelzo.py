@@ -106,7 +106,7 @@ class Kijelzo(QWidget):
         self.cim.setText(self.v.b.kijelzo_cim)
         self.datum.setText(f"{HONAPOK[most.month - 1]} {most.day}., {NAPOK[most.weekday()]}")
         self.ora.setText(f"{most:%H:%M}")
-        self.szakasz.setText("RIASZTÁS" if self.v.riasztas else a.cim)
+        self.szakasz.setText(a.cim)
         hatra = a.hatralevo(most)
         if a.szakasz is Szakasz.ORA:
             self.hatra.setText(f"Kicsengetésig {idotartam(hatra)}")

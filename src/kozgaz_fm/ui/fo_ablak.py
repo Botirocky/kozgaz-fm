@@ -117,7 +117,6 @@ class FoAblak(QMainWindow):
         self._talca()
         v.uzenet.connect(self._uzenet)
         v.frissito.kiadas_valtozott.connect(self._uj_kiadas)
-        v.riasztas_valtozott.connect(self._riasztas)
         self._masodperc = QTimer(self)
         self._masodperc.setInterval(1000)
         self._masodperc.timeout.connect(self._tick)
@@ -462,27 +461,21 @@ class FoAblak(QMainWindow):
                                    f"{a.kovetkezo.ido:%H:%M}")
         else:
             self.fej_hatra.setText("A következő két hétben nincs csengetés")
-        riaszt = self.v.riasztas
         szol = self.v.zene.szol
-        self.elo.setVisible(riaszt or szol)
-        allapot_ = "szol" if szol and not riaszt else ""
+        self.elo.setVisible(szol)
+        allapot_ = "szol" if szol else ""
         if self.elo.property("allapot") != allapot_:
             self.elo.setProperty("allapot", allapot_)
             self.elo.style().unpolish(self.elo)
             self.elo.style().polish(self.elo)
-        if riaszt:
-            self.elo_ikon.setPixmap(ikon("riasztas", SZIN["hiba"]).pixmap(16, 16))
-            self.elo_szoveg.setText("Riasztás szól")
-        elif szol:
+        if szol:
             self.elo_ikon.setPixmap(ikon("zene", SZIN["elo_szin"]).pixmap(16, 16))
             cim = self.v.zene.most_cim or "Szünetzene"
             metrika = self.elo_szoveg.fontMetrics()
             self.elo_szoveg.setText(metrika.elidedText(cim, Qt.TextElideMode.ElideRight, 340))
 
     def _allapotsor_frissit(self) -> None:
-        if self.v.riasztas:
-            self.as_automatika.setText(f"<span style='color:{SZIN['hiba']}'>&#9679;</span>&nbsp; Riasztás")
-        elif self.v.tartalek.passziv:
+        if self.v.tartalek.passziv:
             self.as_automatika.setText(f"<span style='color:{SZIN['kek']}'>&#9679;</span>&nbsp; Tartalék gép: "
                                        "készenlétben")
         else:
@@ -519,11 +512,6 @@ class FoAblak(QMainWindow):
         self.ertesites.mutat(szoveg, szint)
         if szint == "hiba" and not self.isVisible() and self.talca.isVisible():
             self.talca.showMessage(APP_NEV, szoveg, QSystemTrayIcon.MessageIcon.Warning, 6000)
-
-    def _riasztas(self, be: bool) -> None:
-        if be:
-            self.elohoz()
-            self.ertesites.mutat("RIASZTÁS folyamatban – a Vezérlőpulton állítható le.", "hiba")
 
     def _kijelzo_nyit(self, kepernyo: int = -1) -> None:
         if self.kijelzo is None:

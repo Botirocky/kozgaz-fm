@@ -48,6 +48,7 @@ from kozgaz_fm.utvonalak import adat_mappa
 from kozgaz_fm.vezerlo import Vezerlo
 
 HELYI_MEZOK = ("admin_pin", "web_panel", "web_port", "web_jelszo", "tartalek_mod", "tartalek_cim", "tartalek_kulcs",
+               "zenekeres_szerver_kulcs",
                "ertesites_ntfy", "ertesites_ntfy_token", "ertesites_email", "smtp_szerver", "smtp_port", "smtp_mod",
                "smtp_felhasznalo", "smtp_jelszo", "smtp_felado", "kimenet", "zonak", "tiltott_telefonok")
 
@@ -169,7 +170,7 @@ class BeallitasOldal(Oldal):
         auto_kereses = kapcsolo("Új verzió keresése automatikusan", self.v.b.frissites_kereses)
         auto_kereses.toggled.connect(lambda e: self._allit("frissites_kereses", e))
         auto = kapcsolo("Automatikus telepítés tanítási időn kívül", self.v.b.frissites_auto,
-                        "Csak ha nincs óra, zene és riasztás, és a következő csengetésig van még 45 perc")
+                        "Csak ha nincs óra és zene, és a következő csengetésig van még 45 perc")
         auto.toggled.connect(lambda e: self._allit("frissites_auto", e))
         k.add(self.frissites_allapot)
         k.add(self.frissites_halad)
@@ -288,8 +289,8 @@ class BeallitasOldal(Oldal):
 
     def _web_kartya(self) -> Kartya:
         k = Kartya("Webes vezérlés")
-        k.add(cimke("Telefonról vagy a tanári gépéről, böngészőben is lehet csengetni, zenét indítani, bemondani "
-                    "és riasztani – az iskolai hálózaton belül, jelszóval. A beállító oldalak csak itt, a programban "
+        k.add(cimke("Telefonról vagy a tanári gépéről, böngészőben is lehet csengetni, zenét indítani és "
+                    "bemondani – az iskolai hálózaton belül, jelszóval. A beállító oldalak csak itt, a programban "
                     "módosíthatók. Minden webes művelet bekerül a naplóba.", "halvany", sortores=True))
         self.web_be = kapcsolo("Webpanel bekapcsolása", self.v.b.web_panel)
         self.web_be.toggled.connect(self._web_kapcsolo)
@@ -364,7 +365,7 @@ class BeallitasOldal(Oldal):
     def _ertesites_kartya(self) -> Kartya:
         b = self.v.b
         k = Kartya("Értesítések a rendszergazdának")
-        k.add(cimke("Telefonos értesítés, ha baj van (kimaradt csengetés, hiba, eltűnt hangkimenet, riasztás, "
+        k.add(cimke("Telefonos értesítés, ha baj van (kimaradt csengetés, hiba, eltűnt hangkimenet, "
                     "tartalékgép-átvétel), és reggeli önteszt tanítási napokon. Telefonra a legegyszerűbb az "
                     "ingyenes ntfy alkalmazás: válassz egy hosszú, nehezen kitalálható témanevet, iratkozz fel rá "
                     "az appban, és írd ide a teljes címet. E-mailhez az iskola SMTP-szervere kell.",

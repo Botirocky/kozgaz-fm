@@ -23,7 +23,6 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QMenu,
-    QMessageBox,
     QProgressBar,
     QSlider,
 )
@@ -65,7 +64,6 @@ class Vezerlopult(Oldal):
         v.zene.szam_valtozott.connect(self._szam)
         v.zene.allapot_valtozott.connect(self._zene_gombok)
         v.zene.lista_valtozott.connect(self._zene_gombok)
-        v.riasztas_valtozott.connect(self._riasztas_valtozott)
         self.frissit()
 
     def _elrendez(self, szeles: bool) -> None:
@@ -160,11 +158,8 @@ class Vezerlopult(Oldal):
         bemondas = gomb("Bemondás", "bemondas", tipp="Szöveg felolvasása a hangosbemondón (gonggal)")
         bemondas.setMinimumHeight(52)
         bemondas.clicked.connect(self._gyors_bemondas)
-        self.riasztas_gomb = gomb("Riasztás", "riasztas", "veszely", "Riasztó hang folyamatosan, a zene leáll")
-        self.riasztas_gomb.setMinimumHeight(52)
-        self.riasztas_gomb.clicked.connect(self._riasztas)
         k.add(sor(csengetes, tobb))
-        k.add(sor(bemondas, self.riasztas_gomb))
+        k.add(sor(bemondas))
         self.csengetes_kapcsolo = kapcsolo("Ma legyen csengetés", self.v.b.ma_nincs_csengetes != _ma(),
                                            "Kikapcsolva ma egyáltalán nem csenget (pl. kirándulás, rendezvény)")
         self.csengetes_kapcsolo.toggled.connect(lambda be: self.v.ma_kapcsolo("ma_nincs_csengetes", not be))
@@ -356,23 +351,6 @@ class Vezerlopult(Oldal):
         if ok and szoveg.strip():
             self.v.gyors_bemondas(szoveg.strip())
 
-    def _riasztas(self) -> None:
-        if self.v.riasztas:
-            self.v.riasztas_leallit()
-            return
-        valasz = QMessageBox.warning(self, "Riasztás", "Biztosan elindítod a riasztó hangot?\n\n"
-                                     "A zene leáll, a riasztás a leállításig szól.",
-                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
-                                     QMessageBox.StandardButton.Cancel)
-        if valasz == QMessageBox.StandardButton.Yes:
-            self.v.riasztas_indit()
-
-    def _riasztas_valtozott(self, be: bool) -> None:
-        self.riasztas_gomb.setText("Riasztás leállítása" if be else "Riasztás")
-        self.riasztas_gomb.setProperty("allapot", "aktiv" if be else "")
-        self.riasztas_gomb.style().unpolish(self.riasztas_gomb)
-        self.riasztas_gomb.style().polish(self.riasztas_gomb)
-
 
 def _ma() -> str:
     return datetime.now().date().isoformat()
@@ -383,5 +361,5 @@ def _forras_ikon(tipus: str) -> str:
 
 
 def _esemeny_ikon(tipus: Tipus) -> str:
-    return {Tipus.BEMONDAS: "bemondas", Tipus.ZENE_INDUL: "zene", Tipus.RIADO: "riasztas",
+    return {Tipus.BEMONDAS: "bemondas", Tipus.ZENE_INDUL: "zene",
             Tipus.CSEND: "hold"}.get(tipus, "csengo")
