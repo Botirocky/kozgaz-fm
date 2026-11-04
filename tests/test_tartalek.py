@@ -67,7 +67,7 @@ def test_egy_kieses_kozben_siker_nullaz():
 def test_szinkron_oda_vissza():
     fo = alapertelmezett()
     fo.szunnapok.append(Szunnap("2026-10-23", "2026-11-01", "Őszi szünet"))
-    fo.rendkivuli.append(Rendkivuli("Ünnepség", "2026-11-04", "10:05"))
+    fo.rendkivuli.append(Rendkivuli("Tűzriadó", "2026-11-04", "10:05", tipus="riado"))
     fo.kivetelek["2026-11-05"] = "Rövidített"
     fo.forrasok = []
     fo.web_jelszo = "titok"
@@ -122,6 +122,7 @@ class AlVezerlo:
     def __init__(self) -> None:
         self.b = alapertelmezett()
         self.tartalek = AlTartalek(True)
+        self.riasztas = False
         self._kihagyott = None
         self.csengetesek: list[str] = []
         self.naplo: list[str] = []

@@ -43,6 +43,7 @@ ESEMENYEK = {
     "kimaradt": "Kimaradt csengetés (pl. alvás vagy óraugrás után)",
     "hiba": "Hibák: hiányzó hangfájl, zenehiba, nincs felolvasó hang",
     "hangkimenet": "Eltűnt vagy nem elérhető hangkimenet",
+    "riasztas": "Riasztás indult",
     "tartalek": "A tartalékgép átvette vagy visszaadta a csengetést",
     "indulas": "A program elindult (pl. összeomlás vagy áramszünet után)",
     "reggel": "Reggeli önteszt tanítási napokon",

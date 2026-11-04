@@ -17,6 +17,7 @@ BEEPITETT_HANGOK = {
     "rovid": "Rövid csengő",
     "dallam": "Dallamos csengő",
     "gong": "Gong",
+    "riasztas": "Riasztás",
 }
 
 ALAP_SABLONOK = [
@@ -68,12 +69,14 @@ class Rendkivuli:
     tipus: str = "csengetes"
     ig: str = ""
     hang: str = "beepitett:csengo"
+    riado_perc: int = 3
     csengo_hangero: int = 0
     aktiv: bool = True
 
 
 RENDKIVULI_TIPUSOK = {
     "csengetes": "Rendkívüli csengetés",
+    "riado": "Tűzriadó-gyakorlat",
     "csend": "Csendes időszak",
 }
 
@@ -133,6 +136,7 @@ class Beallitasok:
     hang_kicsengo: str = "beepitett:csengo"
     hang_jelzo: str = "beepitett:rovid"
     hang_gong: str = "beepitett:gong"
+    hang_riasztas: str = "beepitett:riasztas"
     csengo_hangero: int = 90
     zene_hangero: int = 60
     zene_szunetben: bool = True
@@ -193,7 +197,7 @@ class Beallitasok:
     smtp_jelszo: str = ""
     smtp_felado: str = ""
     ertesites_esemenyek: list[str] = field(default_factory=lambda: [
-        "kimaradt", "hiba", "hangkimenet", "tartalek", "indulas", "reggel"])
+        "kimaradt", "hiba", "hangkimenet", "riasztas", "tartalek", "indulas", "reggel"])
     ertesites_reggel_ido: str = "07:15"
     frissites_kereses: bool = True
     frissites_auto: bool = True
@@ -219,7 +223,7 @@ class Beallitasok:
         ut = ut or beallitas_fajl()
         for jelolt in (ut, ut.with_suffix(".bak")):
             try:
-                return _tisztit(_ebbol(cls, json.loads(jelolt.read_text(encoding="utf-8"))))
+                return _riado_vissza(_ebbol(cls, adat := json.loads(jelolt.read_text(encoding="utf-8"))), adat)
             except FileNotFoundError:
                 continue
             except (json.JSONDecodeError, TypeError, ValueError) as hiba:
@@ -227,15 +231,9 @@ class Beallitasok:
         return alapertelmezett()
 
 
-def _tisztit(b: "Beallitasok") -> "Beallitasok":
-    b.rendkivuli = [r for r in b.rendkivuli if r.tipus in RENDKIVULI_TIPUSOK]
-    b.ertesites_esemenyek = [e for e in b.ertesites_esemenyek if e != "riasztas"]
-    for mezo in ("hang_becsengo", "hang_kicsengo", "hang_jelzo", "hang_gong"):
-        if getattr(b, mezo) == "beepitett:riasztas":
-            setattr(b, mezo, getattr(Beallitasok, mezo))
-    for r in b.rendkivuli:
-        if r.hang == "beepitett:riasztas":
-            r.hang = Rendkivuli.hang
+def _riado_vissza(b: "Beallitasok", adat: dict) -> "Beallitasok":
+    if isinstance(adat, dict) and "hang_riasztas" not in adat and "riasztas" not in b.ertesites_esemenyek:
+        b.ertesites_esemenyek.append("riasztas")
     return b
 
 

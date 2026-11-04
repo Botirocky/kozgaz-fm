@@ -116,7 +116,7 @@ class FrissitesAblak(QDialog):
         most = datetime.now()
         a = allapot(self.v.b, most)
         kovetkezo = a.kovetkezo.ido if a.kovetkezo else None
-        if frissites.biztonsagos_ido(a.szakasz.value, kovetkezo, most, self.v.zene.szol):
+        if frissites.biztonsagos_ido(a.szakasz.value, kovetkezo, most, self.v.zene.szol, self.v.riasztas):
             self.figyelmeztetes.setText("A telepítés után a program magától újraindul (pár másodpercig nincs "
                                         "csengetés).")
             self.figyelmeztetes.setStyleSheet(f"color: {SZIN['halvany']};")

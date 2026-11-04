@@ -361,5 +361,5 @@ def _forras_ikon(tipus: str) -> str:
 
 
 def _esemeny_ikon(tipus: Tipus) -> str:
-    return {Tipus.BEMONDAS: "bemondas", Tipus.ZENE_INDUL: "zene",
+    return {Tipus.BEMONDAS: "bemondas", Tipus.ZENE_INDUL: "zene", Tipus.RIADO: "riasztas",
             Tipus.CSEND: "hold"}.get(tipus, "csengo")

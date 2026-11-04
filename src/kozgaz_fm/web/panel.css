@@ -16,6 +16,7 @@
   --elo-hatter: #FBF3D0;
   --szol: #1E9150;
   --hiba: #C4382C;
+  --hiba-hatter: #FBE8E6;
   --fejlec: #2F6CA6;
   --fejlec-szoveg: #FFFFFF;
   --sugar: 10px;
@@ -38,6 +39,7 @@
     --elo-hatter: #2A2610;
     --szol: #3FB66B;
     --hiba: #D9483B;
+    --hiba-hatter: #2E1412;
     --fejlec: #0C0F12;
     --fejlec-szoveg: #E8EBEF;
     color-scheme: dark;
@@ -94,6 +96,7 @@ textarea { resize: vertical; min-height: 84px; }
 .gomb:active { transform: translateY(1px); }
 .gomb:disabled { opacity: 0.5; cursor: default; }
 .gomb.fo { background: var(--kek); border-color: var(--kek); color: #FFFFFF; }
+.gomb.feher { background: #FFFFFF; border-color: #FFFFFF; color: #8A1F16; }
 .gomb.csengo {
   width: 100%;
   min-height: 76px;
@@ -107,6 +110,7 @@ textarea { resize: vertical; min-height: 84px; }
   border-radius: 14px;
 }
 .gomb.csengo:active { border-bottom-width: 1px; margin-top: 25px; transform: none; }
+.veszely-gomb { background: var(--hiba); border-color: var(--hiba); color: #FFFFFF; }
 
 .link { background: none; border: 0; padding: 8px; color: var(--halvany); text-decoration: underline; cursor: pointer; }
 
@@ -126,6 +130,12 @@ textarea { resize: vertical; min-height: 84px; }
 .belepes-doboz h1 { font-size: 1.5rem; }
 .belepes-doboz p { color: var(--halvany); margin-top: 4px; }
 .belepes-doboz .gomb { width: 100%; margin-top: 6px; }
+
+.riasztas-sav {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; gap: 12px; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: var(--hiba); color: #FFFFFF;
+}
 
 .fejlec {
   display: flex; align-items: center; gap: 10px;
@@ -148,6 +158,7 @@ textarea { resize: vertical; min-height: 84px; }
 .bemondas { order: 3; }
 .ma { order: 4; }
 .menetrend { order: 5; }
+.veszely { order: 6; }
 
 .most { padding: 22px 4px 8px; }
 .szakasz { font-size: 1.25rem; color: var(--halvany); font-weight: 600; }
@@ -208,6 +219,7 @@ output { color: var(--szoveg); font-weight: 600; margin-left: 4px; }
 .menetrend li.mult { color: var(--tiltott); }
 .menetrend li.kovetkezo-sor { border-left-color: var(--kek); background: var(--kek-halvany); }
 .menetrend li.zene_indul span, .menetrend li.bemondas span { color: var(--halvany); }
+.menetrend li.riado span { color: var(--hiba); font-weight: 600; }
 .menetrend li.csend span, .menetrend li.rendkivuli span { color: var(--kek); font-weight: 600; }
 .menetrend li.mult span { color: inherit; }
 .menetrend .ures { color: var(--halvany); padding: 10px 0; }
@@ -271,11 +283,22 @@ output { color: var(--szoveg); font-weight: 600; margin-left: 4px; }
 .keresek .sor { margin-top: 8px; }
 .keresek a { color: var(--kek); }
 
+.veszely { background: var(--hiba-hatter); border-color: var(--hiba); }
+.veszely p { margin-bottom: 14px; color: var(--szoveg); }
+.veszely .gomb { width: 100%; }
 
 .lab {
   display: flex; justify-content: space-between; align-items: center;
   max-width: 1080px; margin: 0 auto; padding: 8px 16px 28px; color: var(--halvany); font-size: 0.85rem;
 }
+
+dialog {
+  width: min(420px, calc(100vw - 32px)); padding: 22px 20px;
+  background: var(--felulet); color: var(--szoveg);
+  border: 1px solid var(--keret-eros); border-radius: var(--sugar);
+}
+dialog::backdrop { background: rgba(10, 12, 16, 0.55); }
+dialog p { color: var(--halvany); margin-top: 8px; }
 
 .uzenet {
   position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translate(-50%, 140%);

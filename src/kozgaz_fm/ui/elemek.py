@@ -1,7 +1,10 @@
 __lazy_modules__ = ["PySide6.QtCore", "PySide6.QtWidgets", "kozgaz_fm.ui.tema"]
 
-from PySide6.QtCore import QSize, Qt, QTime, QTimer, Signal
+from PySide6.QtCore import QEvent, QObject, QSize, Qt, QTime, QTimer, Signal
 from PySide6.QtWidgets import (
+    QAbstractScrollArea,
+    QAbstractSpinBox,
+    QApplication,
     QCheckBox,
     QComboBox,
     QFrame,
@@ -10,6 +13,7 @@ from PySide6.QtWidgets import (
     QListView,
     QPushButton,
     QScrollArea,
+    QSlider,
     QTimeEdit,
     QVBoxLayout,
     QWidget,
@@ -111,6 +115,21 @@ def ido_mezo(szoveg: str) -> QTimeEdit:
     m.setTime(QTime(ora, perc))
     m.setMinimumWidth(92)
     return m
+
+
+GORGETES_TILTVA = (QAbstractSpinBox, QComboBox, QSlider)
+
+
+class GorgetesSzuro(QObject):
+    def eventFilter(self, obj: QObject, esemeny: QEvent) -> bool:
+        if esemeny.type() != QEvent.Type.Wheel or not isinstance(obj, GORGETES_TILTVA):
+            return False
+        terulet = obj.parent()
+        while terulet is not None and not isinstance(terulet, QAbstractScrollArea):
+            terulet = terulet.parent()
+        if terulet is not None:
+            QApplication.sendEvent(terulet.verticalScrollBar(), esemeny)
+        return True
 
 
 def gorgeto(belso: QWidget) -> QScrollArea:

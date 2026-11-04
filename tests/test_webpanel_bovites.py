@@ -28,6 +28,7 @@ class AlVezerlo:
     def __init__(self) -> None:
         self.b = alapertelmezett()
         self.zene = AlZene()
+        self.riasztas = False
         self.naplo: list[str] = []
         self.mentesek = 0
 
@@ -46,6 +47,7 @@ class AlMuveletek:
     sablonok_mentese = WebMuveletek.sablonok_mentese
     csend_inditas = WebMuveletek.csend_inditas
     csend_leallitas = WebMuveletek.csend_leallitas
+    _riasztas_kozben = WebMuveletek._riasztas_kozben
 
     def __init__(self) -> None:
         self.v = AlVezerlo()
@@ -123,6 +125,13 @@ def test_csend_hibas_perc(m, perc):
     with pytest.raises(WebHiba) as hiba:
         m.csend_inditas({} if perc is None else {"perc": perc}, "ip")
     assert hiba.value.statusz == 422
+
+
+def test_csend_riasztas_kozben_nem(m):
+    m.v.riasztas = True
+    with pytest.raises(WebHiba) as hiba:
+        m.csend_inditas({"perc": 30}, "ip")
+    assert hiba.value.statusz == 409
 
 
 def test_csend_vege_rovidebbre_vagja_az_utemezettet():

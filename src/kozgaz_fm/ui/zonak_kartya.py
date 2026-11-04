@@ -40,7 +40,7 @@ class ZonakKartya(Kartya):
         super().__init__("Hangzónák")
         self.v = v
         self.add(cimke("Ha több hangkimenet van (pl. folyosó, udvar, tanári), itt zónánként állíthatod, mi szóljon "
-                       "ott. Üres lista esetén minden a fenti Hangkimenetre "
+                       "ott. A riasztás mindig minden zónában szól. Üres lista esetén minden a fenti Hangkimenetre "
                        "megy, mint eddig.", "halvany", sortores=True))
         self.racs_doboz = QWidget()
         self.racs = QGridLayout(self.racs_doboz)
@@ -91,7 +91,7 @@ class ZonakKartya(Kartya):
                 self.racs.addWidget(pipa, i, oszlop, alignment=Qt.AlignmentFlag.AlignCenter)
             hangero = QSpinBox(minimum=0, maximum=100, suffix=" %")
             hangero.setValue(min(100, z.hangero))
-            hangero.setToolTip("Halkítás ebben a zónában (100% = teljes).")
+            hangero.setToolTip("Halkítás ebben a zónában (100% = teljes). A riasztást nem halkítja.")
             hangero.editingFinished.connect(lambda h=hangero, z=z: self._allit(z, "hangero", h.value()))
             self.racs.addWidget(hangero, i, 5)
             proba = gomb("", "lejatszas", tipp="Próbahang csak ebben a zónában")

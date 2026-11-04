@@ -18,6 +18,7 @@ __lazy_modules__ = [
     "kozgaz_fm.ui.statisztika_oldal",
     "kozgaz_fm.ui.naptar_oldal",
     "kozgaz_fm.ui.pin_ablak",
+    "kozgaz_fm.ui.riasztas_oldal",
     "kozgaz_fm.ui.sugo_oldal",
     "kozgaz_fm.ui.tema",
     "kozgaz_fm.ui.vezerlopult",
@@ -54,12 +55,13 @@ from kozgaz_fm.ui import tema
 from kozgaz_fm.ui.beallitas_oldal import BeallitasOldal
 from kozgaz_fm.ui.bemondas_oldal import BemondasOldal
 from kozgaz_fm.ui.csengetes_oldal import CsengetesOldal
-from kozgaz_fm.ui.elemek import Ertesites, cimke, gomb
+from kozgaz_fm.ui.elemek import Ertesites, GorgetesSzuro, cimke, gomb
 from kozgaz_fm.ui.frissites_ablak import FrissitesAblak
 from kozgaz_fm.ui.kijelzo import Kijelzo
 from kozgaz_fm.ui.naplo_oldal import NaploOldal
 from kozgaz_fm.ui.naptar_oldal import NaptarOldal
 from kozgaz_fm.ui.pin_ablak import FeloldoAblak
+from kozgaz_fm.ui.riasztas_oldal import RiasztasOldal
 from kozgaz_fm.ui.statisztika_oldal import StatisztikaOldal
 from kozgaz_fm.ui.sugo_oldal import SugoOldal
 from kozgaz_fm.ui.tema import SZIN, ikon, logo_ikon, logo_pixmap, szam_betu
@@ -70,6 +72,7 @@ from kozgaz_fm.zar import Zar
 
 OLDALAK = [
     ("Vezérlőpult", "pult", Vezerlopult),
+    ("Riasztás", "riasztas", RiasztasOldal),
     ("Csengetési rend", "csengo", CsengetesOldal),
     ("Zene", "zene", ZeneOldal),
     ("Naptár", "naptar", NaptarOldal),
@@ -79,7 +82,7 @@ OLDALAK = [
     ("Beállítások", "beallitas", BeallitasOldal),
     ("Súgó", "nevjegy", SugoOldal),
 ]
-NAV_CSOPORTOK = {1: "Műsor", 5: "Áttekintés", 7: "Rendszer"}
+NAV_CSOPORTOK = {2: "Műsor", 6: "Áttekintés", 8: "Rendszer"}
 VEDETT = (CsengetesOldal, ZeneOldal, NaptarOldal, BemondasOldal, BeallitasOldal)
 ELETJEL = os.environ.get("KOZGAZ_FM_ELETJEL", "")
 TEVEKENYSEG = (QEvent.Type.KeyPress, QEvent.Type.MouseButtonPress, QEvent.Type.Wheel)
@@ -117,14 +120,17 @@ class FoAblak(QMainWindow):
         self._talca()
         v.uzenet.connect(self._uzenet)
         v.frissito.kiadas_valtozott.connect(self._uj_kiadas)
+        v.riasztas_valtozott.connect(self._riasztas)
         self._masodperc = QTimer(self)
         self._masodperc.setInterval(1000)
         self._masodperc.timeout.connect(self._tick)
         self._masodperc.start()
         QShortcut(QKeySequence("F11"), self, activated=self._kijelzo_nyit)
-        for i in range(len(OLDALAK)):
+        for i in range(min(9, len(OLDALAK))):
             QShortcut(QKeySequence(f"Ctrl+{i + 1}"), self, activated=lambda i=i: self._lapozas(i))
         app = QApplication.instance()
+        self._gorgetes_szuro = GorgetesSzuro(self)
+        app.installEventFilter(self._gorgetes_szuro)
         app.styleHints().colorSchemeChanged.connect(lambda _s: self._rendszer_tema())
         self._figyelo = _Tevekenyseg(self._tevekenyseg, self)
         self._figyel = False
@@ -193,7 +199,8 @@ class FoAblak(QMainWindow):
             g.setIconSize(QSize(18, 18))
             g.setCheckable(True)
             g.setChecked(i == 0)
-            g.setToolTip(f"Ctrl+{i + 1}" + (" · PIN-kóddal védhető oldal" if issubclass(_osztaly, VEDETT) else ""))
+            vedett = " · PIN-kóddal védhető oldal" if issubclass(_osztaly, VEDETT) else ""
+            g.setToolTip((f"Ctrl+{i + 1}" if i < 9 else "") + vedett)
             self.nav.addButton(g, i)
             e.addWidget(g)
         self.nav.idClicked.connect(self._lapozas)
@@ -461,21 +468,27 @@ class FoAblak(QMainWindow):
                                    f"{a.kovetkezo.ido:%H:%M}")
         else:
             self.fej_hatra.setText("A következő két hétben nincs csengetés")
+        riaszt = self.v.riasztas
         szol = self.v.zene.szol
-        self.elo.setVisible(szol)
-        allapot_ = "szol" if szol else ""
+        self.elo.setVisible(riaszt or szol)
+        allapot_ = "szol" if szol and not riaszt else ""
         if self.elo.property("allapot") != allapot_:
             self.elo.setProperty("allapot", allapot_)
             self.elo.style().unpolish(self.elo)
             self.elo.style().polish(self.elo)
-        if szol:
+        if riaszt:
+            self.elo_ikon.setPixmap(ikon("riasztas", SZIN["hiba"]).pixmap(16, 16))
+            self.elo_szoveg.setText("Riasztás szól")
+        elif szol:
             self.elo_ikon.setPixmap(ikon("zene", SZIN["elo_szin"]).pixmap(16, 16))
             cim = self.v.zene.most_cim or "Szünetzene"
             metrika = self.elo_szoveg.fontMetrics()
             self.elo_szoveg.setText(metrika.elidedText(cim, Qt.TextElideMode.ElideRight, 340))
 
     def _allapotsor_frissit(self) -> None:
-        if self.v.tartalek.passziv:
+        if self.v.riasztas:
+            self.as_automatika.setText(f"<span style='color:{SZIN['hiba']}'>&#9679;</span>&nbsp; Riasztás")
+        elif self.v.tartalek.passziv:
             self.as_automatika.setText(f"<span style='color:{SZIN['kek']}'>&#9679;</span>&nbsp; Tartalék gép: "
                                        "készenlétben")
         else:
@@ -512,6 +525,12 @@ class FoAblak(QMainWindow):
         self.ertesites.mutat(szoveg, szint)
         if szint == "hiba" and not self.isVisible() and self.talca.isVisible():
             self.talca.showMessage(APP_NEV, szoveg, QSystemTrayIcon.MessageIcon.Warning, 6000)
+
+    def _riasztas(self, be: bool) -> None:
+        if be:
+            self.elohoz()
+            self._lapozas(next(i for i, o in enumerate(OLDALAK) if o[2] is RiasztasOldal))
+            self.ertesites.mutat("RIASZTÁS folyamatban – a Riasztás oldalon állítható le.", "hiba")
 
     def _kijelzo_nyit(self, kepernyo: int = -1) -> None:
         if self.kijelzo is None:

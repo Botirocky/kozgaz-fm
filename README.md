@@ -17,6 +17,7 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
 - **Naptár:** szünnapok, tanítási szünetek, magyar ünnepnapok egy gombbal, kivételnapok.
 - **Bemondás:** azonnali vagy ütemezett, felolvasott szöveg (TTS) vagy hangfájl, gonggal; a zene közben
   lehalkul.
+- **Riasztás:** folyamatos riasztó hang egy gombbal, megerősítéssel, külön oldalon (nem a Vezérlőpulton).
 - **Mai kapcsolók:** ma nincs csengetés / ma nincs zene / mai rend (pl. rövidített órák).
 - **Folyosói kijelző:** teljes képernyős óra, visszaszámláló, épp szóló szám, a zenekérés QR-kódja (F11).
 - **Működés:** tálcán fut, automatikus indítás, egyetlen példány, hangkimenet-választás, napló,
@@ -25,10 +26,11 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
   beépített szól.
 - **Átúsztatás:** a szünetzene számai egymásba úsznak (állítható, csengőnél azonnal elhallgat).
 - **PIN-kód:** a beállító oldalak rendszergazda-PIN-nel zárhatók, a Vezérlőpult szabadon használható marad.
-- **Rendkívüli események:** rendkívüli csengetés (pl. ünnepség kezdete) és csendes időszak (érettségi, mérés: nincs zene és bemondás, a csengő
+- **Rendkívüli események:** előre beállított tűzriadó-gyakorlat (magától indul és leáll), rendkívüli
+  csengetés (pl. ünnepség kezdete) és csendes időszak (érettségi, mérés: nincs zene és bemondás, a csengő
   néma vagy halk).
 - **Webes vezérlés telefonról:** csengetés, zene (a következő számok listájával, ugrással), bemondás
-  szerkeszthető sablonokkal, mai kapcsolók, csendes időszak egy gombbal böngészőből az iskolai
+  szerkeszthető sablonokkal, mai kapcsolók, csendes időszak egy gombbal és riasztás böngészőből az iskolai
   hálózaton, jelszóval; a telefon kezdőképernyőjére is kitehető. Minden webes művelet naplózva.
 - **Zenekérés QR-kóddal, automatikusan:** a diák beolvassa a QR-kódot, beírja a számot (vagy egy szám saját
   QR-kódját olvassa be), és ha a szám átmegy az ellenőrzésen, magától a szünetzene következő helyére kerül.
@@ -40,15 +42,15 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
   tartalék kb. 15 másodpercen belül átveszi a csengetést, és visszaadja, amint a fő gép újra működik. A
   csengetési rendet és a naptárt a tartalék magától átveszi.
 - **Hangerő-kiegyenlítés:** minden szám ugyanolyan hangosan szól (EBU R128 mérés ffmpeg-gel, egyszer, a
-  háttérben); a csengőhangok hangereje nem változik.
+  háttérben); a csengő- és riasztóhangok hangereje nem változik.
 - **Statisztika:** mi szólt, hányszor, mennyi kért szám, mennyire pontosak a csengetések; napi zeneidő,
   toplista, CSV-export (pl. jogdíj-elszámoláshoz), heti összefoglaló a webpanelen.
 - **Tanév rendje importálása:** az iskola honlapjáról (kghsz.hu, a csengetési renddel együtt), .ics fájlból vagy
   Google Naptár/webcal linkről egy kattintással: szünetek szünnapként, rövidített és szombati munkanapok kivételnapként, előnézettel.
 - **Hangzónák:** több hangkimenet (pl. folyosó, udvar, tanári), zónánként kapcsolható csengő, zene és
-  bemondás, külön hangerővel.
+  bemondás, külön hangerővel; a riasztás mindig mindenhol szól.
 - **Értesítés a rendszergazdának:** ntfy (telefon) vagy e-mail, ha kimaradt egy csengetés, hiba van, eltűnt
-  a hangkimenet vagy a tartalékgép átvette a csengetést; reggeli önteszt tanítási napokon.
+  a hangkimenet, riasztás indult vagy a tartalékgép átvette a csengetést; reggeli önteszt tanítási napokon.
 - **Műsorblokkok:** szünetenként és naponként más zeneforrás, a szünet sorszáma szerint (rövidített napon is).
 - **Szűrő:** trágár szavak (a csillagozott és számokkal írt alakok is), „Explicit” jelölés, saját tiltólista,
   korhatáros YouTube-videók kihagyása.
@@ -122,6 +124,13 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
 
+## Újdonságok az 1.7.0-ban
+
+- Visszakerült a riasztás (gomb, webpanel, tűzriadó-gyakorlat, riasztóhang, értesítés), de már saját oldalon
+  (*Riasztás*, Ctrl+2), nem a Vezérlőpulton. Riasztáskor a program erre az oldalra ugrik.
+- Görgetéskor a beállítások (legördülő listák, számmezők, időpontok, csúszkák) nem változnak meg véletlenül:
+  a görgő mindig a lapot görgeti.
+
 ## Újdonságok az 1.6.0-ban
 
 - Debian-csomag (`.deb`): Debian 12/13-ra és Ubuntu 22.04+-ra egy paranccsal telepíthető, menübejegyzéssel és ikonnal.
@@ -178,7 +187,7 @@ vezérlés, zenekérés, tartalékgép, hangzónák, értesítések, statisztika
 ## Újdonságok a 0.8.0-ban
 
 - Értesítések a rendszergazdának telefonra (ntfy) vagy e-mailben: kimaradt csengetés, hibák, eltűnt
-  hangkimenet, tartalékgép-átvétel, a program újraindulása.
+  hangkimenet, riasztás, tartalékgép-átvétel, a program újraindulása.
 - Reggeli önteszt tanítási napokon: mai rend, hangkimenet, zeneforrás, tegnapi pontosság, frissítés.
 
 ## Újdonságok a 0.7.0-ban
@@ -191,7 +200,7 @@ vezérlés, zenekérés, tartalékgép, hangzónák, értesítések, statisztika
 
 ## Újdonságok a 0.6.0-ban
 
-- Rendkívüli események a Naptárban: rendkívüli csengetés, csendes időszak.
+- Rendkívüli események a Naptárban: tűzriadó-gyakorlat, rendkívüli csengetés, csendes időszak.
 - Zenekérés diákoktól QR-kóddal, jóváhagyással.
 - Tartalékgép: automatikus átvétel és visszaadás, beállítás-szinkron.
 - Webpanel: zenesor és ugrás, bemondás-sablonok (a programmal közösek), csendes időszak telefonról, telepíthető ikon.

@@ -34,6 +34,17 @@ Az oldalak között a *Ctrl+1* … *Ctrl+9* billentyűkkel is lehet váltani.
   - *Mai csengetési rend* – például *Rövidített* órák csak mára; éjfélkor visszaáll.
 - **Mai menetrend:** a mai csengetések és szünetzenék listája, a következő ki van emelve.
 
+## Riasztás
+
+Külön oldal az oldalsávban (*Ctrl+2*), szándékosan nem a Vezérlőpulton, hogy véletlenül ne lehessen elindítani.
+PIN-kód nélkül is elérhető.
+
+- *Riasztás indítása* – megerősítés után folyamatos riasztó hang minden hangszóróban (minden zónában, teljes
+  hangerővel) a leállításig. A szünetzene azonnal elhallgat, közben nincs csengetés és bemondás.
+- Riasztáskor a program előjön, és magától erre az oldalra ugrik; itt a *Riasztás leállítása* gombbal állítható le.
+- A riasztó hangja a *Csengetési rend* oldalon cserélhető, előre beállított gyakorlathoz lásd a
+  *Rendkívüli események* részt. A webpanelről is indítható és leállítható.
+
 ## Csengetési rend
 
 - Több rend is lehet (pl. *Normál*, *Rövidített*, *Vizsganap*). Új rendet az *Új* vagy a *Másolat* gombbal
@@ -74,8 +85,8 @@ Az oldalak között a *Ctrl+1* … *Ctrl+9* billentyűkkel is lehet váltani.
 - **YouTube-számok előre letöltése:** a következő számokat a program előre letölti, így nem akad és rövid
   internetkimaradásnál is szól. A letöltött fájlok a *Gyorsítótár ürítése* gombbal törölhetők.
 - **Hangerő-kiegyenlítés:** a program minden számnak megméri a hangosságát (egyszer, a háttérben), és úgy
-  szabályozza, hogy mind ugyanolyan hangosan szóljon – nincs túl halk vagy fülsértően hangos dal. A csengő-
-  és bemondáshangok hangereje nem változik. A Spotify a saját kiegyenlítését használja. Az új számok mérése pár
+  szabályozza, hogy mind ugyanolyan hangosan szóljon – nincs túl halk vagy fülsértően hangos dal. A csengő-,
+  riasztó- és bemondáshangok hangereje nem változik. A Spotify a saját kiegyenlítését használja. Az új számok mérése pár
   másodperc; ha egy szám még nincs megmérve, az első másodpercekben áll be a helyes hangerő.
 
 ### Műsorblokkok
@@ -207,6 +218,9 @@ A nemzeti ünnepek nincsenek a honlapon, azokat az *Ünnepnapok betöltése* gom
 Egyszeri, előre beállított események a *Naptár → Rendkívüli események* részben (*Hozzáadás*). A pipával
 ideiglenesen kikapcsolhatók, törlés nélkül.
 
+- **Tűzriadó-gyakorlat:** a megadott időpontban magától elindul a riasztás, és a beállított idő (pl. 3 perc)
+  után leáll; 0 perc = kézi leállításig. A folyosói kijelző előre nem mutatja, a gyakorlat meglepetés maradhat.
+  Ha közben valaki kézzel indít riasztást, azt a gyakorlat vége nem állítja le.
 - **Rendkívüli csengetés:** a megadott időpontban egyszer megszólal a kiválasztott hang (pl. ünnepség kezdete,
   fogadóóra vége). Szünnapon és „ma nincs csengetés” mellett is szól.
 - **Csendes időszak:** kezdettől végig nincs szünetzene és ütemezett bemondás; a csengő néma, vagy ha kéred,
@@ -235,8 +249,8 @@ képernyő. Kilépés: **Esc** vagy dupla kattintás.
 A program magától keresi az új verziókat a GitHubon (indítás után és 6 óránként). Ha talál, a bal alsó
 sarokban megjelenik: *↑ Új verzió*.
 
-- **Automatikus telepítés tanítási időn kívül:** csak akkor frissít, ha nincs óra, nem szól zene, és
-   a következő csengetésig legalább 45 perc van hátra (pl. délután vagy szünnapon).
+- **Automatikus telepítés tanítási időn kívül:** csak akkor frissít, ha nincs óra, nem szól zene, nincs
+  riasztás, és a következő csengetésig legalább 45 perc van hátra (pl. délután vagy szünnapon).
 - **Kézzel:** *Beállítások → Frissítések → Telepítés most*. A program pár másodpercre leáll, majd magától
   újraindul a beállítások megtartásával.
 - A letöltött csomagot a program ellenőrzőösszeggel (SHA-256) ellenőrzi, sérült vagy hamis fájlt nem telepít.
@@ -245,7 +259,7 @@ sarokban megjelenik: *↑ Új verzió*.
 
 - *Beállítások → Hozzáférés → PIN beállítása…*: 4–8 számjegyű PIN. Ezután a **Csengetési rend**, **Zene**,
   **Naptár**, **Bemondások** és **Beállítások** oldal csak a PIN megadása után nyílik meg.
-- A **Vezérlőpult** (csengetés most, bemondás, zene, mai kapcsolók), a **Napló** és a **Súgó** PIN
+- A **Vezérlőpult** (csengetés most, bemondás, zene, mai kapcsolók), a **Riasztás**, a **Napló** és a **Súgó** PIN
   nélkül is használható – a napi működéshez nem kell PIN.
 - Feloldás után a beállítások a megadott ideig (alapból 5 perc) tétlenség után maguktól újra zárolódnak; a bal
   alsó *Beállítások zárolása* gombbal azonnal is zárolhatók. Ha a program a tálcára kerül, szintén zárol.
@@ -260,7 +274,7 @@ sarokban megjelenik: *↑ Új verzió*.
 
 A Vezérlőpult legfontosabb gombjai böngészőből is elérhetők, az iskolai hálózaton bármelyik telefonról vagy gépről:
 csengetés most (más hanggal is), szünetzene indítása / leállítása / következő szám, zeneforrás és hangerő,
-bemondás felolvasása, mai kapcsolók és mai csengetési rend – és látszik a visszaszámláló meg a mai menetrend.
+bemondás felolvasása, mai kapcsolók és mai csengetési rend, riasztás – és látszik a visszaszámláló meg a mai menetrend.
 
 - **Bekapcsolás:** *Beállítások → Webes vezérlés → Webpanel bekapcsolása*. Első bekapcsoláskor jelszót kér
   (legalább 8 karakter). Alatta megjelenik a cím, például `http://192.168.1.50:8080` – ezt kell a telefon
@@ -318,9 +332,9 @@ mindegyik kaphat saját hangkimenetet (hangkártyát, USB-s hangkártyát, HDMI-
 - **Csengő** – szóljon-e itt a becsengő, kicsengő, jelzőcsengő;
 - **Zene** – szóljon-e itt a szünetzene (pl. a tanáriban ne);
 - **Bemondás** – hallják-e itt a bemondásokat (a gongot is);
-- **Hangerő** – halkítás ebben a zónában (100% = teljes, 50% = halkabb).
+- **Hangerő** – halkítás ebben a zónában (100% = teljes, 50% = halkabb); a riasztást nem halkítja.
 
-A ▶ gombbal próbahangot játszhatsz csak az
+A **riasztás mindig minden zónában szól**, ezt nem lehet kikapcsolni. A ▶ gombbal próbahangot játszhatsz csak az
 adott zónában. Ha egy zóna eszköze nem érhető el (kihúzták), ott az alapértelmezett kimenet szól, és a program
 figyelmeztet (értesítést is küld, ha be van kapcsolva). Üres zónalistánál minden a felső Hangkimenetre megy.
 
@@ -335,7 +349,7 @@ a gong és a hangfájlos bemondás viszont zónák szerint. A zónák gépenkén
 - **kimaradt csengetés** – a gép aludt, lefagyott vagy ugrott az órája, és emiatt csengetés maradt ki (időponttal);
 - **hiba** – hiányzik egy hangfájl, nem játszható a zene, nincs felolvasó hang;
 - **hangkimenet** – kihúzták az erősítő kábelét, vagy nincs hangkártya;
-- a **tartalékgép átvette** vagy visszaadta a csengetést;
+- **riasztás indult**, illetve a **tartalékgép átvette** vagy visszaadta a csengetést;
 - **a program elindult** – ha nem te indítottad, összeomlás vagy áramszünet lehetett;
 - **reggeli önteszt** tanítási napokon a megadott időben: mai rend, első csengetés, hangkimenet, zeneforrás,
   tegnapi csengetések pontossága, elérhető frissítés.

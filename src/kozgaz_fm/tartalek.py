@@ -269,6 +269,6 @@ class Tartalek(QObject):
         self.szinkronizalt.emit(valtozott)
 
 
-def eletjel(b: Beallitasok, atvett: bool) -> dict:
+def eletjel(b: Beallitasok, atvett: bool, riasztas: bool) -> dict:
     return {"szerep": b.tartalek_mod, "verzio": __version__, "ido": datetime.now().isoformat(timespec="seconds"),
-            "atvett": atvett}
+            "atvett": atvett, "riasztas": riasztas}

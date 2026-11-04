@@ -90,6 +90,7 @@ HANG_MEZOK = {f.name: f.default for f in fields(Beallitasok) if f.name.startswit
 class _Feladat:
     tipus: str
     ertek: str = ""
+    ismetles: bool = False
     tartalek: str = ""
     hangero: int | None = None
     cel: str = "csengo"
@@ -99,6 +100,7 @@ class Vezerlo(QObject):
     frissult = Signal()
     naplo_bejegyzes = Signal(str)
     uzenet = Signal(str, str)
+    riasztas_valtozott = Signal(bool)
     hangok_valtoztak = Signal()
     keresek_valtoztak = Signal()
 
@@ -121,6 +123,7 @@ class Vezerlo(QObject):
         self._kovetkezo_kert = False
         self.spotify: Spotify | None = None
         self.naplo: deque[str] = deque(maxlen=1000)
+        self.riasztas = False
         self.keresek = Keresek()
         self.szuro = Szuro()
         self.dalszoveg_tar = DalszovegTar(gyorsitotar_mappa() / "dalszoveg.json")
@@ -134,6 +137,7 @@ class Vezerlo(QObject):
         self._nap: date | None = None
         self._utolso: datetime | None = None
         self._auto_zene = False
+        self._auto_riado = False
         self._sor: deque[_Feladat] = deque()
         self.csengo.kesz.connect(self._kovetkezo_feladat)
         self.bemondo.kesz.connect(self._kovetkezo_feladat)
@@ -393,14 +397,14 @@ class Vezerlo(QObject):
         if self.proba.szol:
             self.proba.megallit()
             return True
-        if self.csengo.szol:
-            self._tiltas("Csengetés közben nincs meghallgatás.")
+        if self.riasztas or self.csengo.szol:
+            self._tiltas("Csengetés vagy riasztás közben nincs meghallgatás.")
             return True
         return self.proba.lejatszas(ertek, self.b.csengo_hangero, cel="elso")
 
     def zona_proba(self, index: int) -> bool:
-        if self.csengo.szol:
-            self._tiltas("Csengetés közben nincs próbahang.")
+        if self.riasztas or self.csengo.szol:
+            self._tiltas("Csengetés vagy riasztás közben nincs próbahang.")
             return False
         self.proba.zonak(self.zona_kimenetek())
         return self.proba.lejatszas(self.b.hang_gong, self.b.csengo_hangero, cel=f"zona:{index}")
@@ -520,6 +524,8 @@ class Vezerlo(QObject):
 
     def _szinkron(self) -> None:
         most = datetime.now()
+        if self.riasztas:
+            return
         if self.tartalek.passziv:
             if self._auto_zene and self.zene.szol:
                 self.zene.megallit()
@@ -541,7 +547,17 @@ class Vezerlo(QObject):
             if e.tipus in CSENGOK or e.tipus is Tipus.RENDKIVULI:
                 self._kihagyott = e
             return
-        if e.tipus in (Tipus.CSEND, Tipus.CSEND_VEGE):
+        if self.riasztas and e.tipus not in (Tipus.ZENE_LEALL, Tipus.RIADO_VEGE, Tipus.CSEND, Tipus.CSEND_VEGE):
+            self.log(f"Kihagyva riasztás miatt: {e.leiras}")
+            return
+        if e.tipus is Tipus.RIADO:
+            self.log(f"Rendkívüli esemény: {e.leiras}")
+            self.riasztas_indit()
+            self._auto_riado = True
+        elif e.tipus is Tipus.RIADO_VEGE:
+            if self.riasztas and self._auto_riado:
+                self.riasztas_leallit()
+        elif e.tipus in (Tipus.CSEND, Tipus.CSEND_VEGE):
             self.log(f"Csendes időszak {'kezdődik' if e.tipus is Tipus.CSEND else 'véget ért'}: "
                      f"{e.rendkivuli.nev if e.rendkivuli else ''}")
             if e.tipus is Tipus.CSEND and self.zene.szol:
@@ -589,6 +605,9 @@ class Vezerlo(QObject):
 
     def csengetes(self, hang: str, leiras: str = "Kézi csengetés", hangero: int | None = None,
                   tervezett: datetime | None = None, tipus: str = "kezi") -> None:
+        if self.riasztas:
+            self._tiltas("Riasztás közben nincs csengetés.")
+            return
         self.log(f"Csengetés: {leiras}" + (f" (halkan, {hangero}%)" if hangero is not None else ""))
         if self.stat:
             self.stat.csengetes(tipus, leiras, tervezett)
@@ -597,6 +616,9 @@ class Vezerlo(QObject):
             self._kovetkezo_feladat()
 
     def bemondas(self, bem: Bemondas) -> None:
+        if self.riasztas:
+            self._tiltas("Riasztás közben nincs bemondás.")
+            return
         self.log(f"Bemondás: {bem.nev}")
         if bem.gong:
             self._sor.append(_Feladat("hang", self.b.hang_gong, tartalek=HANG_MEZOK["hang_gong"], cel="bemondas"))
@@ -611,7 +633,7 @@ class Vezerlo(QObject):
         self._sor = deque(f for f in self._sor if f.tipus == "hang" and f.ertek != self.b.hang_gong)
         if self.bemondo.beszel:
             self.bemondo.megallit()
-        elif self.csengo.szol:
+        elif self.csengo.szol and not self.riasztas:
             self.csengo.megallit()
 
     def _kovetkezo_feladat(self) -> None:
@@ -625,15 +647,46 @@ class Vezerlo(QObject):
                 self._jelez("A gépen nincs elérhető felolvasó hang (TTS).", "hiba")
                 continue
             forras = Path(feladat.ertek) if feladat.tipus == "fajl" else feladat.ertek
-            hangero = feladat.hangero or self.b.csengo_hangero
-            if self.csengo.lejatszas(forras, hangero, cel=feladat.cel):
+            hangero = 100 if feladat.ismetles else feladat.hangero or self.b.csengo_hangero
+            if self.csengo.lejatszas(forras, hangero, feladat.ismetles, cel=feladat.cel):
                 return
             if feladat.tartalek and feladat.tartalek != feladat.ertek:
                 self._jelez("A beállított csengőhang nem található, a beépített hang szól helyette.", "hiba")
-                if self.csengo.lejatszas(feladat.tartalek, hangero, cel=feladat.cel):
+                if self.csengo.lejatszas(feladat.tartalek, hangero, feladat.ismetles, cel=feladat.cel):
                     return
             self._jelez(f"A hangfájl nem található: {feladat.ertek}", "hiba")
-        self.zene.halkit(False)
+        if not self.riasztas:
+            self.zene.halkit(False)
+
+    def riasztas_indit(self) -> None:
+        if self.riasztas:
+            return
+        self.riasztas = True
+        self._auto_riado = False
+        self._auto_zene = False
+        self.zene.megallit(elhalkitas=False)
+        self.log("RIASZTÁS ELINDÍTVA")
+        self.ertesito.kuld("riasztas", "Riasztás indult", f"{datetime.now():%H:%M}-kor elindult a riasztás a "
+                           "Közgáz FM-en.", "hiba", ismetles_mp=60)
+        self._sor.clear()
+        self._sor.append(_Feladat("hang", self.b.hang_riasztas, ismetles=True, cel="mind",
+                                  tartalek=HANG_MEZOK["hang_riasztas"]))
+        if not self._foglalt():
+            self._kovetkezo_feladat()
+        self.riasztas_valtozott.emit(True)
+        self.frissult.emit()
+
+    def riasztas_leallit(self) -> None:
+        if not self.riasztas:
+            return
+        self.riasztas = False
+        self._auto_riado = False
+        self._sor.clear()
+        self.log("Riasztás leállítva")
+        if not self._foglalt():
+            self.zene.halkit(False)
+        self.riasztas_valtozott.emit(False)
+        self.frissult.emit()
 
     def zene_indit(self) -> None:
         self._auto_zene = False

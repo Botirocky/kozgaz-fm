@@ -121,7 +121,7 @@ def test_vezerlo_zona_kimenetek():
     assert z[1].nev == "2. zóna" and z[1].szorzo == 0.5 and not z[1].csengo
 
 
-def test_mind_cel_nem_halkul_a_zonakban():
+def test_riasztas_nem_halkul_a_zonakban():
     t = TobbLejatszo(zonak=ZONAK)
     t.setVolume(1.0)
     t.aktiv("csengo")

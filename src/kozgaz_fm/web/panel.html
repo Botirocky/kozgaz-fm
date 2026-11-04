@@ -30,6 +30,11 @@
 </section>
 
 <div id="panel" hidden>
+  <div id="riasztas-sav" class="riasztas-sav" hidden>
+    <strong>Riasztás szól</strong>
+    <button type="button" class="gomb feher" data-muvelet="riasztas-le">Riasztás leállítása</button>
+  </div>
+
   <header class="fejlec">
     <img src="logo.png" alt="" width="36" height="36">
     <span id="cim" class="fejlec-cim">Közgáz FM</span>
@@ -72,6 +77,12 @@
           <button type="button" class="link" id="sablon-szerkesztes" data-muvelet="sablon-szerkesztes" aria-pressed="false">Sablonok törlése</button>
         </div>
       </form>
+    </section>
+
+    <section class="blokk veszely" aria-labelledby="riasztas-cim">
+      <h2 id="riasztas-cim">Riasztás</h2>
+      <p>Folyamatos riasztó hang, a zene leáll. A leállításig szól.</p>
+      <button type="button" id="riasztas-gomb" class="gomb veszely-gomb" data-muvelet="riasztas">Riasztás indítása</button>
     </section>
     </div>
 
@@ -156,6 +167,16 @@
   </footer>
 </div>
 
+<dialog id="megerosites">
+  <form method="dialog">
+    <h2>Biztosan elindítod a riasztást?</h2>
+    <p>A riasztó hang az összes hangszóróban szól, amíg valaki le nem állítja.</p>
+    <div class="sor jobbra">
+      <button value="megse" class="gomb">Mégse</button>
+      <button value="igen" class="gomb veszely-gomb">Riasztás indítása</button>
+    </div>
+  </form>
+</dialog>
 
 <div id="uzenet" class="uzenet" role="status" aria-live="polite"></div>
 </body>

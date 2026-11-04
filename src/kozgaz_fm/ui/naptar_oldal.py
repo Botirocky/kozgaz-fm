@@ -107,10 +107,12 @@ class KivetelAblak(QDialog):
         f.addRow(gombok)
 
 
-RENDKIVULI_IKON = {"csengetes": "csengo", "csend": "hold"}
+RENDKIVULI_IKON = {"csengetes": "csengo", "riado": "riasztas", "csend": "hold"}
 RENDKIVULI_SUGO = {
     "csengetes": "A megadott időpontban egyszer megszólal a kiválasztott hang (pl. ünnepség kezdete). "
                  "Szünnapon és „ma nincs csengetés” mellett is szól.",
+    "riado": "A megadott időpontban magától elindul a riasztás, és a beállított idő után leáll "
+             "(0 perc = kézi leállításig). A folyosói kijelző előre nem mutatja.",
     "csend": "Az időszak alatt nincs szünetzene és ütemezett bemondás; a csengő néma vagy halk "
              "(pl. érettségi, ünnepség, mérés).",
 }
@@ -120,6 +122,8 @@ def rendkivuli_leiras(r: Rendkivuli) -> str:
     if r.tipus == "csend":
         csengo = f"halk csengő ({r.csengo_hangero}%)" if r.csengo_hangero else "néma csengő"
         return f"{r.tol}–{r.ig}, {csengo}"
+    if r.tipus == "riado":
+        return f"{r.tol}, " + (f"{r.riado_perc} percig" if r.riado_perc else "kézi leállításig")
     return r.tol
 
 
@@ -138,11 +142,16 @@ class RendkivuliAblak(QDialog):
         self.tipus.setCurrentIndex(max(0, self.tipus.findData(r.tipus)))
         self.sugo = cimke("", "halvany", sortores=True)
         self.nev = QLineEdit(r.nev)
-        self.nev.setPlaceholderText("pl. Érettségi, Március 15. ünnepség")
+        self.nev.setPlaceholderText("pl. Tűzriadó-gyakorlat, Érettségi, Március 15. ünnepség")
         self.datum = datum_mezo(date.fromisoformat(r.datum) if r.datum else alap)
         self.tol = ido_mezo(r.tol)
         self.ig = ido_mezo(r.ig or r.tol)
         self.hang = HangValaszto(v, r.hang)
+        self.riado_perc = QSpinBox()
+        self.riado_perc.setRange(0, 60)
+        self.riado_perc.setSuffix(" perc")
+        self.riado_perc.setSpecialValueText("kézi leállításig")
+        self.riado_perc.setValue(r.riado_perc)
         self.halk = QCheckBox("Halk csengő:")
         self.halk.setChecked(r.csengo_hangero > 0)
         self.hangero = QSpinBox()
@@ -158,6 +167,7 @@ class RendkivuliAblak(QDialog):
         f.addRow("Időpont:", self.tol)
         f.addRow("Vége:", self.ig)
         f.addRow("Hang:", self.hang)
+        f.addRow("Riasztás hossza:", self.riado_perc)
         self.csengo_sor = sor(self.halk, self.hangero, None)
         f.addRow("Csengő:", self.csengo_sor)
         gombok = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
@@ -172,6 +182,7 @@ class RendkivuliAblak(QDialog):
         self.sugo.setText(RENDKIVULI_SUGO[tipus])
         self.f.setRowVisible(self.ig, tipus == "csend")
         self.f.setRowVisible(self.hang, tipus == "csengetes")
+        self.f.setRowVisible(self.riado_perc, tipus == "riado")
         self.f.setRowVisible(self.csengo_sor, tipus == "csend")
         self.f.labelForField(self.tol).setText("Kezdete:" if tipus == "csend" else "Időpont:")
         self.adjustSize()
@@ -191,6 +202,7 @@ class RendkivuliAblak(QDialog):
             tipus=tipus,
             ig=self.ig.time().toString("HH:mm") if tipus == "csend" else "",
             hang=self.hang.ertek(),
+            riado_perc=self.riado_perc.value(),
             csengo_hangero=self.hangero.value() if tipus == "csend" and self.halk.isChecked() else 0,
             aktiv=self.aktiv,
         )
@@ -263,7 +275,7 @@ class NaptarOldal(Oldal):
 
     def _rendkivuli_kartya(self) -> Kartya:
         k = Kartya("Rendkívüli események")
-        k.add(cimke("Egyszeri, előre beállított események: rendkívüli csengetés (pl. ünnepség "
+        k.add(cimke("Egyszeri, előre beállított események: tűzriadó-gyakorlat, rendkívüli csengetés (pl. ünnepség "
                     "kezdete) vagy csendes időszak (érettségi, mérés), amikor nincs zene és bemondás.",
                     "halvany", sortores=True))
         self.rendkivuli = QListWidget()

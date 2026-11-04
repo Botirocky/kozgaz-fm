@@ -36,6 +36,7 @@ SOTET = {
     "figyelem": "#E0A43A",
     "hiba": "#D9483B",
     "hiba_sotet": "#A8342A",
+    "riaszt_hatter": "#2E1412",
     "veszely_szoveg": "#F2B8B2",
     "fejlec": "#101317",
     "fejlec_szoveg": "#E8EBEF",
@@ -72,6 +73,7 @@ VILAGOS = {
     "figyelem": "#A86A12",
     "hiba": "#C4382C",
     "hiba_sotet": "#A32D23",
+    "riaszt_hatter": "#FBE8E6",
     "veszely_szoveg": "#C4382C",
     "fejlec": "#2F6CA6",
     "fejlec_szoveg": "#FFFFFF",
@@ -136,6 +138,8 @@ IKONOK = {
     "kovetkezo": '<path d="m5 4 10 8-10 8V4zM19 5v14"/>',
     "elozo": '<path d="m19 20-10-8 10-8v16zM5 19V5"/>',
     "hangero": '<path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>',
+    "riasztas": '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>'
+                '<path d="M12 9v4M12 17h.01"/>',
     "kijelzo": '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',
     "plusz": '<path d="M12 5v14M5 12h14"/>',
     "kuka": '<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>',
@@ -279,6 +283,7 @@ def stilus() -> str:
     QFrame[szerep="kartya"][szakasz="ora"] {{ border-left: 4px solid {s['kek']}; }}
     QFrame[szerep="kartya"][szakasz="szunet"] {{ border-left: 4px solid {s['kiemelt']}; }}
     QFrame[szerep="kartya"][szakasz="csend"] {{ border-left: 4px solid {s['keret_hover']}; }}
+    QFrame[szerep="kartya"][allapot="riasztas"] {{ background: {s['riaszt_hatter']}; border-color: {s['hiba']}; }}
     QPushButton {{ background: {s['felulet2']}; border: 1px solid {s['keret_eros']}; border-radius: 5px;
                    padding: 7px 14px; color: {s['szoveg']}; font-weight: 600; }}
     QPushButton:hover {{ background: {s['keret']}; border-color: {s['keret_hover']}; }}
