@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#2F6CA6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101317" media="(prefers-color-scheme: dark)">
+<meta name="robots" content="noindex">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src https://picloud.tail7df6a9.ts.net; base-uri 'none'; form-action 'none'">
+<title>Zenekérés – Közgáz FM</title>
+<link rel="icon" href="logo.png">
+<link rel="stylesheet" href="zenekeres.css?v=2">
+<script src="zenekeres.js?v=2" defer></script>
+</head>
+<body>
+<header class="fejlec">
+  <img src="logo.png" alt="" width="40" height="40">
+  <div>
+    <span id="cim" class="fejlec-cim">Közgáz FM</span>
+    <span class="fejlec-al">iskolarádió · zenekérés</span>
+  </div>
+</header>
+
+<main class="tartalom">
+  <section class="blokk">
+    <h1>Kérj zenét a szünetre</h1>
+    <p id="leiras" class="halvany">Írd be a szám előadóját és címét, vagy másold be a YouTube-linkjét.</p>
+    <p id="betolt" class="doboz">Betöltés…</p>
+    <p id="kikapcsolva" class="doboz" hidden></p>
+    <form id="urlap" hidden>
+      <label for="szoveg">Előadó és cím, vagy YouTube-link</label>
+      <input id="szoveg" type="text" maxlength="150" autocomplete="off" enterkeyhint="send" required
+             placeholder="pl. Queen – Don't Stop Me Now">
+      <label for="nev">Neved vagy osztályod (nem kötelező)</label>
+      <input id="nev" type="text" maxlength="30" autocomplete="off" placeholder="pl. 10.B">
+      <button type="submit" class="gomb">Kérés küldése</button>
+      <p id="maradek" class="halvany kicsi"></p>
+    </form>
+  </section>
+
+  <section id="sajat-blokk" class="blokk" hidden>
+    <h2>Mai kéréseid</h2>
+    <ul id="sajat" class="lista"></ul>
+  </section>
+
+  <section class="blokk szabalyok">
+    <h2>Tudnivalók</h2>
+    <ul>
+      <li>A szám a szünetekben szól, a tanórák alatt nem.</li>
+      <li>Trágár szövegű vagy korhatáros szám nem kerül adásba, ezt a rendszer ellenőrzi.</li>
+      <li id="szabaly-napi">Naponta néhány számot kérhetsz, és csak rövidebb számot.</li>
+    </ul>
+  </section>
+</main>
+
+<div id="uzenet" class="uzenet" role="status" aria-live="polite"></div>
+</body>
+</html>

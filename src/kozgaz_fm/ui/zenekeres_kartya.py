@@ -70,6 +70,17 @@ class ZenekeresKartya(Kartya):
         self.kulcs.setPlaceholderText("A szerver telepítésekor megadott titkos kulcs")
         self.kulcs.editingFinished.connect(self._szerver_mentes)
         self.szerver_allapot = cimke("", "halvany", sortores=True)
+        self.oldal = QLineEdit(b.zenekeres_oldal)
+        self.oldal.setPlaceholderText("pl. https://botirocky.github.io/kozgaz-fm/ – üresen a szerver címe")
+        self.oldal.editingFinished.connect(self._oldal_mentes)
+        self.mp3 = kapcsolo("Elfogadott kért számok mentése MP3-ként", b.zenekeres_mp3,
+                            "Minden elfogadott kért szám MP3-ként a megadott mappába kerül (a címe lesz a fájlnév)")
+        self.mp3.toggled.connect(lambda e: self._allit("zenekeres_mp3", e))
+        self.mp3_mappa = QLineEdit(str(v.kert_mp3_mappa()))
+        self.mp3_mappa.editingFinished.connect(
+            lambda: self._allit("zenekeres_mp3_mappa", self.mp3_mappa.text().strip()))
+        mp3_valaszt = gomb("Mappa…", tipp="Hova kerüljenek a kért számok")
+        mp3_valaszt.clicked.connect(self._mp3_mappa_valaszt)
         racs = QGridLayout()
         racs.setVerticalSpacing(10)
         racs.addWidget(cimke("Naponta ennyit kérhet egy telefon:"), 0, 0)
@@ -83,6 +94,10 @@ class ZenekeresKartya(Kartya):
         racs.addWidget(cimke("Szerver kulcsa:"), 6, 0, 1, 2)
         racs.addWidget(self.kulcs, 7, 0, 1, 2)
         racs.addWidget(self.szerver_allapot, 8, 0, 1, 2)
+        racs.addWidget(cimke("Kérő oldal címe (QR-kód, plakát, kijelző):"), 9, 0, 1, 2)
+        racs.addWidget(self.oldal, 10, 0, 1, 2)
+        racs.addWidget(self.mp3, 11, 0, 1, 2)
+        racs.addLayout(sor(self.mp3_mappa, mp3_valaszt), 12, 0, 1, 2)
         racs.setColumnStretch(0, 1)
         self.qr = cimke()
         self.qr.setFixedSize(QR_MERET, QR_MERET)
@@ -157,6 +172,24 @@ class ZenekeresKartya(Kartya):
             self.cim.setText("" if self.v.b.zenekeres and (self.v.web.fut or self.v.keres_szerver.beallitva) else
                              "A QR-kód a zenekérés bekapcsolása után jelenik meg (szerver nélkül a webes "
                              "vezérlés is kell).")
+
+    def _oldal_mentes(self) -> None:
+        cim = self.oldal.text().strip()
+        if cim and not cim.startswith(("http://", "https://")):
+            QMessageBox.warning(self, "Zenekérés", "A kérő oldal címe http:// vagy https:// kezdetű legyen.")
+            return
+        if cim == self.v.b.zenekeres_oldal:
+            return
+        self.v.b.zenekeres_oldal = cim
+        self.v.log(f"Zenekérő oldal: {cim or 'alapértelmezett'}")
+        self.v.mentes()
+        self._cim_frissit()
+
+    def _mp3_mappa_valaszt(self) -> None:
+        mappa = QFileDialog.getExistingDirectory(self, "Kért számok mappája", self.mp3_mappa.text())
+        if mappa:
+            self.mp3_mappa.setText(mappa)
+            self._allit("zenekeres_mp3_mappa", mappa)
 
     def _szerver_mentes(self) -> None:
         b = self.v.b

@@ -210,7 +210,7 @@ def napi_esemenyek(b: Beallitasok, nap: date) -> list[Esemeny]:
         csengok.append(Esemeny(kezdet, Tipus.BECSENGO, szam))
         if b.kicsengo:
             csengok.append(Esemeny(vege, Tipus.KICSENGO, szam))
-        if zene_ma:
+        if zene_ma and szam - 1 not in b.zene_kihagyott_szunetek:
             ablak = _zene_ablak(b, elozo_vege, jelzo or kezdet)
             if ablak:
                 zene_parok.append((*ablak, szam - 1))

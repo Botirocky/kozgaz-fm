@@ -156,6 +156,15 @@ class ZeneOldal(Oldal):
         racs.setColumnStretch(0, 1)
         k.add(auto)
         k.add(racs)
+        k.add(cimke("Ezekben a szünetekben ne legyen zene:", sortores=True))
+        kihagy = []
+        for szunet in range(10):
+            pipa = kapcsolo("Reggel" if szunet == 0 else f"{szunet}.", szunet in b.zene_kihagyott_szunetek,
+                            "Tanítás előtt" if szunet == 0 else f"A {szunet}. óra utáni szünet")
+            pipa.toggled.connect(lambda _e: self._allit("zene_kihagyott_szunetek",
+                                                        [i for i, p in enumerate(kihagy) if p.isChecked()]))
+            kihagy.append(pipa)
+        k.add(sor(*kihagy, nyujt=True))
         k.add(sor(reggeli, reggel_ido, nyujt=True))
         k.add(keveres)
         gyors = kapcsolo("YouTube-számok előre letöltése", b.youtube_gyorsitotar,

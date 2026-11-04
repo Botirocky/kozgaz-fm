@@ -42,7 +42,7 @@ from pathlib import Path
 from PySide6.QtCore import QObject, QTimer, Signal
 from PySide6.QtMultimedia import QMediaDevices
 
-from kozgaz_fm import __version__, dalszoveg, hatter, sajat_hangok, youtube
+from kozgaz_fm import __version__, dalszoveg, hatter, kert_mentes, sajat_hangok, youtube
 from kozgaz_fm.beallitasok import (
     Beallitasok,
     Bemondas,
@@ -832,10 +832,25 @@ class Vezerlo(QObject):
                                          "(Spotify mellett nem).")
         k = self.keresek.dont(azon, elfogad)
         self.log(f"Zenekérés {'elfogadva' if elfogad else 'elutasítva'}{f' ({ki})' if ki else ''}: {k.cim}")
+        if elfogad and k.yt and self.b.zenekeres_mp3:
+            self.kert_mp3(k.yt, k.cim)
         if self.stat:
             self.stat.keres("elfogadva" if elfogad else "elutasitva")
         self.keresek_valtoztak.emit()
         return k
+
+    def kert_mp3_mappa(self) -> Path:
+        return Path(self.b.zenekeres_mp3_mappa) if self.b.zenekeres_mp3_mappa.strip() else kert_mentes.alap_mappa()
+
+    def kert_mp3(self, yt: str, cim: str) -> None:
+        mappa = self.kert_mp3_mappa()
+
+        def kesz(ut: Path | None) -> None:
+            if ut is not None:
+                self.log(f"Kért szám elmentve MP3-ként: {ut}")
+
+        hatter.futtat(lambda: kert_mentes.mentes(yt, cim, mappa), kesz,
+                      lambda e: self.log(f"HIBA: a kért szám MP3-mentése nem sikerült ({cim}): {e}"))
 
     def _tiltas_frissit(self) -> None:
         tiltott = self.b.tiltott_szamok

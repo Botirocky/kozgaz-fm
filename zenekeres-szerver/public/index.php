@@ -41,8 +41,19 @@ function json_test(): array
     return $adat;
 }
 
+function engedett_origin(): ?string
+{
+    $origin = (string)($_SERVER['HTTP_ORIGIN'] ?? '');
+    $engedett = array_filter(array_map('trim', explode(',', (string)(getenv('KFM_ENGEDETT_ORIGIN') ?: 'https://botirocky.github.io'))));
+    return $origin !== '' && in_array($origin, $engedett, true) ? $origin : null;
+}
+
 function eszkoz(): string
 {
+    $fejlec = (string)($_SERVER['HTTP_X_KOZGAZ_FM_ESZKOZ'] ?? '');
+    if (engedett_origin() !== null && preg_match('/^[0-9a-f]{64}$/', $fejlec)) {
+        return hash('sha256', 'kulso:' . $fejlec);
+    }
     $suti = $_COOKIE[SUTI] ?? '';
     if (!is_string($suti) || !preg_match('/^[0-9a-f]{64}$/', $suti)) {
         $suti = bin2hex(random_bytes(32));
@@ -86,6 +97,18 @@ try {
     }
 
     if ($ut === '/api/zenekeres') {
+        $kulso = engedett_origin();
+        if ($kulso !== null) {
+            header('Access-Control-Allow-Origin: ' . $kulso);
+            header('Vary: Origin');
+            header('Access-Control-Allow-Headers: Content-Type, X-Kozgaz-FM, X-Kozgaz-FM-Eszkoz');
+            header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+            header('Access-Control-Max-Age: 600');
+            if ($modszer === 'OPTIONS') {
+                http_response_code(204);
+                exit;
+            }
+        }
         $eszkoz = eszkoz();
         if ($modszer === 'GET') {
             valasz(200, ['data' => diak_allapot($eszkoz)]);
@@ -98,7 +121,7 @@ try {
         }
         $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
         $gazda = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? ($_SERVER['HTTP_HOST'] ?? '');
-        if ($origin !== '' && parse_url($origin, PHP_URL_HOST) !== explode(':', $gazda)[0]) {
+        if ($origin !== '' && $kulso === null && parse_url($origin, PHP_URL_HOST) !== explode(':', $gazda)[0]) {
             hiba(403, 'forbidden', 'Hibás kérés.');
         }
         $adat = json_test();

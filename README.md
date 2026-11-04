@@ -124,6 +124,14 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
 
+## Újdonságok az 1.9.0-ban
+
+- A Riasztás oldal is a rendszergazda-PIN-hez kötött.
+- Az elfogadott kért számok MP3-ként elmentődnek egy mappába (alapból „Közgáz FM kért számok” a saját mappádban).
+- Kiválasztható, melyik szünetekben ne legyen szünetzene (Zene → Szünetzene beállításai).
+- Zenekérő oldal a GitHubon (https://botirocky.github.io/kozgaz-fm/): a diákok mobilnetről is kérhetnek, a QR-kód
+  és a plakát erre a címre mutathat (Zene → Zenekérés → Kérő oldal címe).
+
 ## Újdonságok az 1.8.0-ban
 
 - Zenekérés: a hosszkorlátnál hosszabb számnak a program a rádiós változatát (radio edit) keresi meg, és csak

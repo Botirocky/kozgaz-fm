@@ -11,4 +11,5 @@ services:
     environment:
       TZ: Europe/Budapest
       KFM_GEP_KULCS: ${KFM_GEP_KULCS:?KFM_GEP_KULCS kell}
+      KFM_ENGEDETT_ORIGIN: ${KFM_ENGEDETT_ORIGIN:-https://botirocky.github.io}
     mem_limit: 256m

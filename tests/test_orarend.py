@@ -146,3 +146,18 @@ def test_mentes_betoltes(tmp_path, b):
 ])
 def test_nap_szoveg(ido, vart):
     assert nap_szoveg(ido, datetime(2026, 11, 2, 16, 0)) == vart
+
+
+def test_kihagyott_szunetben_nincs_zene():
+    from datetime import date
+
+    from kozgaz_fm.beallitasok import alapertelmezett
+    from kozgaz_fm.orarend import Tipus, napi_esemenyek
+
+    b = alapertelmezett()
+    nap = date(2026, 11, 9)
+    elotte = [e.ora for e in napi_esemenyek(b, nap) if e.tipus is Tipus.ZENE_INDUL]
+    b.zene_kihagyott_szunetek = [2, 4]
+    utana = [e.ora for e in napi_esemenyek(b, nap) if e.tipus is Tipus.ZENE_INDUL]
+    assert 2 in elotte and 4 in elotte
+    assert utana == [o for o in elotte if o not in (2, 4)]

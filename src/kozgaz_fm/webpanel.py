@@ -778,6 +778,8 @@ class WebPanel:
         return cimek
 
     def keres_cim(self) -> str:
+        if self.v.b.zenekeres_oldal.strip():
+            return self.v.b.zenekeres_oldal.strip()
         if self.v.keres_szerver.beallitva:
             return self.v.keres_szerver.oldal()
         cimek = self.cimek()

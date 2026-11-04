@@ -37,7 +37,7 @@ Az oldalak között a *Ctrl+1* … *Ctrl+9* billentyűkkel is lehet váltani.
 ## Riasztás
 
 Külön oldal az oldalsávban (*Ctrl+2*), szándékosan nem a Vezérlőpulton, hogy véletlenül ne lehessen elindítani.
-PIN-kód nélkül is elérhető.
+Ha van rendszergazda-PIN, a Riasztás oldal is csak a PIN megadása után nyílik meg.
 
 - *Riasztás indítása* – megerősítés után folyamatos riasztó hang minden hangszóróban (minden zónában, teljes
   hangerővel) a leállításig. A szünetzene azonnal elhallgat, közben nincs csengetés és bemondás.
@@ -74,6 +74,8 @@ PIN-kód nélkül is elérhető.
 
 ### Szünetzene beállításai
 
+- **Zene nélküli szünetek:** pipáld be, melyik szünetekben ne induljon szünetzene (*Reggel* = tanítás előtt,
+  *1.* = az 1. óra utáni szünet). A csengetést nem érinti.
 - **Csak ennél hosszabb szünetben:** a rövid szünetekben nem indul zene.
 - **Kicsengetés után ennyivel indul:** hogy a csengő ne keveredjen a zenével.
 - **Átúsztatás a számok között:** a szám vége előtt ennyi másodperccel már indul a következő, és a kettő
@@ -152,6 +154,10 @@ Szabályok, amelyeket a program magától betart:
 - **Hosszkorlát** (alapból 7 perc); élő adás és lejátszási lista nem kérhető. Ha a kért szám hosszabb, a program
   megkeresi a YouTube-on a rádiós változatát (*radio edit*, *radio version*), és csak azt teszi a sorba – a
   kérések listájában ez megjegyzésként látszik. Ha nincs a korláton belüli rádiós változat, a kérés elutasul.
+- **Kért számok MP3-ba:** az elfogadott kért számok MP3-ként a megadott mappába kerülnek (a cím lesz a
+  fájlnév). Kikapcsolható, a mappa a Zenekérés kártyán választható.
+- **Kérő oldal címe:** ha megadod (pl. a GitHubon futó https://botirocky.github.io/kozgaz-fm/ oldalt), a QR-kód,
+  a plakát és a folyosói kijelző erre a címre mutat.
 - **Tiltólista:** soronként egy szó vagy előadó; ha a kérésben vagy a talált címben szerepel, a kérés nem megy át.
 - Ugyanazt a számot nem lehet kétszer kérni, amíg az előző vár vagy szólni fog, és a már lejátszottat is csak
   legalább 12 óra múlva.
@@ -261,7 +267,8 @@ sarokban megjelenik: *↑ Új verzió*.
 
 - *Beállítások → Hozzáférés → PIN beállítása…*: 4–8 számjegyű PIN. Ezután a **Csengetési rend**, **Zene**,
   **Naptár**, **Bemondások** és **Beállítások** oldal csak a PIN megadása után nyílik meg.
-- A **Vezérlőpult** (csengetés most, bemondás, zene, mai kapcsolók), a **Riasztás**, a **Napló** és a **Súgó** PIN
+- A **Riasztás** oldal is a PIN-hez kötött (ugyanaz a PIN).
+- A **Vezérlőpult** (csengetés most, bemondás, zene, mai kapcsolók), a **Napló** és a **Súgó** PIN
   nélkül is használható – a napi működéshez nem kell PIN.
 - Feloldás után a beállítások a megadott ideig (alapból 5 perc) tétlenség után maguktól újra zárolódnak; a bal
   alsó *Beállítások zárolása* gombbal azonnal is zárolhatók. Ha a program a tálcára kerül, szintén zárol.

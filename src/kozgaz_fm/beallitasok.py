@@ -147,6 +147,7 @@ class Beallitasok:
     atusztatas: float = 4.0
     reggeli_zene: bool = False
     reggeli_zene_tol: str = "07:30"
+    zene_kihagyott_szunetek: list[int] = field(default_factory=list)
     forrasok: list[ZeneForras] = field(default_factory=list)
     aktiv_forras: int = 0
     keveres: bool = True
@@ -181,6 +182,9 @@ class Beallitasok:
     zenekeres_tiltott: list[str] = field(default_factory=list)
     zenekeres_szerver: str = ""
     zenekeres_szerver_kulcs: str = ""
+    zenekeres_oldal: str = ""
+    zenekeres_mp3: bool = True
+    zenekeres_mp3_mappa: str = ""
     tiltott_szamok: list[TiltottSzam] = field(default_factory=list)
     tiltott_telefonok: list[TiltottTelefon] = field(default_factory=list)
     tartalek_mod: str = ""
