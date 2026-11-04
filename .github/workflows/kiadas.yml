@@ -4,6 +4,11 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      cimke:
+        description: "Kiadás címkéje (pl. v1.6.0); üresen csak épít"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -106,18 +111,20 @@ jobs:
           compression-level: 0
 
   kiadas:
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/') || inputs.cimke != ''
     needs: [windows, linux, wheel, pi-os]
     runs-on: ubuntu-24.04
     timeout-minutes: 40
+    env:
+      CIMKE: ${{ inputs.cimke || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Változások listája
         run: |
-          elozo=$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)
-          tartomany="${elozo:+$elozo..}${GITHUB_REF_NAME}"
+          elozo=$(git describe --tags --abbrev=0 "HEAD^" 2>/dev/null || true)
+          tartomany="${elozo:+$elozo..}HEAD"
           {
             echo "## Változások"
             echo
@@ -134,5 +141,8 @@ jobs:
         run: cd kiadas && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt
       - uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.CIMKE }}
+          name: ${{ env.CIMKE }}
+          target_commitish: ${{ github.sha }}
           files: kiadas/*
           body_path: valtozasok.md
