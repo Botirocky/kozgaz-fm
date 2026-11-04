@@ -56,7 +56,7 @@ def _hiba(e: Exception) -> SzerverHiba:
         if e.code in (401, 403):
             return SzerverHiba("A szerver nem fogadta el a kulcsot.")
         if e.code == 503:
-            return SzerverHiba("A szerveren nem érhető el a zenemappa (ki van húzva a pendrive?).")
+            return SzerverHiba("A szerveren nincs meg a zenemappa (nincs bent a pendrive?), a helyi zenék maradnak.")
         return SzerverHiba(f"A szerver hibát jelzett ({e.code}).")
     return SzerverHiba(f"A szerver nem érhető el ({getattr(e, 'reason', e)}).")
 
@@ -150,6 +150,8 @@ def szinkron(cim: str, kulcs: str, mappa: Path, kbps: int = 0,
     tavoli = lista(cim, kulcs)
     mappa.mkdir(parents=True, exist_ok=True)
     jegyzek = _jegyzek_olvas(mappa)
+    if not tavoli:
+        raise SzerverHiba("A szerver üres zenelistát adott (ki van húzva a pendrive?) – a helyi zenékhez nem nyúlok.")
     e = Eredmeny(osszes=len(tavoli))
     meglevo = set()
     for i, elem in enumerate(tavoli, 1):

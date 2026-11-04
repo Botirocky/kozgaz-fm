@@ -134,3 +134,14 @@ def test_rossz_kulcs(szerver, tmp_path):
     cim, _, _ = szerver
     with pytest.raises(SzerverHiba, match="kulcs"):
         zene_szinkron.szinkron(cim, "rossz", tmp_path / "helyi")
+
+
+def test_ures_szerverlista_nem_torol(szerver, tmp_path):
+    cim, gyoker, _ = szerver
+    (gyoker / "A.mp3").write_bytes(b"a")
+    helyi = tmp_path / "helyi"
+    zene_szinkron.szinkron(cim, KULCS, helyi)
+    (gyoker / "A.mp3").unlink()
+    with pytest.raises(SzerverHiba, match="üres"):
+        zene_szinkron.szinkron(cim, KULCS, helyi)
+    assert (helyi / "A.mp3").exists()

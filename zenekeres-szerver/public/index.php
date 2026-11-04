@@ -115,6 +115,9 @@ function zene_lista(): array
         }
         $lista[] = ['ut' => $relativ, 'meret' => $f->getSize(), 'ido' => $f->getMTime()];
     }
+    if ($lista === []) {
+        hiba(503, 'no_music', 'A zenemappa üres vagy nincs felcsatolva a szerveren.');
+    }
     usort($lista, static fn($a, $b) => strcmp($a['ut'], $b['ut']));
     return $lista;
 }

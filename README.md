@@ -124,6 +124,11 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
 
+## Újdonságok az 1.10.1-ben
+
+- Ha a szerveren nincs bent a zenés pendrive (üres a zenemappa), a program nem törli a már letöltött zenéket,
+  csak jelzi a hibát; a szerver ilyenkor 503-at ad.
+
 ## Újdonságok az 1.10.0-ban
 
 - Zenék a szerverről: a program letölti a zenekérő szerver zenemappáját (például a szerverre dugott pendrive-ot)
