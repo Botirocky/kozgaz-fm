@@ -3,6 +3,10 @@ name: Kiadás
 on:
   push:
     tags: ["v*"]
+    branches: [main]
+    paths:
+      - src/kozgaz_fm/__init__.py
+      - .github/workflows/kiadas.yml
   workflow_dispatch:
     inputs:
       cimke:
@@ -14,6 +18,29 @@ permissions:
   contents: write
 
 jobs:
+  cimke:
+    runs-on: ubuntu-24.04
+    outputs:
+      cimke: ${{ steps.c.outputs.cimke }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: c
+        env:
+          KEZI: ${{ inputs.cimke }}
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            cimke="$GITHUB_REF_NAME"
+          elif [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            cimke="$KEZI"
+          else
+            cimke="v$(sed -n 's/^__version__ = "\(.*\)"/\1/p' src/kozgaz_fm/__init__.py)"
+            if [ -n "$(git ls-remote --tags origin "refs/tags/$cimke")" ]; then
+              cimke=""
+            fi
+          fi
+          echo "cimke=$cimke" >> "$GITHUB_OUTPUT"
+          echo "Kiadás címkéje: ${cimke:-nincs}"
+
   windows:
     runs-on: windows-2025
     timeout-minutes: 40
@@ -111,12 +138,12 @@ jobs:
           compression-level: 0
 
   kiadas:
-    if: startsWith(github.ref, 'refs/tags/') || inputs.cimke != ''
-    needs: [windows, linux, wheel, pi-os]
+    if: needs.cimke.outputs.cimke != ''
+    needs: [cimke, windows, linux, wheel, pi-os]
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     env:
-      CIMKE: ${{ inputs.cimke || github.ref_name }}
+      CIMKE: ${{ needs.cimke.outputs.cimke }}
     steps:
       - uses: actions/checkout@v4
         with:
