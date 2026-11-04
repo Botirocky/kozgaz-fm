@@ -149,7 +149,9 @@ beolvassa, annak a telefonja rögtön elküldi a kérést; a kérésre ugyanazok
 Szabályok, amelyeket a program magától betart:
 
 - **Napi korlát** telefononként (alapból 3 szám), és óránként legfeljebb 20 kérés egy hálózati címről.
-- **Hosszkorlát** (alapból 7 perc); élő adás és lejátszási lista nem kérhető.
+- **Hosszkorlát** (alapból 7 perc); élő adás és lejátszási lista nem kérhető. Ha a kért szám hosszabb, a program
+  megkeresi a YouTube-on a rádiós változatát (*radio edit*, *radio version*), és csak azt teszi a sorba – a
+  kérések listájában ez megjegyzésként látszik. Ha nincs a korláton belüli rádiós változat, a kérés elutasul.
 - **Tiltólista:** soronként egy szó vagy előadó; ha a kérésben vagy a talált címben szerepel, a kérés nem megy át.
 - Ugyanazt a számot nem lehet kétszer kérni, amíg az előző vár vagy szólni fog, és a már lejátszottat is csak
   legalább 12 óra múlva.

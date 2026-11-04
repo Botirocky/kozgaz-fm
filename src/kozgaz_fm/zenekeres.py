@@ -169,7 +169,8 @@ class Keresek:
         elif hossz <= 0:
             self._elutasit(k, "Élő adás vagy ismeretlen hosszú videó nem kérhető.")
         elif hossz > max_perc * 60:
-            self._elutasit(k, f"Túl hosszú (legfeljebb {max_perc} perc lehet).")
+            self._elutasit(k, f"Túl hosszú (legfeljebb {max_perc} perc lehet), és nincs rövidebb rádiós "
+                              "változata (radio edit).")
         elif any(m is not k and m.yt == yt and m.allapot in ("varakozik", "elfogadva") for m in self.lista):
             self._elutasit(k, "Ezt a számot már kérték, hamarosan szólhat.")
         elif any(m is not k and m.yt == yt and m.allapot == "szol" for m in self.lista):

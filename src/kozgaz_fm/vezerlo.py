@@ -751,15 +751,28 @@ class Vezerlo(QObject):
         azon, cel = k.azon, youtube_cel(k.szoveg)
         tobblet = k.szoveg if cel.startswith("ytsearch") else ""
         szoveg_kell = self.b.szuro_dalszoveg
+        max_mp = self.b.zenekeres_max_perc * 60
+        radio: list[str] = []
 
         def munka() -> tuple[tuple[str, str, int, int] | None, Eredmeny | None]:
             talalat = youtube.egy_szam(cel)
+            if talalat is not None and talalat[0] and talalat[2] > max_mp:
+                try:
+                    rovid = youtube.radio_edit(talalat[1], max_mp)
+                except Exception as e:
+                    naplo.warning("Radio edit keresése nem sikerült: %s", e)
+                    rovid = None
+                if rovid is not None:
+                    radio.append(talalat[1])
+                    talalat = rovid
             if talalat is None or not szoveg_kell or not talalat[0]:
                 return talalat, None
             return talalat, self._dalszoveg_lekeres(talalat[1], talalat[2], tobblet)
 
         def kesz(eredmeny: tuple[tuple[str, str, int, int] | None, Eredmeny | None]) -> None:
             talalat, szoveg = eredmeny
+            if radio and talalat is not None:
+                self.log(f"Zenekérés: hosszú szám ({radio[0]}), helyette a rádiós változat: {talalat[1]}")
             if talalat is None:
                 self.keresek.nem_talalt(azon, "Nem található ilyen szám a YouTube-on.")
             else:
@@ -770,6 +783,8 @@ class Vezerlo(QObject):
                                          self.zene.tiltott_e(yt, cim))
                 if tragar:
                     self.log(f"Zenekérés elutasítva, trágár szöveg: {cim} ({szoveg.ertekeles.szoveg()})")
+                if radio:
+                    k.megjegyzes = "Rádiós változat (radio edit), mert az eredeti túl hosszú."
                 if k.allapot == "varakozik":
                     self._kert_szam_kesz(k, szoveg, szoveg_kell)
             self.keresek_valtoztak.emit()

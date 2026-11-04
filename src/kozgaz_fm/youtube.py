@@ -1,6 +1,8 @@
-__lazy_modules__ = ["logging", "dataclasses", "pathlib"]
+__lazy_modules__ = ["logging", "dataclasses", "pathlib", "re", "unicodedata"]
 
 import logging
+import re
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -147,3 +149,52 @@ def egy_szam(cel: str) -> tuple[str, str, int, int] | None:
     if info.get("is_live") or info.get("live_status") in ("is_live", "is_upcoming"):
         return info["id"], info.get("title") or info["id"], 0, korhatar
     return info["id"], info.get("title") or info["id"], int(info.get("duration") or 0), korhatar
+
+
+RADIO_JELEK = ("radio edit", "radio version", "radio mix", "radio cut")
+CIM_ZAJ = re.compile(r"[\(\[][^\)\]]*[\)\]]|\b(official|video|audio|lyrics?|hd|4k|music|clip|visualizer|"
+                     r"remaster(ed)?|extended|version|full|album)\b", re.IGNORECASE)
+
+
+def _szavak(szoveg: str) -> list[str]:
+    alap = unicodedata.normalize("NFKD", szoveg.lower())
+    alap = "".join(c for c in alap if not unicodedata.combining(c))
+    return re.findall(r"[a-z0-9]+", alap)
+
+
+def radio_alap_cim(cim: str) -> str:
+    return " ".join(CIM_ZAJ.sub(" ", cim).split())
+
+
+def radio_edit_valaszt(elemek: list[dict], eredeti_cim: str, max_mp: int) -> dict | None:
+    fontos = {w for w in _szavak(radio_alap_cim(eredeti_cim)) if len(w) > 2}
+    for e in elemek:
+        if not e or not e.get("id"):
+            continue
+        cim = e.get("title") or ""
+        szoveg = " ".join(_szavak(cim))
+        if not any(j in szoveg for j in RADIO_JELEK):
+            continue
+        hossz = int(e.get("duration") or 0)
+        if hossz <= 0 or hossz > max_mp:
+            continue
+        if fontos and len(fontos & set(_szavak(cim))) * 2 < len(fontos):
+            continue
+        return e
+    return None
+
+
+def radio_edit(eredeti_cim: str, max_mp: int) -> tuple[str, str, int, int] | None:
+    import yt_dlp
+
+    kereses = f"ytsearch8:{radio_alap_cim(eredeti_cim)} radio edit"
+    with yt_dlp.YoutubeDL(_opciok(extract_flat="in_playlist", noplaylist=True,
+                                  allowed_extractors=["youtube", "youtube:search", "youtube:tab"])) as ydl:
+        info = ydl.extract_info(kereses, download=False) or {}
+    talalt = radio_edit_valaszt(list(info.get("entries") or []), eredeti_cim, max_mp)
+    if talalt is None:
+        return None
+    teljes = egy_szam(f"https://www.youtube.com/watch?v={talalt['id']}")
+    if teljes is None or not teljes[0] or not 0 < teljes[2] <= max_mp:
+        return None
+    return teljes

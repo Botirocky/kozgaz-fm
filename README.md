@@ -124,6 +124,11 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
 
+## Újdonságok az 1.8.0-ban
+
+- Zenekérés: a hosszkorlátnál hosszabb számnak a program a rádiós változatát (radio edit) keresi meg, és csak
+  azt játssza le; ha nincs ilyen, a kérést elutasítja.
+
 ## Újdonságok az 1.7.0-ban
 
 - Visszakerült a riasztás (gomb, webpanel, tűzriadó-gyakorlat, riasztóhang, értesítés), de már saját oldalon
