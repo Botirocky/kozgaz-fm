@@ -154,8 +154,8 @@ class BeallitasOldal(Oldal):
     def _frissites_kartya(self) -> Kartya:
         f = self.v.frissito
         k = Kartya("Frissítések")
-        modok = {"windows": "Windows-telepítő", "linux-csomag": "Linux-csomag", "venv": "Közgáz FM OS / Python",
-                 "fejlesztoi": "fejlesztői futtatás (git)"}
+        modok = {"windows": "Windows-telepítő", "linux-csomag": "Linux-csomag", "deb": "Debian-csomag",
+                 "venv": "Közgáz FM OS / Python", "fejlesztoi": "fejlesztői futtatás (git)"}
         k.add(cimke(f"Telepített verzió: <b>{__version__}</b> ({modok.get(f.mod, f.mod)})", sortores=True))
         self.frissites_allapot = cimke(f.allapot or "Az új verziókat a GitHubról tölti le, ellenőrzött "
                                        "csomagból.", "halvany", sortores=True)

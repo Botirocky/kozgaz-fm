@@ -1,0 +1,77 @@
+#!/usr/bin/python3 -I
+import hashlib
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import urllib.request
+from pathlib import Path
+
+REPO = "Botirocky/kozgaz-fm"
+CSOMAG = "kozgaz-fm"
+FEJLEC = {"Accept": "application/vnd.github+json", "User-Agent": "KozgazFM-frissites-telepito"}
+
+
+def hiba(uzenet: str) -> None:
+    print(uzenet, file=sys.stderr)
+    sys.exit(1)
+
+
+def get(url: str) -> bytes:
+    with urllib.request.urlopen(urllib.request.Request(url, headers=FEJLEC), timeout=30) as v:
+        return v.read()
+
+
+def deb_mezo(deb: Path, mezo: str) -> str:
+    return subprocess.run(["dpkg-deb", "-f", str(deb), mezo], capture_output=True, text=True,
+                          check=True).stdout.strip()
+
+
+def main() -> None:
+    if os.geteuid() != 0:
+        hiba("Rendszergazdai jog kell (pkexec).")
+    if len(sys.argv) != 2:
+        hiba("Használat: frissites-telepito <kozgaz-fm_VERZIO_ARCH.deb>")
+    forras = Path(sys.argv[1])
+    if not re.fullmatch(r"kozgaz-fm_[0-9][0-9A-Za-z.+~-]*_(amd64|arm64)\.deb", forras.name):
+        hiba("Ez nem Közgáz FM Debian-csomag.")
+    if not forras.is_file() or forras.stat().st_size > 1024**3:
+        hiba("A csomagfájl nem érvényes.")
+    adat = json.loads(get(f"https://api.github.com/repos/{REPO}/releases/latest"))
+    eszkozok = {e["name"]: e["browser_download_url"] for e in adat.get("assets", [])}
+    if forras.name not in eszkozok or "SHA256SUMS.txt" not in eszkozok:
+        hiba("A csomag nem a legújabb GitHub-kiadásból való.")
+    osszegek = {}
+    for sor in get(eszkozok["SHA256SUMS.txt"]).decode("utf-8", "replace").splitlines():
+        reszek = sor.split()
+        if len(reszek) == 2:
+            osszegek[reszek[1].lstrip("*")] = reszek[0].lower()
+    with tempfile.TemporaryDirectory(prefix="kozgaz-fm-") as tmp:
+        deb = Path(tmp) / forras.name
+        with forras.open("rb") as be, deb.open("wb") as ki:
+            shutil.copyfileobj(be, ki)
+        h = hashlib.sha256()
+        with deb.open("rb") as f:
+            while darab := f.read(1024 * 1024):
+                h.update(darab)
+        if h.hexdigest() != osszegek.get(forras.name):
+            hiba("Az ellenőrzőösszeg nem egyezik, nem telepítem.")
+        if deb_mezo(deb, "Package") != CSOMAG:
+            hiba("A csomag neve nem kozgaz-fm.")
+        uj = deb_mezo(deb, "Version")
+        regi = subprocess.run(["dpkg-query", "-W", "-f=${Version}", CSOMAG], capture_output=True,
+                              text=True).stdout.strip()
+        if regi and subprocess.run(["dpkg", "--compare-versions", uj, "gt", regi]).returncode != 0:
+            hiba(f"A csomag ({uj}) nem újabb a telepítettnél ({regi}).")
+        os.chmod(tmp, 0o755)
+        kornyezet = {"PATH": "/usr/sbin:/usr/bin:/sbin:/bin", "DEBIAN_FRONTEND": "noninteractive"}
+        eredmeny = subprocess.run(["apt-get", "install", "-y", "-o", "Dpkg::Options::=--force-confold", str(deb)],
+                                  env=kornyezet)
+        sys.exit(eredmeny.returncode)
+
+
+if __name__ == "__main__":
+    main()

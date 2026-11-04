@@ -58,7 +58,7 @@ zenét játszik helyi MP3-ból, YouTube-ról vagy Spotifyról, és hangosbemond�
   sorból; három érzékenységi fokozat, MP3-ra, YouTube-ra, Spotifyra és a kért számokra is érvényes.
 - **Világos és sötét téma**, a mai nap idővonala a Vezérlőpulton.
 - **Automatikus frissítés a GitHubról:** saját frissítő ablak változáslistával; csak tanítási időn kívül
-  települ magától, SHA-256-tal ellenőrzött csomagból (Windows-telepítő, Linux-csomag és a Pi is).
+  települ magától, SHA-256-tal ellenőrzött csomagból (Windows-telepítő, Linux- és Debian-csomag, a Pi is).
 - **Közgáz FM OS:** saját Raspberry Pi rendszer – bekapcsolás után kioszk módban indul, VNC-n távolról
   kezelhető, Spotify Connect hangszóró, hardveres watchdog és lefagyás-figyelő. Leírás: [pi-os/OLVASS-EL.md](pi-os/OLVASS-EL.md).
 
@@ -121,6 +121,12 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
+
+## Újdonságok az 1.6.0-ban
+
+- Debian-csomag (`.deb`): Debian 12/13-ra és Ubuntu 22.04+-ra egy paranccsal telepíthető, menübejegyzéssel és ikonnal.
+  Az önfrissítő a .deb-es telepítést is frissíti: a GitHubról letöltött, SHA-256-tal ellenőrzött csomagot egy kis
+  rendszer-segéd telepíti (pkexec), amely csak a legújabb hivatalos kiadás csomagját fogadja el.
 
 ## Újdonságok az 1.4.0-ban
 
@@ -194,7 +200,9 @@ vezérlés, zenekérés, tartalékgép, hangzónák, értesítések, statisztika
 ## Telepítés
 
 - **Windows:** `KozgazFM-<verzió>-telepito.exe` a Releases oldalról (rendszergazdai jog nem kell).
-- **Linux:** `tar xzf KozgazFM-<verzió>-linux-x86_64.tar.gz && ./KozgazFM-*/telepites.sh`
+- **Debian / Ubuntu:** `sudo apt install ./kozgaz-fm_<verzió>_amd64.deb` a Releases oldalról letöltött fájllal
+  (eltávolítás: `sudo apt remove kozgaz-fm`, a beállítások a felhasználó mappájában megmaradnak).
+- **Linux (más disztribúció):** `tar xzf KozgazFM-<verzió>-linux-x86_64.tar.gz && ./KozgazFM-*/telepites.sh`
 - **Raspberry Pi:** `KozgazFM-OS-<verzió>-arm64.img.xz` Raspberry Pi Imagerrel SD-kártyára.
 
 A már telepített példányok az önfrissítővel maguktól megkapják az új verziót (tanítási időn kívül).
@@ -210,6 +218,7 @@ uv venv -p 3.14 && uv pip install -e ".[dev]"
 
 A beépített csengőhangokat az `eszkozok/hangok.py` generálja, a felület képernyőképeit az
 `eszkozok/kepernyokep.py` készíti. A kiadást a `v*` tag indítja (GitHub Actions: Windows-telepítő,
-Linux-csomag, wheel és Pi-lemezkép). A Pi-kép helyben: `pi-os/epit.sh`.
+Linux-csomag, Debian-csomag, wheel és Pi-lemezkép). A .deb helyben a PyInstaller-build után:
+`packaging/debian/epit-deb.sh`. A Pi-kép helyben: `pi-os/epit.sh`.
 
 Használati útmutató: [src/kozgaz_fm/sugo.md](src/kozgaz_fm/sugo.md) (a programban a *Súgó* oldalon is).

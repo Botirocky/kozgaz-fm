@@ -61,10 +61,17 @@ jobs:
           cp src/kozgaz_fm/sugo.md "csomag/$nev/HASZNALATI-UTMUTATO.md"
           cp assets/ikon-*.png "csomag/$nev/ikonok/"
           tar -C csomag -czf "dist/$nev.tar.gz" "$nev"
+      - name: Debian-csomag
+        run: |
+          packaging/debian/epit-deb.sh dist/KozgazFM dist
+          dpkg-deb --info dist/*.deb
+          dpkg-deb --contents dist/*.deb | head -20
       - uses: actions/upload-artifact@v4
         with:
           name: linux
-          path: dist/*.tar.gz
+          path: |
+            dist/*.tar.gz
+            dist/*.deb
 
   wheel:
     runs-on: ubuntu-24.04

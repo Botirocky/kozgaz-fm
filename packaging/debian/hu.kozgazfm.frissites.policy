@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>Közgáz FM</vendor>
+  <action id="hu.kozgazfm.frissites">
+    <description>Install a Közgáz FM update</description>
+    <description xml:lang="hu">Közgáz FM frissítés telepítése</description>
+    <message>Authentication is required to install a Közgáz FM update</message>
+    <message xml:lang="hu">A Közgáz FM frissítéséhez hitelesítés szükséges</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/kozgaz-fm/frissites-telepito</annotate>
+  </action>
+</policyconfig>

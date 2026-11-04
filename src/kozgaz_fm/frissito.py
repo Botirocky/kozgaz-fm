@@ -50,7 +50,7 @@ class Frissito(QObject):
 
     @property
     def tamogatott(self) -> bool:
-        return self.mod in ("windows", "linux-csomag", "venv")
+        return self.mod in ("windows", "linux-csomag", "deb", "venv")
 
     def _allit(self, szoveg: str) -> None:
         self.allapot = szoveg

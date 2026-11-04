@@ -24,10 +24,12 @@ def test_verzio_kulcs():
 
 def test_csomag_neve():
     k = kiadas(**{"KozgazFM-9.9.0-telepito.exe": "u1", "KozgazFM-9.9.0-linux-x86_64.tar.gz": "u2",
-                  "kozgaz_fm-9.9.0-py3-none-any.whl": "u3"})
+                  "kozgaz_fm-9.9.0-py3-none-any.whl": "u3", "kozgaz-fm_9.9.0_amd64.deb": "u4"})
     assert frissites.csomag_neve(k, "windows") == "KozgazFM-9.9.0-telepito.exe"
     assert frissites.csomag_neve(k, "venv") == "kozgaz_fm-9.9.0-py3-none-any.whl"
     assert frissites.csomag_neve(k, "fejlesztoi") is None
+    if not frissites._arm():
+        assert frissites.csomag_neve(k, "deb") == "kozgaz-fm_9.9.0_amd64.deb"
 
 
 def test_fejlesztoi_mod():

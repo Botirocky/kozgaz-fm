@@ -38,6 +38,9 @@ from kozgaz_fm.utvonalak import gyorsitotar_mappa
 API = "https://api.github.com/repos/{repo}/releases/latest"
 FEJLEC = {"Accept": "application/vnd.github+json", "User-Agent": f"KozgazFM/{__version__}"}
 WINDOWS = sys.platform.startswith("win")
+DEB_MAPPA = Path("/opt/kozgaz-fm")
+DEB_SEGED = Path("/usr/lib/kozgaz-fm/frissites-telepito")
+DEB_INDITO = Path("/usr/bin/kozgaz-fm")
 
 
 class FrissitesHiba(Exception):
@@ -65,7 +68,9 @@ def verzio_kulcs(verzio: str) -> tuple[int, ...]:
 
 def telepitesi_mod() -> str:
     if getattr(sys, "frozen", False):
-        return "windows" if WINDOWS else "linux-csomag"
+        if WINDOWS:
+            return "windows"
+        return "deb" if Path(sys.executable).resolve().parent == DEB_MAPPA else "linux-csomag"
     csomag = Path(__file__).resolve()
     if sys.prefix != sys.base_prefix and "site-packages" in csomag.parts:
         return "venv"
@@ -113,6 +118,8 @@ def csomag_neve(kiadas: Kiadas, mod: str | None = None) -> str | None:
         minta = r"^KozgazFM-.*-telepito\.exe$"
     elif mod == "linux-csomag":
         minta = r"^KozgazFM-.*-linux-aarch64\.tar\.gz$" if _arm() else r"^KozgazFM-.*-linux-x86_64\.tar\.gz$"
+    elif mod == "deb":
+        minta = r"^kozgaz-fm_.*_arm64\.deb$" if _arm() else r"^kozgaz-fm_.*_amd64\.deb$"
     elif mod == "venv":
         minta = r"^kozgaz_fm-.*-py3-none-any\.whl$"
     else:
@@ -200,6 +207,17 @@ def telepit(csomag: Path, mod: str | None = None) -> list[str] | None:
                 raise FrissitesHiba(f"A telepítés nem sikerült: {eredmeny.stderr.strip()[-300:]}")
         uj = shutil.which("kozgaz-fm") or str(Path.home() / ".local" / "bin" / "kozgaz-fm")
         return [uj, *inditasi_argumentumok()]
+    if mod == "deb":
+        pkexec = shutil.which("pkexec")
+        if pkexec is None or not DEB_SEGED.exists():
+            raise FrissitesHiba("A Debian-csomag frissítéséhez a pkexec kell (sudo apt install pkexec), "
+                                "vagy telepítsd kézzel az új .deb fájlt.")
+        eredmeny = subprocess.run([pkexec, str(DEB_SEGED), str(csomag)], capture_output=True, text=True,
+                                  timeout=900)
+        if eredmeny.returncode != 0:
+            hiba = (eredmeny.stderr or eredmeny.stdout).strip()[-300:]
+            raise FrissitesHiba(f"A .deb telepítése nem sikerült: {hiba or eredmeny.returncode}")
+        return [str(DEB_INDITO), *inditasi_argumentumok()]
     if mod == "venv":
         eredmeny = subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "--no-input", str(csomag)],
                                   capture_output=True, text=True, timeout=900)
