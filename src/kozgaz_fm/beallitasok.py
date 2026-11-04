@@ -185,6 +185,9 @@ class Beallitasok:
     zenekeres_oldal: str = ""
     zenekeres_mp3: bool = True
     zenekeres_mp3_mappa: str = ""
+    zene_szinkron: bool = False
+    zene_szinkron_mappa: str = ""
+    zene_szinkron_kbps: int = 0
     tiltott_szamok: list[TiltottSzam] = field(default_factory=list)
     tiltott_telefonok: list[TiltottTelefon] = field(default_factory=list)
     tartalek_mod: str = ""

@@ -48,7 +48,7 @@ from kozgaz_fm.utvonalak import adat_mappa
 from kozgaz_fm.vezerlo import Vezerlo
 
 HELYI_MEZOK = ("admin_pin", "web_panel", "web_port", "web_jelszo", "tartalek_mod", "tartalek_cim", "tartalek_kulcs",
-               "zenekeres_szerver_kulcs", "zenekeres_mp3_mappa",
+               "zenekeres_szerver_kulcs", "zenekeres_mp3_mappa", "zene_szinkron_mappa",
                "ertesites_ntfy", "ertesites_ntfy_token", "ertesites_email", "smtp_szerver", "smtp_port", "smtp_mod",
                "smtp_felhasznalo", "smtp_jelszo", "smtp_felado", "kimenet", "zonak", "tiltott_telefonok")
 

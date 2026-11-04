@@ -135,6 +135,7 @@ class FoAblak(QMainWindow):
         self._figyelo = _Tevekenyseg(self._tevekenyseg, self)
         self._figyel = False
         app.aboutToQuit.connect(lambda: self._figyeles(False))
+        app.aboutToQuit.connect(v.zene_szinkron.leallit)
         self._zar_frissit()
         self._tick()
 

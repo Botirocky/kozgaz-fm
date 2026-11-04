@@ -78,18 +78,98 @@ function biztonsagi_fejlecek(): void
     header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
 }
 
+function gep_kulcs_ellenoriz(): void
+{
+    $kulcs = (string)(getenv('KFM_GEP_KULCS') ?: '');
+    $kapott = (string)($_SERVER['HTTP_X_KOZGAZ_FM_KULCS'] ?? '');
+    if (strlen($kulcs) < 24 || !hash_equals($kulcs, $kapott)) {
+        usleep(300000);
+        hiba(401, 'unauthorized', 'Hibás kulcs.');
+    }
+}
+
+const ZENE_KITERJESZTESEK = ['mp3', 'm4a', 'aac', 'ogg', 'opus', 'flac', 'wav', 'wma'];
+
+function zene_gyoker(): ?string
+{
+    $gyoker = realpath((string)(getenv('KFM_ZENE_MAPPA') ?: '/zene'));
+    return $gyoker !== false && is_dir($gyoker) ? $gyoker : null;
+}
+
+function zene_lista(): array
+{
+    $gyoker = zene_gyoker();
+    if ($gyoker === null) {
+        hiba(503, 'no_music', 'A zenemappa nem érhető el a szerveren.');
+    }
+    $lista = [];
+    $bejaro = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($gyoker, FilesystemIterator::SKIP_DOTS));
+    foreach ($bejaro as $f) {
+        if (!$f->isFile() || str_starts_with($f->getFilename(), '.')
+            || !in_array(strtolower($f->getExtension()), ZENE_KITERJESZTESEK, true)) {
+            continue;
+        }
+        $relativ = substr($f->getPathname(), strlen($gyoker) + 1);
+        if (!mb_check_encoding($relativ, 'UTF-8')) {
+            continue;
+        }
+        $lista[] = ['ut' => $relativ, 'meret' => $f->getSize(), 'ido' => $f->getMTime()];
+    }
+    usort($lista, static fn($a, $b) => strcmp($a['ut'], $b['ut']));
+    return $lista;
+}
+
+function zene_fajl(string $relativ): never
+{
+    $gyoker = zene_gyoker();
+    if ($gyoker === null) {
+        hiba(503, 'no_music', 'A zenemappa nem érhető el a szerveren.');
+    }
+    $teljes = realpath($gyoker . '/' . $relativ);
+    if ($relativ === '' || str_contains($relativ, "\0") || $teljes === false || !is_file($teljes)
+        || !str_starts_with($teljes, $gyoker . '/')
+        || !in_array(strtolower(pathinfo($teljes, PATHINFO_EXTENSION)), ZENE_KITERJESZTESEK, true)) {
+        hiba(404, 'not_found', 'Nincs ilyen zenefájl.');
+    }
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+    $meret = (int)filesize($teljes);
+    $kezdet = 0;
+    if (preg_match('/^bytes=(\d+)-$/', (string)($_SERVER['HTTP_RANGE'] ?? ''), $t) && (int)$t[1] < $meret) {
+        $kezdet = (int)$t[1];
+        http_response_code(206);
+        header("Content-Range: bytes {$kezdet}-" . ($meret - 1) . "/{$meret}");
+    }
+    header('Content-Type: application/octet-stream');
+    header('Accept-Ranges: bytes');
+    header('Content-Length: ' . ($meret - $kezdet));
+    header('Cache-Control: no-store');
+    $f = fopen($teljes, 'rb');
+    fseek($f, $kezdet);
+    fpassthru($f);
+    fclose($f);
+    exit;
+}
+
 biztonsagi_fejlecek();
 $ut = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $modszer = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 try {
-    if ($ut === '/api/gep') {
-        $kulcs = (string)(getenv('KFM_GEP_KULCS') ?: '');
-        $kapott = (string)($_SERVER['HTTP_X_KOZGAZ_FM_KULCS'] ?? '');
-        if (strlen($kulcs) < 24 || !hash_equals($kulcs, $kapott)) {
-            usleep(300000);
-            hiba(401, 'unauthorized', 'Hibás kulcs.');
+    if ($ut === '/api/zenek' || $ut === '/api/zenek/fajl') {
+        gep_kulcs_ellenoriz();
+        if ($modszer !== 'GET') {
+            hiba(405, 'method_not_allowed', 'Csak GET.');
         }
+        if ($ut === '/api/zenek') {
+            valasz(200, ['data' => zene_lista()]);
+        }
+        zene_fajl((string)($_GET['ut'] ?? ''));
+    }
+
+    if ($ut === '/api/gep') {
+        gep_kulcs_ellenoriz();
         if ($modszer !== 'POST') {
             hiba(405, 'method_not_allowed', 'Csak POST.');
         }

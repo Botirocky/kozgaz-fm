@@ -28,6 +28,7 @@ __lazy_modules__ = [
     "kozgaz_fm.youtube",
     "kozgaz_fm.zenekeres",
     "kozgaz_fm.zenekeres_szerver",
+    "kozgaz_fm.zene_szinkron",
 ]
 
 import contextlib
@@ -78,6 +79,7 @@ from kozgaz_fm.szuro import Szuro
 from kozgaz_fm.tartalek import Tartalek
 from kozgaz_fm.utvonalak import adat_mappa, eletjel_fajl, gyorsitotar_mappa, naplo_fajl
 from kozgaz_fm.webpanel import WebPanel
+from kozgaz_fm.zene_szinkron import FORRAS_NEV, ZeneSzinkron
 from kozgaz_fm.zenekeres import TELEFON_TILTAS_NAP, Keres, Keresek, KeresHiba, telefon_kulcs, youtube_cel
 from kozgaz_fm.zenekeres_szerver import ZenekeresSzerver
 
@@ -171,6 +173,7 @@ class Vezerlo(QObject):
         self._web_indult = False
         self.web = WebPanel(self)
         self.keres_szerver = ZenekeresSzerver(self, self)
+        self.zene_szinkron = ZeneSzinkron(self, self)
         self.beallitasok_alkalmazasa()
 
     def indit(self) -> None:
@@ -838,6 +841,16 @@ class Vezerlo(QObject):
             self.stat.keres("elfogadva" if elfogad else "elutasitva")
         self.keresek_valtoztak.emit()
         return k
+
+    def szerver_zenek_frissultek(self, mappa: Path, valtozott: bool) -> None:
+        cim = str(mappa)
+        if not any(f.tipus == "mappa" and f.cim == cim for f in self.b.forrasok):
+            self.b.forrasok.append(ZeneForras("mappa", FORRAS_NEV, cim))
+            self.b.mentes()
+            self.log(f"Új zeneforrás: „{FORRAS_NEV}” ({cim})")
+            self.frissult.emit()
+        if valtozott:
+            self.zene.mappa_frissult(cim)
 
     def kert_mp3_mappa(self) -> Path:
         return Path(self.b.zenekeres_mp3_mappa) if self.b.zenekeres_mp3_mappa.strip() else kert_mentes.alap_mappa()

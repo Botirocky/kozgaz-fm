@@ -124,6 +124,24 @@ A szűrőn fennakadó szám nem kerül a lejátszási sorba, és diák sem kérh
   korhatár-szűrés ettől még él). A szűrő nem tévedhetetlen: a sok magyar számnak nincs meg a szövege, és egy
   félrecímkézett videót nem ismer fel.
 
+### Zenék a szerverről
+
+Ha a zenék egy szerveren vannak (például a zenekérő szerver gépére dugott pendrive-on), a program letölti őket
+erre a gépre, és innen játssza le. Így szünetben nem a hálózaton streamel, és akkor is szól, ha éppen nincs net.
+
+1. Előbb állítsd be a **Zenekérés diákoktól** kártyán a zenekérő szerver címét és kulcsát (ugyanezt használja).
+2. A **Zenék a szerverről** kártyán kapcsold be a *Zenék letöltése a szerverről* kapcsolót.
+3. Az első letöltés után megjelenik egy új zeneforrás, *Zenék a szerverről* néven. Válaszd ki, vagy tedd be egy
+   műsorblokkba.
+
+- Félóránként megnézi a szervert, és csak az új vagy megváltozott fájlokat tölti le, egyszerre egyet. A *Letöltés
+  most* gomb azonnal megnézi.
+- Ha félbeszakad a letöltés, onnan folytatja, ahol abbamaradt. Amit a szerverről törölsz, azt itt is törli, de a
+  mappába saját kezűleg tett fájlokhoz nem nyúl.
+- A **Sebességkorlát** megadja, legfeljebb milyen gyorsan töltsön, hogy ne lassítsa le az iskolai netet (0 =
+  korlátlan).
+- A letöltési mappa gépenként külön állítható, a biztonsági mentés nem viszi át másik gépre.
+
 ### Zenekérés diákoktól
 
 A diákok telefonról kérhetnek számot a szünetekre. Az ellenőrzésen átment szám magától a sorba kerül, ha az

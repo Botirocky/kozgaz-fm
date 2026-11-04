@@ -11,6 +11,7 @@ __lazy_modules__ = [
     "kozgaz_fm.ui.musorblokk_kartya",
     "kozgaz_fm.ui.moderalas_kartya",
     "kozgaz_fm.ui.szuro_kartya",
+    "kozgaz_fm.ui.szerver_zene_kartya",
     "kozgaz_fm.ui.tema",
     "kozgaz_fm.ui.zenekeres_kartya",
     "kozgaz_fm.utvonalak",
@@ -41,6 +42,7 @@ from kozgaz_fm.spotify import ATIRANYITAS, SpotifyHiba, spotify_uri
 from kozgaz_fm.ui.elemek import Kartya, Oldal, cimke, gomb, ido_mezo, kapcsolo, sor
 from kozgaz_fm.ui.moderalas_kartya import ModeralasKartya
 from kozgaz_fm.ui.musorblokk_kartya import MusorblokkKartya
+from kozgaz_fm.ui.szerver_zene_kartya import SzerverZeneKartya
 from kozgaz_fm.ui.szuro_kartya import SzuroKartya
 from kozgaz_fm.ui.tema import SZIN, ikon
 from kozgaz_fm.ui.zenekeres_kartya import ZenekeresKartya
@@ -69,8 +71,9 @@ class ZeneOldal(Oldal):
         self.musorblokk = MusorblokkKartya(v)
         also.addWidget(self.musorblokk, 1, 0)
         also.addWidget(SzuroKartya(v), 1, 1)
-        also.addWidget(ZenekeresKartya(v), 2, 0, 1, 2)
-        also.addWidget(ModeralasKartya(v), 3, 0, 1, 2)
+        also.addWidget(SzerverZeneKartya(v), 2, 0, 1, 2)
+        also.addWidget(ZenekeresKartya(v), 3, 0, 1, 2)
+        also.addWidget(ModeralasKartya(v), 4, 0, 1, 2)
         also.setColumnStretch(0, 1)
         also.setColumnStretch(1, 1)
         self.add(also)

@@ -8,6 +8,7 @@ services:
       - "127.0.0.1:${ZENEKERES_PORT:-8100}:80"
     volumes:
       - ${ZENEKERES_ADAT:-./adat}:/data
+      - ${ZENEKERES_ZENE:-./zene}:/zene:ro
     environment:
       TZ: Europe/Budapest
       KFM_GEP_KULCS: ${KFM_GEP_KULCS:?KFM_GEP_KULCS kell}

@@ -496,6 +496,13 @@ class ZeneLejatszo(QObject):
         self._elore_letolt()
         return True
 
+    def mappa_frissult(self, mappa: str) -> None:
+        self._tarolt.pop(("mappa", mappa), None)
+        forras = self.forras
+        if forras is not None and forras.tipus == "mappa" and forras.cim == mappa \
+                and not self._szol and not self._betoltes_alatt:
+            self.betoltes()
+
     def forras_beallitas(self, forras: ZeneForras | None) -> None:
         if forras == self.forras and (self.szamok or self.spotify_mod or self._betoltes_alatt):
             return

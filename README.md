@@ -124,6 +124,13 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
 
+## Újdonságok az 1.10.0-ban
+
+- Zenék a szerverről: a program letölti a zenekérő szerver zenemappáját (például a szerverre dugott pendrive-ot)
+  erre a gépre, és innen játssza le, így nem streamel a hálózaton. Csak az új vagy megváltozott fájlokat tölti
+  le, a félbeszakadt letöltést folytatja, és a sebessége korlátozható (Zene → Zenék a szerverről).
+- A zenekérő szerver új végpontjai: `GET /api/zenek` és `GET /api/zenek/fajl` (kulccsal, folytatható letöltéssel).
+
 ## Újdonságok az 1.9.0-ban
 
 - A Riasztás oldal is a rendszergazda-PIN-hez kötött.
