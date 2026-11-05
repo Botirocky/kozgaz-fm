@@ -699,6 +699,18 @@ class Vezerlo(QObject):
         self._auto_zene = False
         self.zene.megallit()
 
+    def keveres_allitas(self, be: bool) -> None:
+        self.b.keveres = be
+        self.zene.keveres = be
+        self.mentes_kesobb()
+        self.frissult.emit()
+
+    def keveres_most(self) -> bool:
+        if not self.zene.ujrakever():
+            return False
+        self.log("Lejátszási sor újrakeverve")
+        return True
+
     def zene_valt(self) -> None:
         if self.zene.szol:
             self.zene_leallit()

@@ -395,6 +395,18 @@ class ZeneLejatszo(QObject):
         self.lista_valtozott.emit()
         self.kiszurve.emit(f"A szűrő {kiszurt} számot kivett a lejátszási sorból")
 
+    def ujrakever(self) -> bool:
+        if self.spotify_mod or len(self.szamok) < 3:
+            return False
+        eleje = self.szamok[:self.index + 1]
+        hatra = self.szamok[self.index + 1:]
+        tobbi = [s for s in hatra if not s.kert]
+        random.shuffle(tobbi)
+        self.szamok = eleje + [s for s in hatra if s.kert] + tobbi
+        self.lista_valtozott.emit()
+        self._elore_letolt()
+        return True
+
     def vizsgalando(self) -> list[Szam]:
         if self.spotify_mod or not self.szamok:
             return []

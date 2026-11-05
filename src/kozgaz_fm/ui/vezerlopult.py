@@ -120,6 +120,8 @@ class Vezerlopult(Oldal):
         self.lejatszas_gomb = ikon_gomb("lejatszas", "Lejátszás / szünet", "kerek_fo", 26, SZIN["kiemelt_szoveg"])
         self.kovetkezo_gomb = ikon_gomb("kovetkezo", "Következő szám")
         self.stop_gomb = ikon_gomb("stop", "Zene leállítása")
+        self.kever_gomb = ikon_gomb("kever", "Keverés most: a hátralévő számok új, véletlen sorrendben")
+        self.kever_gomb.clicked.connect(self.v.keveres_most)
         self.elozo_gomb.clicked.connect(self.v.zene.elozo)
         self.kovetkezo_gomb.clicked.connect(self.v.zene.kovetkezo)
         self.lejatszas_gomb.clicked.connect(self.v.zene_valt)
@@ -137,7 +139,8 @@ class Vezerlopult(Oldal):
         k.add(self.forras_valaszto)
         k.add(self.szam_cimke)
         k.add(self.forras_cimke)
-        k.add(sor(None, self.elozo_gomb, self.lejatszas_gomb, self.kovetkezo_gomb, self.stop_gomb, None, terkoz=14))
+        gombok = (self.elozo_gomb, self.lejatszas_gomb, self.kovetkezo_gomb, self.stop_gomb, self.kever_gomb)
+        k.add(sor(None, *gombok, None, terkoz=14))
         k.add(sor(hangero_ikon, self.hangero, self.hangero_cimke))
         self.zene_kapcsolo = kapcsolo("Ma legyen szünetzene", self.v.b.ma_nincs_zene != _ma(),
                                       "Kikapcsolva ma nem indul automatikusan zene a szünetekben")

@@ -266,3 +266,9 @@ def test_egesz_mezo_hibas(ertek) -> None:
 def test_egesz_mezo_jo() -> None:
     assert _egesz({"x": 0}, "x", 0, 100) == 0
     assert _egesz({}, "x", 0, 100) is None
+
+
+def test_keveres_vegpontok() -> None:
+    from kozgaz_fm.webpanel import UTVONALAK
+    assert UTVONALAK[("POST", "/api/v1/zene/keveres")] == "zene_keveres"
+    assert UTVONALAK[("PATCH", "/api/v1/zene")] == "zene_allitas"

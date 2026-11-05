@@ -124,6 +124,12 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
 
+## Újdonságok az 1.13.0-ban
+
+- Keverés a webes vezérlőben is: *Véletlen sorrend (keverés)* kapcsoló és *Keverés most* gomb, ami a hátralévő
+  számokat új sorrendbe rakja (a most szóló és a kért számok a helyükön maradnak). A Vezérlőpulton is van
+  keverés gomb. API: `PATCH /api/v1/zene {"keveres": true|false}`, `POST /api/v1/zene/keveres`.
+
 ## Újdonságok az 1.12.0-ban
 
 - Az iskola saját csengőhangjai lettek a beépített hangok: becsengő, kicsengő és jelzőcsengő. A korábbi

@@ -174,6 +174,8 @@ function megjelenit(a) {
   $("zene-gomb").textContent = z.szol ? "Zene leállítása" : "Zene indítása";
   $("kovetkezo-gomb").disabled = !z.szol;
   $("most-tiltas-gomb").disabled = !z.szol;
+  $("keveres-gomb").disabled = !z.szol || z.sor.length < 2;
+  $("keveres").checked = z.keveres;
   const forrasok = z.forrasok.map((f) => [String(f.index), f.nev]);
   if (!forrasok.length) forrasok.push(["", "Nincs zeneforrás beállítva"]);
   opciok($("forras"), forrasok, z.forras === null ? "" : String(z.forras));
@@ -442,6 +444,9 @@ document.addEventListener("click", (esemeny) => {
     case "kovetkezo":
       muvelet("POST", "/zene/kovetkezo", undefined, "Következő szám");
       break;
+    case "keveres-most":
+      muvelet("POST", "/zene/keveres", undefined, "Sor összekeverve");
+      break;
     case "bemondas-le":
       muvelet("DELETE", "/bemondas", undefined, "Bemondás leállítva");
       break;
@@ -550,6 +555,10 @@ $("bemondas-urlap").addEventListener("submit", async (esemeny) => {
 $("menetrend").addEventListener("scroll", (e) => {
   e.target.classList.toggle("gorgetett", e.target.scrollTop > 2);
 }, { passive: true });
+
+$("keveres").addEventListener("change", (e) => {
+  muvelet("PATCH", "/zene", { keveres: e.target.checked }, e.target.checked ? "Keverés bekapcsolva" : "Keverés kikapcsolva");
+});
 
 $("forras").addEventListener("change", (e) => {
   if (e.target.value !== "") muvelet("PATCH", "/zene", { forras: Number(e.target.value) }, "Zeneforrás átállítva");

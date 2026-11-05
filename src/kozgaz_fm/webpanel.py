@@ -101,6 +101,7 @@ UTVONALAK = {
     ("POST", "/api/v1/zene/kovetkezo"): "zene_kovetkezo",
     ("PATCH", "/api/v1/zene"): "zene_allitas",
     ("POST", "/api/v1/zene/ugras"): "zene_ugras",
+    ("POST", "/api/v1/zene/keveres"): "zene_keveres",
     ("POST", "/api/v1/bemondas"): "bemondas",
     ("DELETE", "/api/v1/bemondas"): "bemondas_leallitas",
     ("PUT", "/api/v1/bemondas/sablonok"): "sablonok_mentese",
@@ -526,6 +527,7 @@ class WebMuveletek(_Fosszal):
                 "forrasok": [{"index": i, "nev": f.nev, "tipus": f.tipus} for i, f in enumerate(b.forrasok)
                              if f.aktiv],
                 "hangero": b.zene_hangero,
+                "keveres": b.keveres,
                 "blokk": v.musor_blokk.nev if v.musor_blokk else "",
                 "sor": [{"index": i, "cim": cim} for i, cim in v.zene.kovetkezok()] if v.zene.szol else [],
             },
@@ -593,10 +595,20 @@ class WebMuveletek(_Fosszal):
         self.v.zene.ugras(index)
         return self.allapot()
 
+    def zene_keveres(self, _adat: dict, ip: str) -> dict:
+        if not self.v.keveres_most():
+            raise WebHiba(409, "cannot_shuffle", "Most nincs mit összekeverni (Spotify vagy túl rövid a sor).")
+        self.v.log(f"Webpanel ({ip}): keverés most")
+        return self.allapot()
+
     def zene_allitas(self, adat: dict, ip: str) -> dict:
         b = self.v.b
         forras = _egesz(adat, "forras", 0, max(0, len(b.forrasok) - 1))
         hangero = _egesz(adat, "hangero", 0, 100)
+        keveres = _logikai(adat, "keveres")
+        if keveres is not None and keveres != b.keveres:
+            self.v.log(f"Webpanel ({ip}): keverés {'be' if keveres else 'ki'}")
+            self.v.keveres_allitas(keveres)
         if forras is not None:
             if not b.forrasok or not b.forrasok[forras].aktiv:
                 raise WebHiba(422, "validation_error", "Ez a zeneforrás nem választható.")
