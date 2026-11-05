@@ -1,0 +1,30 @@
+[Unit]
+Description=Közgáz FM webes felület (%i)
+Documentation=https://github.com/Botirocky/kozgaz-fm/tree/main/php
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=%i
+Environment=TZ=Europe/Budapest
+Environment=PHP_CLI_SERVER_WORKERS=6
+Environment=PATH=/var/lib/kozgaz-fm-ytdlp/bin:/usr/local/bin:/usr/bin:/bin
+Environment=KFM_WEB_CIM=0.0.0.0
+Environment=KFM_WEB_PORT=8080
+EnvironmentFile=-/etc/kozgaz-fm-szerver/fm.env
+ExecStart=/usr/share/kozgaz-fm-szerver/fm/rendszer/web.sh
+Restart=always
+SuccessExitStatus=143 SIGTERM
+RestartSec=3
+NoNewPrivileges=yes
+ProtectSystem=full
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+LockPersonality=yes
+
+[Install]
+WantedBy=multi-user.target

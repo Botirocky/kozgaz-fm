@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zenekérés – Közgáz FM</title>
+<link rel="icon" href="/statikus/logo.png">
+<link rel="stylesheet" href="/statikus/app.css">
+<link rel="stylesheet" href="/statikus/keres.css">
+</head>
+<body class="keres-oldal">
+<main class="keres">
+  <header class="keres-fej"><img src="/statikus/logo.png" alt=""><div><h1 id="cim">Közgáz FM</h1><p class="halvany">Zenekérés a szünetekre</p></div></header>
+  <section class="kartya" id="most-szol" hidden><div class="halvany kicsi-szoveg">Most szól</div><div class="zene-cim" id="most"></div></section>
+  <section class="kartya" id="urlap-kartya">
+    <form id="urlap">
+      <label for="szoveg">Melyik számot szeretnéd?</label>
+      <input id="szoveg" name="szoveg" maxlength="150" required placeholder="Előadó – cím, vagy YouTube-link" autocomplete="off">
+      <label for="nev">Neved (nem kötelező)</label>
+      <input id="nev" name="nev" maxlength="30" autocomplete="nickname">
+      <button class="gomb fo orias" type="submit" id="kuld">Kérem!</button>
+      <p class="hiba-szoveg" id="hiba"></p>
+      <p class="halvany kicsi-szoveg" id="info"></p>
+    </form>
+  </section>
+  <section class="kartya" id="kikapcsolva" hidden><h2>A zenekérés most nem elérhető</h2><p class="halvany">Próbáld később, vagy szólj a rádiósoknak.</p></section>
+  <section class="kartya"><h2>A mai kéréseid</h2><div id="keresek" class="lista"><div class="lista-ures">Ma még nem kértél számot.</div></div></section>
+</main>
+<script src="/statikus/keres.js"></script>
+</body>
+</html>

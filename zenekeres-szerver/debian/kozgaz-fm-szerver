@@ -2,13 +2,65 @@
 set -e
 NEV=kozgaz-fm-szerver
 ENV=/etc/$NEV/szerver.env
+FM_ENV=/etc/$NEV/fm.env
+FM_FELHASZNALO=/etc/$NEV/fm-felhasznalo
+FM=/usr/share/$NEV/fm
+YTDLP=/var/lib/kozgaz-fm-ytdlp
 
 ertek() {
-    sed -n "s/^$1=//p" "$ENV" 2>/dev/null | tail -n 1
+    sed -n "s/^$1=//p" "${2:-$ENV}" 2>/dev/null | tail -n 1
 }
 
 root_kell() {
     [ "$(id -u)" -eq 0 ] || { echo "Ehhez root kell: sudo $NEV $1" >&2; exit 1; }
+}
+
+fm_felhasznalo() {
+    if [ -n "${1:-}" ]; then
+        echo "$1"
+    elif [ -s "$FM_FELHASZNALO" ]; then
+        cat "$FM_FELHASZNALO"
+    else
+        getent passwd | awk -F: '$3 >= 1000 && $3 < 60000 && $7 !~ /(nologin|false)$/ { print $1 }' | head -n 2 | {
+            read -r elso || true
+            read -r masodik || true
+            [ -n "$elso" ] && [ -z "$masodik" ] && echo "$elso"
+        }
+    fi
+}
+
+fm_adat() {
+    A=$(ertek KOZGAZ_FM_ADAT "$FM_ENV")
+    if [ -n "$A" ]; then echo "$A"; else echo "$(getent passwd "$1" | cut -d: -f6)/.local/share/kozgaz-fm-web"; fi
+}
+
+fm_kezelo() {
+    F="$1"
+    shift
+    runuser -u "$F" -- env KOZGAZ_FM_ADAT="$(fm_adat "$F")" php "$FM/bin/kezelo.php" "$@"
+}
+
+fm_cimek() {
+    PORT=$(ertek KFM_WEB_PORT "$FM_ENV")
+    PORT=${PORT:-8080}
+    for IP in $(hostname -I 2>/dev/null); do
+        case "$IP" in *:*) ;; *) echo "  http://$IP:$PORT" ;; esac
+    done
+    if command -v tailscale >/dev/null 2>&1; then
+        TS=$(tailscale ip -4 2>/dev/null | head -n 1)
+        [ -n "$TS" ] && echo "  http://$TS:$PORT  (Tailscale, távolról)"
+    fi
+    return 0
+}
+
+ytdlp_frissit() {
+    if ! python3 -c 'import venv' 2>/dev/null; then
+        echo "A yt-dlp frissítéséhez a python3-venv csomag kell." >&2
+        return 1
+    fi
+    [ -x "$YTDLP/bin/pip" ] || python3 -m venv "$YTDLP"
+    "$YTDLP/bin/pip" install --quiet --disable-pip-version-check --upgrade "yt-dlp[default]"
+    "$YTDLP/bin/yt-dlp" --version
 }
 
 case "${1:-allapot}" in
@@ -16,6 +68,15 @@ case "${1:-allapot}" in
         systemctl --no-pager --lines=0 status $NEV.service || true
         CIM=$(ertek KFM_CIM); PORT=$(ertek KFM_PORT)
         php -r '$v = @file_get_contents("http://" . $argv[1] . "/egeszseg"); echo $v === false ? "A szerver nem válaszol.\n" : $v . "\n";' "${CIM:-127.0.0.1}:${PORT:-8100}"
+        F=$(fm_felhasznalo)
+        if [ -s "$FM_FELHASZNALO" ] && [ -n "$F" ]; then
+            echo
+            systemctl --no-pager --lines=0 status "kozgaz-fm-web@$F.service" "kozgaz-fm-demon@$F.service" || true
+            echo "Közgáz FM (webes):"
+            fm_cimek
+        else
+            echo "A webes Közgáz FM nincs bekapcsolva: sudo $NEV fm-be [felhasználó]"
+        fi
         ;;
     kulcs)
         root_kell kulcs
@@ -39,9 +100,68 @@ case "${1:-allapot}" in
     ujraindit)
         root_kell ujraindit
         systemctl restart $NEV.service
+        F=$(fm_felhasznalo)
+        [ -s "$FM_FELHASZNALO" ] && [ -n "$F" ] && systemctl restart "kozgaz-fm-web@$F.service" "kozgaz-fm-demon@$F.service"
+        ;;
+    fm-be)
+        root_kell fm-be
+        F=$(fm_felhasznalo "${2:-}")
+        if [ -z "$F" ] || ! getent passwd "$F" >/dev/null; then
+            echo "Add meg, melyik felhasználó nevében szóljon a hang (akinek a gépére a hangosítás csatlakozik):" >&2
+            echo "  sudo $NEV fm-be <felhasználó>" >&2
+            exit 1
+        fi
+        REGI=$(cat "$FM_FELHASZNALO" 2>/dev/null || true)
+        if [ -n "$REGI" ] && [ "$REGI" != "$F" ]; then
+            systemctl disable --now "kozgaz-fm-web@$REGI.service" "kozgaz-fm-demon@$REGI.service" >/dev/null 2>&1 || true
+        fi
+        echo "$F" > "$FM_FELHASZNALO"
+        loginctl enable-linger "$F" 2>/dev/null || true
+        [ -x "$YTDLP/bin/yt-dlp" ] || ytdlp_frissit >/dev/null 2>&1 || echo "A yt-dlp most nem települt (nincs net?): sudo $NEV ytdlp-frissites" >&2
+        UJ_JELSZO=""
+        if ! fm_kezelo "$F" van-jelszo; then
+            UJ_JELSZO=$(head -c 12 /dev/urandom | base64 | tr -d '/+=' | cut -c1-14)
+            printf '%s' "$UJ_JELSZO" | fm_kezelo "$F" jelszo
+        fi
+        systemctl daemon-reload
+        systemctl enable --now "kozgaz-fm-web@$F.service" "kozgaz-fm-demon@$F.service" >/dev/null
+        echo "A webes Közgáz FM fut, a hang $F felhasználó hangrendszerén szól."
+        echo "Elérés:"
+        fm_cimek
+        if [ -n "$UJ_JELSZO" ]; then
+            echo "Kezdő jelszó: $UJ_JELSZO   (belépés után a Beállításokban megváltoztatható)"
+        fi
+        ;;
+    fm-ki)
+        root_kell fm-ki
+        F=$(cat "$FM_FELHASZNALO" 2>/dev/null || true)
+        [ -n "$F" ] && systemctl disable --now "kozgaz-fm-web@$F.service" "kozgaz-fm-demon@$F.service" >/dev/null 2>&1 || true
+        rm -f "$FM_FELHASZNALO"
+        echo "A webes Közgáz FM leállítva (az adatai megmaradtak)."
+        ;;
+    fm-naplo)
+        F=$(fm_felhasznalo)
+        journalctl -u "kozgaz-fm-web@$F.service" -u "kozgaz-fm-demon@$F.service" -n "${2:-100}" --no-pager
+        ;;
+    fm-beallitas)
+        root_kell fm-beallitas
+        "${EDITOR:-nano}" "$FM_ENV"
+        F=$(fm_felhasznalo)
+        [ -n "$F" ] && systemctl restart "kozgaz-fm-web@$F.service" "kozgaz-fm-demon@$F.service"
+        ;;
+    pin-torles|jelszo-torles)
+        root_kell "$1"
+        F=$(fm_felhasznalo)
+        [ -n "$F" ] || { echo "Nincs bekapcsolva a webes Közgáz FM." >&2; exit 1; }
+        fm_kezelo "$F" "$1"
+        ;;
+    ytdlp-frissites)
+        root_kell ytdlp-frissites
+        ytdlp_frissit
         ;;
     *)
         echo "Használat: $NEV [allapot|kulcs|uj-kulcs|beallitas|naplo [sorok]|ujraindit]" >&2
+        echo "  webes Közgáz FM: fm-be [felhasználó]|fm-ki|fm-naplo [sorok]|fm-beallitas|pin-torles|jelszo-torles|ytdlp-frissites" >&2
         exit 2
         ;;
 esac

@@ -1,0 +1,37 @@
+name: kozgazfm-php
+
+x-kozos: &kozos
+  build:
+    context: .
+    dockerfile: docker/Dockerfile
+  image: kozgazfm-php:helyi
+  restart: unless-stopped
+  environment:
+    TZ: Europe/Budapest
+    KOZGAZ_FM_ADAT: /adat
+    KOZGAZ_FM_ZENE: /zene
+  volumes:
+    - ./adat:/adat
+    - ${KFM_ZENE_MAPPA:-~/Zenék}:/zene:ro
+
+services:
+  web:
+    <<: *kozos
+    ports:
+      - "${KFM_WEB_PORT:-8080}:80"
+      - "127.0.0.1:8898:80"
+
+  demon:
+    <<: *kozos
+    user: "1000:1000"
+    command: ["php", "/app/bin/demon.php"]
+    environment:
+      TZ: Europe/Budapest
+      KOZGAZ_FM_ADAT: /adat
+      KOZGAZ_FM_ZENE: /zene
+      PULSE_SERVER: unix:/run/pulse/native
+      HOME: /home/kfm
+    volumes:
+      - ./adat:/adat
+      - ${KFM_ZENE_MAPPA:-~/Zenék}:/zene:ro
+      - ${XDG_RUNTIME_DIR:-/run/user/1000}/pulse/native:/run/pulse/native

@@ -30,3 +30,23 @@ jobs:
       - run: uv venv && uv pip install -e ".[dev]"
       - run: uv run --no-sync ruff check src tests eszkozok
       - run: uv run --no-sync pytest -q
+
+  php:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.14"
+      - name: PHP és eszközök
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends php-cli php-intl php-sqlite3 php-mbstring qrencode
+      - run: uv venv && uv pip install -e .
+      - name: Mintaadatok az asztali változatból
+        run: |
+          mkdir -p php/tests/adat
+          uv run --no-sync python php/tests/eszkozok/orarend_minta.py > php/tests/adat/orarend_minta.json
+          uv run --no-sync python php/tests/eszkozok/szuro_minta.py > php/tests/adat/szuro_minta.json
+      - name: Szintaxis
+        run: find php -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
+      - run: php php/tests/futtat.php

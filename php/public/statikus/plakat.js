@@ -1,0 +1,10 @@
+'use strict';
+const parameterek = new URLSearchParams(location.search);
+const cim = parameterek.get('cim') || `${location.origin}/keres`;
+const nev = parameterek.get('nev') || 'Közgáz FM';
+document.getElementById('cim').textContent = cim.replace(/^[a-z]+:\/\//i, '').replace(/\/+$/, '');
+document.getElementById('nev').textContent = nev;
+document.getElementById('lab-nev').textContent = `${nev} · jó zenélést!`;
+document.title = `${nev} – zenekérés`;
+document.getElementById('qr').src = `/api/v1/qr?stilus=plakat&szoveg=${encodeURIComponent(cim)}`;
+document.getElementById('nyomtat').addEventListener('click', () => window.print());

@@ -1,0 +1,26 @@
+[Unit]
+Description=Közgáz FM lejátszó démon (%i)
+Documentation=https://github.com/Botirocky/kozgaz-fm/tree/main/php
+After=network-online.target sound.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=%i
+Environment=TZ=Europe/Budapest
+Environment=PATH=/var/lib/kozgaz-fm-ytdlp/bin:/usr/local/bin:/usr/bin:/bin
+EnvironmentFile=-/etc/kozgaz-fm-szerver/fm.env
+ExecStart=/usr/share/kozgaz-fm-szerver/fm/rendszer/demon.sh
+Restart=always
+SuccessExitStatus=143 SIGTERM
+RestartSec=3
+NoNewPrivileges=yes
+ProtectSystem=full
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+LockPersonality=yes
+
+[Install]
+WantedBy=multi-user.target

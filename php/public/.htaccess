@@ -1,0 +1,7 @@
+Options -Indexes
+RewriteEngine On
+RewriteCond %{REQUEST_URI} !^/statikus/
+RewriteRule ^ index.php [L,QSA]
+<FilesMatch "\.(css|js|png|svg)$">
+  Header set Cache-Control "public, max-age=86400"
+</FilesMatch>

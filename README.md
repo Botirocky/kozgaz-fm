@@ -124,6 +124,24 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
 
+## Újdonságok az 1.15.0-ban
+
+- **Webes Közgáz FM a szervercsomagban:** a `kozgaz-fm-szerver` Debian-csomag a teljes, böngészőből kezelhető
+  Közgáz FM-et is felrakja (PHP, Docker nélkül, forrás: [php/](php/README.md)). Bekapcsolás:
+  `sudo kozgaz-fm-szerver fm-be <felhasználó>`; a hang a gép hangkimenetén szól, a felület jelszóval védett,
+  távolról Tailscale-en érhető el. Az asztali program minden mostani funkciója megvan benne (kért zenék külön
+  sorban, keverés, zenék a szerverről, új plakát, Napló PIN).
+
+## Újdonságok az 1.14.1-ben
+
+- A Napló oldal is PIN-kódot kér (ha van beállítva PIN).
+
+## Újdonságok az 1.14.0-ban
+
+- **Kért zenék külön sorban:** a kért zenék mindig elsőként szólnak, a kérés sorrendjében; ha elfogytak, az alap
+  lista onnan folytatódik, ahol abbamaradt. A lejátszott kérés nem jön elő újra. A Zene oldalon, a Vezérlőpulton és a
+  webpanelen is látszik, hol tart a lejátszás (pl. alap lista: 4/12).
+
 ## Újdonságok az 1.13.1-ben
 
 - Új zenekérő plakát (Zene → Zenekérés → Plakát): nagy cím, kiemelt, vektoros QR-kód a kérő oldalra, három lépés.

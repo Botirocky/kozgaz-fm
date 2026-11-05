@@ -27,6 +27,31 @@ A telepítő:
 Az adatbázis a `/var/lib/kozgaz-fm-szerver` mappában van, a zenék alapból a `/var/lib/kozgaz-fm-szerver/zene`
 mappába kerülnek. Frissítésnél (`sudo apt install ./új.deb`) a beállítások, a kulcs és az adatok megmaradnak.
 
+## Webes Közgáz FM ugyanebben a csomagban
+
+A csomag a teljes, böngészőből kezelhető Közgáz FM-et is tartalmazza (csengetés, szünetzene, kért zenék,
+bemondás, napló). Ez nem indul el magától, mert tudnia kell, melyik felhasználó hangrendszerén szóljon:
+
+```
+sudo kozgaz-fm-szerver fm-be <felhasználó>
+```
+
+- bekapcsolja a `kozgaz-fm-web@<felhasználó>` (webes felület, `0.0.0.0:8080`) és a
+  `kozgaz-fm-demon@<felhasználó>` (lejátszó) szolgáltatást,
+- bekapcsolja a felhasználó „lingering” módját, így a PipeWire bejelentkezés nélkül, a gép indulásakor is fut,
+- telepíti a friss yt-dlp-t a `/var/lib/kozgaz-fm-ytdlp` mappába (frissítés: `sudo kozgaz-fm-szerver ytdlp-frissites`),
+- ha még nincs webes jelszó, beállít egy véletlen kezdő jelszót, és kiírja (belépés után átírható).
+
+Az adatok a felhasználó `~/.local/share/kozgaz-fm-web` mappájában vannak, a zenék alapból a `~/Zenék`
+mappából jönnek; ezek a csomag eltávolítása után is megmaradnak. Port, cím, mappák:
+`sudo kozgaz-fm-szerver fm-beallitas` (`/etc/kozgaz-fm-szerver/fm.env`: `KFM_WEB_CIM`, `KFM_WEB_PORT`,
+`KOZGAZ_FM_ADAT`, `KOZGAZ_FM_ZENE`).
+
+**Távoli elérés:** a felület a helyi hálózaton a gép címén érhető el (`http://GÉP:8080`). Iskolán kívülről a
+legegyszerűbb a [Tailscale](https://tailscale.com): telepítsd a gépre (`curl -fsSL https://tailscale.com/install.sh | sh`,
+`sudo tailscale up`), és a saját eszközeidről a gép Tailscale-címén (`http://100.x.y.z:8080`) éred el. Az
+`fm-be` és az `allapot` parancs ki is írja ezt a címet. Nyilvános internetre (port-továbbítás, Funnel) ne tedd ki.
+
 ### Kezelés
 
 ```
@@ -36,6 +61,14 @@ sudo kozgaz-fm-szerver uj-kulcs   új kulcs, újraindítással (a programban is 
 sudo kozgaz-fm-szerver beallitas  a szerver.env szerkesztése, utána újraindít
 kozgaz-fm-szerver naplo [sorok]   a szolgáltatás naplója
 sudo kozgaz-fm-szerver ujraindit
+
+sudo kozgaz-fm-szerver fm-be [felhasználó]   webes Közgáz FM be (első jelszóval)
+sudo kozgaz-fm-szerver fm-ki                 webes Közgáz FM ki (az adatok maradnak)
+kozgaz-fm-szerver fm-naplo [sorok]           a webes felület és a lejátszó naplója
+sudo kozgaz-fm-szerver fm-beallitas          az fm.env szerkesztése, utána újraindít
+sudo kozgaz-fm-szerver pin-torles            elfelejtett PIN törlése
+sudo kozgaz-fm-szerver jelszo-torles         elfelejtett webes jelszó törlése (megnyitáskor újat kér)
+sudo kozgaz-fm-szerver ytdlp-frissites       a yt-dlp frissítése
 ```
 
 ### Beállítások (`/etc/kozgaz-fm-szerver/szerver.env`)

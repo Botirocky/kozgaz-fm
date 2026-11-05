@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Folyosói kijelző – Közgáz FM</title>
+<link rel="icon" href="/statikus/logo.png">
+<link rel="stylesheet" href="/statikus/kijelzo.css">
+</head>
+<body>
+<main class="kijelzo">
+  <header><img src="/statikus/logo.png" alt=""><div id="cim">Közgáz FM</div><div class="datum" id="datum"></div></header>
+  <section class="kozep">
+    <div class="ora" id="ora">--:--</div>
+    <div class="szakasz" id="szakasz"></div>
+    <div class="hatra" id="hatra"></div>
+    <div class="halado"><div id="halado"></div></div>
+    <div class="kovetkezo" id="kovetkezo"></div>
+  </section>
+  <footer>
+    <div class="zene" id="zene"></div>
+    <div class="qr" id="qr" hidden><img id="qr-kep" alt=""><span>Kérj zenét!</span></div>
+  </footer>
+</main>
+<script src="/statikus/kijelzo.js"></script>
+</body>
+</html>

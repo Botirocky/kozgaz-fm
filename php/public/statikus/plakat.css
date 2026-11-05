@@ -1,0 +1,51 @@
+@page { size: A4; margin: 0; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Segoe UI", "Noto Sans", "DejaVu Sans", system-ui, sans-serif; background: #D9DEE5; }
+.eszkoz { text-align: center; padding: 12px; }
+.eszkoz button { font-size: 16px; padding: 8px 18px; cursor: pointer; }
+.lap {
+  position: relative; width: 210mm; height: 297mm; margin: 0 auto 20px; overflow: hidden;
+  background: #F6F8FB; color: #14273D; -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+.fej {
+  position: absolute; inset: 0 0 auto 0; height: 170mm; padding: 15mm 17mm 0; color: #fff; overflow: hidden;
+  background: linear-gradient(120deg, #4A8FCB 0%, #173F68 100%);
+  clip-path: path("M0 0 H793.7 V551.8 Q396.9 642.5 0 551.8 Z");
+}
+.hullamok { position: absolute; top: 0; right: 0; width: 150mm; height: 112mm; }
+.hullamok circle { fill: none; stroke: #fff; stroke-width: 4; }
+.hullamok circle:nth-child(1) { stroke-opacity: .13; } .hullamok circle:nth-child(2) { stroke-opacity: .11; }
+.hullamok circle:nth-child(3) { stroke-opacity: .09; } .hullamok circle:nth-child(4) { stroke-opacity: .07; }
+.hullamok circle:nth-child(5) { stroke-opacity: .05; } .hullamok circle:nth-child(6) { stroke-opacity: .03; }
+.marka { position: relative; display: flex; align-items: center; gap: 6mm; }
+.logo-doboz { width: 24mm; height: 24mm; padding: 2mm; border-radius: 5mm; background: #fff; }
+.logo-doboz img { width: 100%; height: 100%; object-fit: contain; }
+.nev { font-size: 17pt; font-weight: 700; }
+.alcim { font-size: 12pt; opacity: .8; }
+.cimke { position: relative; margin-top: 13mm; color: #DCBD31; font-size: 13pt; font-weight: 700; letter-spacing: .9mm; }
+h1 { position: relative; margin: 2mm 0 0; font-size: 50pt; font-weight: 900; line-height: 1.12; }
+h1 span { color: #DCBD31; }
+.bevezeto { position: relative; width: 62%; margin: 5mm 0 0; font-size: 14pt; line-height: 1.35; opacity: .9; }
+.kartya {
+  position: absolute; left: 53mm; top: 128mm; width: 104mm; height: 117mm; border-radius: 7mm; background: #fff;
+  box-shadow: 0 2mm 7mm rgba(10, 30, 55, .22);
+}
+.fogantyu { position: absolute; left: 38mm; top: -1.6mm; width: 28mm; height: 3.2mm; border-radius: 1.6mm; background: #DCBD31; }
+.qr { position: absolute; left: 10mm; top: 9mm; width: 84mm; height: 84mm; }
+.cim {
+  position: absolute; left: 10mm; right: 10mm; top: 98mm; bottom: 0; display: flex; align-items: center; justify-content: center;
+  border-top: .35mm solid #E3E8EF; color: #4085C0; font-size: 12pt; font-weight: 600; word-break: break-all; text-align: center;
+}
+.lepesek { position: absolute; left: 17mm; right: 17mm; top: 254mm; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8mm; margin: 0; padding: 0; list-style: none; counter-reset: lepes; }
+.lepesek li { counter-increment: lepes; }
+.lepesek b { display: flex; align-items: center; gap: 3mm; height: 10mm; font-size: 13pt; }
+.lepesek b::before {
+  content: counter(lepes); display: inline-flex; align-items: center; justify-content: center; width: 10mm; height: 10mm;
+  border-radius: 50%; background: #DCBD31; font-weight: 900;
+}
+.lepesek span { display: block; margin-top: 2mm; color: #5B6B7D; font-size: 10.5pt; line-height: 1.3; }
+.lab {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 11mm; padding: 1.2mm 17mm 0; display: flex; align-items: center;
+  justify-content: space-between; background: #173F68; border-top: 1.2mm solid #DCBD31; color: rgba(255, 255, 255, .85); font-size: 9.5pt;
+}
+@media print { body { background: #fff; } .eszkoz { display: none; } .lap { margin: 0; } }

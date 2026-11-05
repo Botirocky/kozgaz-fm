@@ -1,0 +1,16 @@
+html, body { margin: 0; height: 100%; background: #0B0F14; color: #F1F4F8; font-family: system-ui, "Segoe UI", Roboto, sans-serif; cursor: none; }
+.kijelzo { height: 100%; display: flex; flex-direction: column; padding: 3vh 4vw; box-sizing: border-box; }
+header { display: flex; align-items: center; gap: 2vw; font-size: 3.2vh; font-weight: 650; }
+header img { height: 9vh; }
+.datum { margin-left: auto; color: #9AA6B4; font-weight: 500; }
+.kozep { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+.ora { font-size: 22vh; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: .02em; }
+.szakasz { font-size: 7vh; font-weight: 700; margin-top: 2vh; color: #DCBD31; }
+.hatra { font-size: 5vh; margin-top: 1vh; font-variant-numeric: tabular-nums; }
+.halado { width: 60vw; height: 1.2vh; background: #1E2630; border-radius: 1vh; margin-top: 3vh; overflow: hidden; }
+.halado div { height: 100%; background: #4C8BD0; width: 0; transition: width 1s linear; }
+.kovetkezo { font-size: 3.4vh; color: #9AA6B4; margin-top: 3vh; }
+footer { display: flex; align-items: flex-end; gap: 3vw; min-height: 18vh; }
+.zene { font-size: 3.6vh; flex: 1; }
+.qr { display: flex; flex-direction: column; align-items: center; gap: 1vh; font-size: 2.4vh; color: #9AA6B4; }
+.qr img { height: 16vh; width: 16vh; background: #fff; padding: .8vh; border-radius: 1vh; }

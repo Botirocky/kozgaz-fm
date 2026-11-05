@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<title>Plakát – Közgáz FM</title>
+<link rel="stylesheet" href="/statikus/plakat.css">
+</head>
+<body>
+<div class="eszkoz"><button id="nyomtat">Nyomtatás / mentés PDF-be</button></div>
+<article class="lap">
+  <header class="fej">
+    <svg class="hullamok" viewBox="0 0 400 300" aria-hidden="true">
+      <circle cx="380" cy="-10" r="60"/><circle cx="380" cy="-10" r="100"/><circle cx="380" cy="-10" r="140"/>
+      <circle cx="380" cy="-10" r="180"/><circle cx="380" cy="-10" r="220"/><circle cx="380" cy="-10" r="260"/>
+    </svg>
+    <div class="marka">
+      <div class="logo-doboz"><img src="/statikus/logo.png" alt=""></div>
+      <div><div class="nev" id="nev">Közgáz FM</div><div class="alcim">iskolarádió · zenekérés</div></div>
+    </div>
+    <div class="cimke">SZÓLJON A TE SZÁMOD</div>
+    <h1>Kérj zenét<br><span>a szünetre!</span></h1>
+    <p class="bevezeto">Olvasd be a kódot, írd be a kedvenc számod, és szólhat a következő szünetben.</p>
+  </header>
+  <section class="kartya">
+    <div class="fogantyu"></div>
+    <img class="qr" id="qr" alt="QR-kód">
+    <div class="cim" id="cim"></div>
+  </section>
+  <ol class="lepesek">
+    <li><b>Olvasd be</b><span>a QR-kódot a telefonod kamerájával.</span></li>
+    <li><b>Írd be</b><span>az előadót és a szám címét, vagy egy YouTube-linket.</span></li>
+    <li><b>Hallgasd</b><span>a következő szünetek egyikében szól.</span></li>
+  </ol>
+  <footer class="lab"><span>Trágár vagy korhatáros szám nem kerül adásba.</span><b id="lab-nev">Közgáz FM · jó zenélést!</b></footer>
+</article>
+<script src="/statikus/plakat.js"></script>
+</body>
+</html>

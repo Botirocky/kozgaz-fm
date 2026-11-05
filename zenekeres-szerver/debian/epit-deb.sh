@@ -16,12 +16,18 @@ OSZT="$R/usr/share/$NEV"
 
 install -d "$R/DEBIAN" "$OSZT" "$R/usr/bin" "$R/usr/lib/systemd/system" "$R/usr/share/doc/$NEV"
 cp -r "$SZERVER/public" "$SZERVER/src" "$OSZT/"
+install -d "$OSZT/fm"
+cp -r "$GYOKER/php/bin" "$GYOKER/php/src" "$GYOKER/php/public" "$GYOKER/php/eroforrasok" "$GYOKER/php/rendszer" "$OSZT/fm/"
+rm -f "$OSZT/fm/rendszer/"*.service
+sed -i "s/^const KFM_VERZIO = .*/const KFM_VERZIO = '$VERZIO';/" "$OSZT/fm/src/bootstrap.php"
 install -m644 "$ITT/router.php" "$OSZT/router.php"
 install -m644 "$ITT/szerver.env.minta" "$OSZT/szerver.env.minta"
 install -m755 "$ITT/kozgaz-fm-szerver" "$R/usr/bin/$NEV"
 install -m644 "$ITT/$NEV.service" "$R/usr/lib/systemd/system/$NEV.service"
+install -m644 "$GYOKER/php/rendszer/kozgaz-fm-web@.service" "$GYOKER/php/rendszer/kozgaz-fm-demon@.service" "$R/usr/lib/systemd/system/"
 install -m644 "$SZERVER/README.md" "$R/usr/share/doc/$NEV/README.md"
 find "$OSZT" -type d -exec chmod 755 {} + && find "$OSZT" -type f -exec chmod 644 {} +
+chmod 755 "$OSZT/fm/rendszer/web.sh" "$OSZT/fm/rendszer/demon.sh"
 {
     echo "Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/"
     echo "Upstream-Name: kozgaz-fm"
@@ -43,13 +49,16 @@ Installed-Size: $MERET
 Section: web
 Priority: optional
 Homepage: https://github.com/Botirocky/kozgaz-fm
-Depends: php-cli (>= 2:8.1~) | php8.1-cli | php8.2-cli | php8.3-cli | php8.4-cli, php-sqlite3 | php8.1-sqlite3 | php8.2-sqlite3 | php8.3-sqlite3 | php8.4-sqlite3, php-mbstring | php8.1-mbstring | php8.2-mbstring | php8.3-mbstring | php8.4-mbstring, adduser, systemd
+Depends: php-cli (>= 2:8.2~) | php8.2-cli | php8.3-cli | php8.4-cli, php-sqlite3 | php8.2-sqlite3 | php8.3-sqlite3 | php8.4-sqlite3, php-mbstring | php8.2-mbstring | php8.3-mbstring | php8.4-mbstring, php-intl | php8.2-intl | php8.3-intl | php8.4-intl, mpv, ffmpeg, espeak-ng, qrencode, pulseaudio-utils, nodejs, python3-venv, adduser, systemd
+Recommends: pipewire-pulse, wireplumber, xdg-user-dirs
 Suggests: tailscale
-Description: Közgáz FM zenekérő szerver
- A diákok ezen a webszerveren kérnek zenét QR-kóddal, az iskolai Közgáz FM
- program innen kéri le és ellenőrzi a kéréseket, és innen tölti le a
- szünetzenéket. PHP beépített szerverrel, systemd-szolgáltatásként fut,
- Docker nélkül.
+Description: Közgáz FM szerver: webes csengetőrendszer és zenekérő
+ Két része van. A webes Közgáz FM a teljes iskolai csengető és szünetzene
+ böngészőből kezelve (csengetési rend, zene, kért zenék, bemondás, napló),
+ a hangot a gép hangkimenetén adja; bekapcsolás: kozgaz-fm-szerver fm-be.
+ A zenekérő szerveren a diákok QR-kóddal kérnek zenét, az iskolai Közgáz FM
+ program innen kéri le a kéréseket és tölti le a szünetzenéket.
+ PHP beépített szerverrel, systemd-szolgáltatásként fut, Docker nélkül.
 CONTROL
 
 
@@ -71,10 +80,20 @@ if [ "$1" = "configure" ]; then
     chmod 0640 /etc/$NEV/szerver.env
     [ -d /var/lib/$NEV ] || install -d -m 0750 -o $NEV -g $NEV /var/lib/$NEV
     [ -d /var/lib/$NEV/zene ] || install -d -m 0755 -o $NEV -g $NEV /var/lib/$NEV/zene
+    [ -e /etc/$NEV/fm.env ] || install -m 0644 /usr/share/$NEV/fm/rendszer/fm.env.minta /etc/$NEV/fm.env
+    [ -d /var/lib/kozgaz-fm-ytdlp ] || install -d -m 0755 /var/lib/kozgaz-fm-ytdlp
     if [ -d /run/systemd/system ]; then
         systemctl daemon-reload
         systemctl enable $NEV.service >/dev/null 2>&1
         systemctl restart $NEV.service || echo "A szolgáltatás nem indult el: journalctl -u $NEV" >&2
+        FM=$(cat /etc/$NEV/fm-felhasznalo 2>/dev/null || true)
+        if [ -n "$FM" ]; then
+            systemctl restart "kozgaz-fm-web@$FM.service" "kozgaz-fm-demon@$FM.service" || echo "A webes Közgáz FM nem indult el: $NEV fm-naplo" >&2
+        fi
+    fi
+    if [ ! -s /etc/$NEV/fm-felhasznalo ]; then
+        echo "A webes Közgáz FM (csengetés + szünetzene böngészőből) bekapcsolása:"
+        echo "  sudo $NEV fm-be <felhasználó>   (akinek a gépére a hangosítás csatlakozik)"
     fi
     if [ -n "${UJ:-}" ]; then
         echo "Közgáz FM zenekérő szerver: http://127.0.0.1:8100"
@@ -90,6 +109,10 @@ set -e
 NEV=kozgaz-fm-szerver
 if [ "$1" = "remove" ] && [ -d /run/systemd/system ]; then
     systemctl disable --now $NEV.service >/dev/null 2>&1 || true
+    FM=$(cat /etc/$NEV/fm-felhasznalo 2>/dev/null || true)
+    if [ -n "$FM" ]; then
+        systemctl disable --now "kozgaz-fm-web@$FM.service" "kozgaz-fm-demon@$FM.service" >/dev/null 2>&1 || true
+    fi
 fi
 exit 0
 PRERM
@@ -100,7 +123,7 @@ set -e
 NEV=kozgaz-fm-szerver
 [ -d /run/systemd/system ] && systemctl daemon-reload || true
 if [ "$1" = "purge" ]; then
-    rm -rf /etc/$NEV /var/lib/$NEV
+    rm -rf /etc/$NEV /var/lib/$NEV /var/lib/kozgaz-fm-ytdlp
     getent passwd $NEV >/dev/null && deluser --system $NEV >/dev/null 2>&1 || true
     getent group $NEV >/dev/null && delgroup --system $NEV >/dev/null 2>&1 || true
 fi
