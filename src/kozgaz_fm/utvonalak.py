@@ -46,4 +46,4 @@ def csomag_mappa() -> Path:
 
 
 def beepitett_hang(nev: str) -> Path:
-    return csomag_mappa() / "hangok" / f"{nev}.wav"
+    return csomag_mappa() / "hangok" / f"{nev}.mp3"

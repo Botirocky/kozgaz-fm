@@ -29,7 +29,7 @@ from PySide6.QtCore import QObject, QTimer, QUrl, QVariantAnimation, Signal
 from PySide6.QtMultimedia import QMediaPlayer
 
 from kozgaz_fm import hatter, sajat_hangok, youtube
-from kozgaz_fm.beallitasok import BEEPITETT_HANGOK, ZeneForras
+from kozgaz_fm.beallitasok import BEEPITETT_HANGOK, REGI_HANGOK, ZeneForras
 from kozgaz_fm.dalszoveg import DalszovegTar
 from kozgaz_fm.hangossag import Kiegyenlito
 from kozgaz_fm.kimenetek import TobbLejatszo, ZonaKimenet, eszkoz_azonosito, kimeneti_eszkoz
@@ -50,6 +50,7 @@ SPOTIFY_MAX_KIHAGYAS = 8
 def hang_ut(ertek: str) -> Path | None:
     if ertek.startswith("beepitett:"):
         nev = ertek.split(":", 1)[1]
+        nev = nev if nev in BEEPITETT_HANGOK else REGI_HANGOK.get(nev, "")
         return beepitett_hang(nev) if nev in BEEPITETT_HANGOK else None
     if sajat_hangok.sajat(ertek):
         return sajat_hangok.ut(ertek)
@@ -59,7 +60,8 @@ def hang_ut(ertek: str) -> Path | None:
 
 def hang_nev(ertek: str) -> str:
     if ertek.startswith("beepitett:"):
-        return BEEPITETT_HANGOK.get(ertek.split(":", 1)[1], "Ismeretlen")
+        nev = ertek.split(":", 1)[1]
+        return BEEPITETT_HANGOK.get(nev) or BEEPITETT_HANGOK.get(REGI_HANGOK.get(nev, ""), "Ismeretlen")
     if sajat_hangok.sajat(ertek):
         return sajat_hangok.nev(ertek)
     return Path(ertek).name

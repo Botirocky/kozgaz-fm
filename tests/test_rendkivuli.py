@@ -38,7 +38,7 @@ def tipusok(b: Beallitasok, nap: date, *keresett: Tipus) -> list[Esemeny]:
 
 def test_rendkivuli_csengetes_szunnapon_is(b):
     b.szunnapok.append(Szunnap(HETFO.isoformat(), HETFO.isoformat(), "Igazgatói nap"))
-    b.rendkivuli.append(Rendkivuli("Ünnepség", HETFO.isoformat(), "10:00", hang="beepitett:gong"))
+    b.rendkivuli.append(Rendkivuli("Ünnepség", HETFO.isoformat(), "10:00", hang="beepitett:jelzo"))
     esemenyek = napi_esemenyek(b, HETFO)
     assert [(e.tipus, e.ido, e.leiras) for e in esemenyek] == [(Tipus.RENDKIVULI, dt(HETFO, "10:00"), "Ünnepség")]
 
@@ -172,7 +172,7 @@ def test_vezerlo_halk_csengetes():
     v.b = minta_beallitas()
     v.zene = type("Zene", (), {"szol": False})()
     v._kezel(Esemeny(dt(HETFO, "09:40"), Tipus.KICSENGO, 2, hangero=20))
-    assert v.csengetesek == [("beepitett:csengo", "2. óra – kicsengő (halkan)", 20)]
+    assert v.csengetesek == [("beepitett:kicsengo", "2. óra – kicsengő (halkan)", 20)]
 
 
 def test_riasztas_ertesites_visszakerul_regi_fajlnal(tmp_path, b):

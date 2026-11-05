@@ -124,6 +124,12 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
 
+## Újdonságok az 1.12.0-ban
+
+- Az iskola saját csengőhangjai lettek a beépített hangok: becsengő, kicsengő és jelzőcsengő. A korábbi
+  generált hangok (klasszikus, rövid, dallamos, gong, riasztás) kikerültek; a régi beállítások maguktól átállnak
+  (gong → jelzőcsengő, riasztás → kicsengő ismételve). Saját hang továbbra is választható.
+
 ## Újdonságok az 1.11.1-ben
 
 - Javítva a Windows-os kiadás építése (az 1.10.0 és 1.11.0 újdonságai ezzel jelennek meg).

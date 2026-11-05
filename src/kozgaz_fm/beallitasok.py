@@ -13,12 +13,12 @@ from kozgaz_fm.utvonalak import beallitas_fajl
 naplo = logging.getLogger(__name__)
 
 BEEPITETT_HANGOK = {
-    "csengo": "Klasszikus csengő",
-    "rovid": "Rövid csengő",
-    "dallam": "Dallamos csengő",
-    "gong": "Gong",
-    "riasztas": "Riasztás",
+    "becsengo": "Becsengő",
+    "kicsengo": "Kicsengő",
+    "jelzo": "Jelzőcsengő",
 }
+
+REGI_HANGOK = {"csengo": "becsengo", "dallam": "becsengo", "rovid": "jelzo", "gong": "jelzo", "riasztas": "kicsengo"}
 
 ALAP_SABLONOK = [
     "Kedves Diákok! Felhívjuk figyelmeteket, hogy a mai napon rövidített órák lesznek.",
@@ -68,7 +68,7 @@ class Rendkivuli:
     tol: str
     tipus: str = "csengetes"
     ig: str = ""
-    hang: str = "beepitett:csengo"
+    hang: str = "beepitett:becsengo"
     riado_perc: int = 3
     csengo_hangero: int = 0
     aktiv: bool = True
@@ -132,11 +132,11 @@ class Beallitasok:
     jelzo: bool = True
     jelzo_perc: int = 2
     kicsengo: bool = True
-    hang_becsengo: str = "beepitett:csengo"
-    hang_kicsengo: str = "beepitett:csengo"
-    hang_jelzo: str = "beepitett:rovid"
-    hang_gong: str = "beepitett:gong"
-    hang_riasztas: str = "beepitett:riasztas"
+    hang_becsengo: str = "beepitett:becsengo"
+    hang_kicsengo: str = "beepitett:kicsengo"
+    hang_jelzo: str = "beepitett:jelzo"
+    hang_gong: str = "beepitett:jelzo"
+    hang_riasztas: str = "beepitett:kicsengo"
     csengo_hangero: int = 90
     zene_hangero: int = 60
     zene_szunetben: bool = True
@@ -230,7 +230,8 @@ class Beallitasok:
         ut = ut or beallitas_fajl()
         for jelolt in (ut, ut.with_suffix(".bak")):
             try:
-                return _riado_vissza(_ebbol(cls, adat := json.loads(jelolt.read_text(encoding="utf-8"))), adat)
+                adat = json.loads(jelolt.read_text(encoding="utf-8"))
+                return _regi_hangok(_riado_vissza(_ebbol(cls, adat), adat))
             except FileNotFoundError:
                 continue
             except (json.JSONDecodeError, TypeError, ValueError) as hiba:
@@ -241,6 +242,26 @@ class Beallitasok:
 def _riado_vissza(b: "Beallitasok", adat: dict) -> "Beallitasok":
     if isinstance(adat, dict) and "hang_riasztas" not in adat and "riasztas" not in b.ertesites_esemenyek:
         b.ertesites_esemenyek.append("riasztas")
+    return b
+
+
+def _regi_hang(ertek: str, mezo: str = "") -> str:
+    if not ertek.startswith("beepitett:"):
+        return ertek
+    nev = ertek.split(":", 1)[1]
+    if nev in BEEPITETT_HANGOK:
+        return ertek
+    if nev == "csengo" and mezo == "hang_kicsengo":
+        return "beepitett:kicsengo"
+    return f"beepitett:{REGI_HANGOK.get(nev, 'becsengo')}"
+
+
+def _regi_hangok(b: "Beallitasok") -> "Beallitasok":
+    for mezo in fields(b):
+        if mezo.name.startswith("hang_"):
+            setattr(b, mezo.name, _regi_hang(getattr(b, mezo.name), mezo.name))
+    for r in b.rendkivuli:
+        r.hang = _regi_hang(r.hang)
     return b
 
 
