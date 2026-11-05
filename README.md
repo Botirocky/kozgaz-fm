@@ -124,6 +124,10 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
 
+## Újdonságok az 1.13.1-ben
+
+- Új zenekérő plakát (Zene → Zenekérés → Plakát): nagy cím, kiemelt, vektoros QR-kód a kérő oldalra, három lépés.
+
 ## Újdonságok az 1.13.0-ban
 
 - Keverés a webes vezérlőben is: *Véletlen sorrend (keverés)* kapcsoló és *Keverés most* gomb, ami a hátralévő
