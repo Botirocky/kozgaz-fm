@@ -5,18 +5,80 @@ másodpercenként lekéri innen az új kéréseket (`POST /api/gep`, `X-Kozgaz-F
 ellenőrzi őket (YouTube-keresés, dalszöveg- és korhatár-szűrő, tiltólista), és visszaküldi az
 állapotukat, amit a diák a telefonján lát.
 
-## Futtatás
+## Telepítés szervergépre (lépésről lépésre)
+
+Debian/Ubuntu szerverre. A konténer csak a gépen belül, a `127.0.0.1:8100`-on figyel; kívülről a
+Tailscale Funnel teszi elérhetővé.
+
+### 1. Docker és git
 
 ```
-cp .env.minta .env    # KFM_GEP_KULCS = hosszú véletlen kulcs (openssl rand -hex 24)
+sudo apt update && sudo apt install -y git curl
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER      # utána jelentkezz ki és be
+```
+
+### 2. A fájlok a szerverre
+
+```
+git clone https://github.com/botirocky/kozgaz-fm.git
+cd kozgaz-fm/zenekeres-szerver
+```
+
+Git nélkül elég csak ezt a mappát átmásolni: `scp -r zenekeres-szerver felhasznalo@szerver:~/`
+
+### 3. Beállítások (`.env`)
+
+```
+cp .env.minta .env
+openssl rand -hex 24               # ez legyen a KFM_GEP_KULCS
+nano .env
+```
+
+- `KFM_GEP_KULCS` – kötelező, a programban ugyanezt kell megadni.
+- `ZENEKERES_ZENE` – a zenemappa (pl. a pendrive) útvonala; alapból `./zene`.
+- `KFM_ENGEDETT_ORIGIN` – csak akkor kell, ha a kérőoldal nem a `https://botirocky.github.io` címről jön.
+
+### 4. Az adatmappa jogai
+
+A kérések adatbázisa (`zenekeres.sqlite`) az `adat/` mappába kerül. Ha ezt a Docker hozza létre, a
+tulajdonosa root lesz, és a konténerben futó PHP (www-data, uid 33) nem tud bele írni. Ezért indítás előtt:
+
+```
+mkdir -p adat && sudo chown 33:33 adat
+```
+
+### 5. Indítás és ellenőrzés
+
+```
 docker compose up -d --build
+curl http://127.0.0.1:8100/egeszseg
+docker compose logs -f             # hibakereséshez
 ```
 
-A konténer a `127.0.0.1:8100`-on figyel; kívülről a Tailscale Funnel teszi elérhetővé:
-`sudo tailscale funnel --bg --https=443 http://127.0.0.1:8100`.
+A `restart: unless-stopped` miatt a szerver újraindítása után magától elindul.
+
+### 6. Elérhetővé tétel kívülről (Tailscale Funnel)
+
+```
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+sudo tailscale funnel --bg --https=443 http://127.0.0.1:8100
+tailscale funnel status            # itt látszik a https://<gép>.<tailnet>.ts.net cím
+```
+
+A Funnelt a Tailscale admin felületén is engedélyezni kell. Saját nyilvános IP-vel és domainnel Funnel
+helyett Caddy vagy nginx is továbbíthat a `127.0.0.1:8100`-ra.
+
+### 7. Összekötés a programmal
 
 A programban: *Zene → Zenekérés diákoktól → Zenekérő szerver* = a Funnel-cím, *Szerver kulcsa* = a
 `KFM_GEP_KULCS`.
+
+### Frissítés, mentés
+
+- Frissítés: `git pull && docker compose up -d --build` (másolásnál a `.env`-et és az `adat/`-ot hagyd meg).
+- Mentés: az `adat/` mappa és a `.env`.
 
 ## Zenék a szerverről
 
