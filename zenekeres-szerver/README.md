@@ -5,6 +5,20 @@ másodpercenként lekéri innen az új kéréseket (`POST /api/gep`, `X-Kozgaz-F
 ellenőrzi őket (YouTube-keresés, dalszöveg- és korhatár-szűrő, tiltólista), és visszaküldi az
 állapotukat, amit a diák a telefonján lát.
 
+## Gyors telepítés: `telepites.sh`
+
+A szervergépen (Debian/Ubuntu), ebben a mappában:
+
+```
+./telepites.sh                                       # telepítés vagy frissítés
+./telepites.sh /srv/tarolok/PARKADAT/zenek           # zenemappa megadásával
+./telepites.sh --funnel /srv/tarolok/PARKADAT/zenek  # + Tailscale Funnel, kívülről is elérhető
+```
+
+Ha kell, telepíti a Dockert, létrehozza a `.env`-et új kulccsal, beállítja az `adat/` mappa jogait,
+elindítja és ellenőrzi a konténert, a végén kiírja a programba beírandó címet és kulcsot. Többször is
+futtatható, a meglévő `.env`-et és adatokat megtartja. Az alábbi lépések ugyanezt írják le kézzel.
+
 ## Telepítés szervergépre (lépésről lépésre)
 
 Debian/Ubuntu szerverre. A konténer csak a gépen belül, a `127.0.0.1:8100`-on figyel; kívülről a
@@ -77,7 +91,7 @@ A programban: *Zene → Zenekérés diákoktól → Zenekérő szerver* = a Funn
 
 ### Frissítés, mentés
 
-- Frissítés: `git pull && docker compose up -d --build` (másolásnál a `.env`-et és az `adat/`-ot hagyd meg).
+- Frissítés: `git pull && ./telepites.sh` (vagy `docker compose up -d --build`) (másolásnál a `.env`-et és az `adat/`-ot hagyd meg).
 - Mentés: az `adat/` mappa és a `.env`.
 
 ## Zenék a szerverről
