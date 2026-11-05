@@ -290,9 +290,9 @@ sarokban megjelenik: *↑ Új verzió*.
 ## Hozzáférés (PIN-kód)
 
 - *Beállítások → Hozzáférés → PIN beállítása…*: 4–8 számjegyű PIN. Ezután a **Csengetési rend**, **Zene**,
-  **Naptár**, **Bemondások** és **Beállítások** oldal csak a PIN megadása után nyílik meg.
+  **Naptár**, **Bemondások**, **Napló** és **Beállítások** oldal csak a PIN megadása után nyílik meg.
 - A **Riasztás** oldal is a PIN-hez kötött (ugyanaz a PIN).
-- A **Vezérlőpult** (csengetés most, bemondás, zene, mai kapcsolók), a **Napló** és a **Súgó** PIN
+- A **Vezérlőpult** (csengetés most, bemondás, zene, mai kapcsolók), a **Statisztika** és a **Súgó** PIN
   nélkül is használható – a napi működéshez nem kell PIN.
 - Feloldás után a beállítások a megadott ideig (alapból 5 perc) tétlenség után maguktól újra zárolódnak; a bal
   alsó *Beállítások zárolása* gombbal azonnal is zárolhatók. Ha a program a tálcára kerül, szintén zárol.

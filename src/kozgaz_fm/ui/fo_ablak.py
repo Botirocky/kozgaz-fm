@@ -83,7 +83,7 @@ OLDALAK = [
     ("Súgó", "nevjegy", SugoOldal),
 ]
 NAV_CSOPORTOK = {2: "Műsor", 6: "Áttekintés", 8: "Rendszer"}
-VEDETT = (RiasztasOldal, CsengetesOldal, ZeneOldal, NaptarOldal, BemondasOldal, BeallitasOldal)
+VEDETT = (RiasztasOldal, CsengetesOldal, ZeneOldal, NaptarOldal, BemondasOldal, NaploOldal, BeallitasOldal)
 ELETJEL = os.environ.get("KOZGAZ_FM_ELETJEL", "")
 TEVEKENYSEG = (QEvent.Type.KeyPress, QEvent.Type.MouseButtonPress, QEvent.Type.Wheel)
 
