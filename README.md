@@ -124,6 +124,12 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
 
+## Újdonságok az 1.11.0-ban
+
+- A zenekérő szerver Debian-csomagot kapott (`kozgaz-fm-szerver_VERZIO_all.deb`): Docker nélkül, systemd-
+  szolgáltatásként fut Debianon, Ubuntun és Raspberry Pi OS-en, a kulcsot telepítéskor generálja, és a
+  `kozgaz-fm-szerver` paranccsal kezelhető. Leírás: [zenekeres-szerver/README.md](zenekeres-szerver/README.md).
+
 ## Újdonságok az 1.10.1-ben
 
 - Ha a szerveren nincs bent a zenés pendrive (üres a zenemappa), a program nem törli a már letöltött zenéket,

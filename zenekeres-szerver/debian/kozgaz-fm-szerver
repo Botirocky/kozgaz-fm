@@ -1,0 +1,47 @@
+#!/bin/sh
+set -e
+NEV=kozgaz-fm-szerver
+ENV=/etc/$NEV/szerver.env
+
+ertek() {
+    sed -n "s/^$1=//p" "$ENV" 2>/dev/null | tail -n 1
+}
+
+root_kell() {
+    [ "$(id -u)" -eq 0 ] || { echo "Ehhez root kell: sudo $NEV $1" >&2; exit 1; }
+}
+
+case "${1:-allapot}" in
+    allapot)
+        systemctl --no-pager --lines=0 status $NEV.service || true
+        CIM=$(ertek KFM_CIM); PORT=$(ertek KFM_PORT)
+        php -r '$v = @file_get_contents("http://" . $argv[1] . "/egeszseg"); echo $v === false ? "A szerver nem válaszol.\n" : $v . "\n";' "${CIM:-127.0.0.1}:${PORT:-8100}"
+        ;;
+    kulcs)
+        root_kell kulcs
+        ertek KFM_GEP_KULCS
+        ;;
+    uj-kulcs)
+        root_kell uj-kulcs
+        KULCS=$(head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n')
+        sed -i "s/^KFM_GEP_KULCS=.*/KFM_GEP_KULCS=$KULCS/" "$ENV"
+        systemctl restart $NEV.service
+        echo "$KULCS"
+        ;;
+    beallitas)
+        root_kell beallitas
+        "${EDITOR:-nano}" "$ENV"
+        systemctl restart $NEV.service
+        ;;
+    naplo)
+        journalctl -u $NEV.service -n "${2:-100}" --no-pager
+        ;;
+    ujraindit)
+        root_kell ujraindit
+        systemctl restart $NEV.service
+        ;;
+    *)
+        echo "Használat: $NEV [allapot|kulcs|uj-kulcs|beallitas|naplo [sorok]|ujraindit]" >&2
+        exit 2
+        ;;
+esac

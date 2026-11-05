@@ -98,6 +98,10 @@ jobs:
           packaging/debian/epit-deb.sh dist/KozgazFM dist
           dpkg-deb --info dist/*.deb
           dpkg-deb --contents dist/*.deb | head -20
+      - name: Zenekérő szerver Debian-csomag
+        run: |
+          zenekeres-szerver/debian/epit-deb.sh dist
+          dpkg-deb --info dist/kozgaz-fm-szerver_*.deb
       - uses: actions/upload-artifact@v4
         with:
           name: linux

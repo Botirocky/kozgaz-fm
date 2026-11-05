@@ -1,0 +1,37 @@
+[Unit]
+Description=Közgáz FM zenekérő szerver
+Documentation=https://github.com/Botirocky/kozgaz-fm/tree/main/zenekeres-szerver
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=kozgaz-fm-szerver
+Group=kozgaz-fm-szerver
+Environment=KFM_CIM=127.0.0.1
+Environment=KFM_PORT=8100
+Environment=KFM_ADAT=/var/lib/kozgaz-fm-szerver
+Environment=KFM_ZENE_MAPPA=/var/lib/kozgaz-fm-szerver/zene
+Environment=TZ=Europe/Budapest
+Environment=PHP_CLI_SERVER_WORKERS=4
+EnvironmentFile=/etc/kozgaz-fm-szerver/szerver.env
+ExecStart=/usr/bin/php -d expose_php=0 -d display_errors=0 -d log_errors=1 -d memory_limit=128M -S ${KFM_CIM}:${KFM_PORT} -t /usr/share/kozgaz-fm-szerver/public /usr/share/kozgaz-fm-szerver/router.php
+Restart=always
+RestartSec=3
+StateDirectory=kozgaz-fm-szerver
+StateDirectoryMode=0750
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=yes
+MemoryMax=256M
+
+[Install]
+WantedBy=multi-user.target
