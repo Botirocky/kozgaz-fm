@@ -190,6 +190,7 @@ class Szam:
     helyi: Path | None = None
     yt: str = ""
     kert: bool = False
+    keresbol: bool = False
 
 
 def mappa_szamai(mappa: Path) -> list[Szam]:
@@ -346,9 +347,11 @@ class ZeneLejatszo(QObject):
         self._kifuto_animacio.setDuration(atusztatas)
         self._kifuto_animacio.start()
         self.index = kovetkezo
+        volt_kert = szam.kert
         if szam.kert:
             szam.kert = False
             self.kert_szol.emit(szam.yt)
+        self._lejatszott_kereseket_kivesz(szam, volt_kert)
         self.most_cim = szam.cim
         self.szam_valtozott.emit(szam.cim, self.forras.nev if self.forras else "")
         self._forrast_indit(QUrl.fromLocalFile(str(szam.helyi)), atusztatas)
@@ -400,9 +403,9 @@ class ZeneLejatszo(QObject):
             return False
         eleje = self.szamok[:self.index + 1]
         hatra = self.szamok[self.index + 1:]
-        tobbi = [s for s in hatra if not s.kert]
+        tobbi = [s for s in hatra if not (s.kert or s.keresbol)]
         random.shuffle(tobbi)
-        self.szamok = eleje + [s for s in hatra if s.kert] + tobbi
+        self.szamok = eleje + [s for s in hatra if s.kert or s.keresbol] + tobbi
         self.lista_valtozott.emit()
         self._elore_letolt()
         return True
@@ -412,7 +415,7 @@ class ZeneLejatszo(QObject):
             return []
         hossz = len(self.szamok)
         sorrend = (self.szamok[(self.index + i) % hossz] for i in range(hossz))
-        return [s for s in sorrend if not s.kert]
+        return [s for s in sorrend if not (s.kert or s.keresbol)]
 
     def tragarak_torlese(self) -> None:
         self._tragarak.clear()
@@ -421,7 +424,7 @@ class ZeneLejatszo(QObject):
     def tragarat_kivesz(self, szam: Szam, reszlet: str) -> None:
         self._tragarak.add(szam.cim)
         self._tarolt.clear()
-        if szam.kert or not any(s is szam for s in self.szamok):
+        if szam.kert or szam.keresbol or not any(s is szam for s in self.szamok):
             return
         self.kiszurve.emit(f"Trágár szövegű szám kihagyva: {szam.cim} ({reszlet})")
         self._sorbol_kivesz(szam)
@@ -486,10 +489,10 @@ class ZeneLejatszo(QObject):
     def _tarol(self) -> None:
         if self.forras is None or self.spotify_mod or not self.szamok:
             return
-        sajat = [s for s in self.szamok if not s.kert]
+        sajat = [s for s in self.szamok if not (s.kert or s.keresbol)]
         if not sajat:
             return
-        lejatszott = sum(1 for s in self.szamok[:self.index + 1] if not s.kert)
+        lejatszott = sum(1 for s in self.szamok[:self.index + 1] if not (s.kert or s.keresbol))
         self._tarolt[(self.forras.tipus, self.forras.cim)] = (sajat, lejatszott % len(sajat), time.monotonic())
 
     def _visszatolt(self, forras: ZeneForras) -> bool:
@@ -620,9 +623,11 @@ class ZeneLejatszo(QObject):
         self._kifuto_leallit()
         self.index = index % len(self.szamok)
         szam = self.szamok[self.index]
+        volt_kert = szam.kert
         if szam.kert:
             szam.kert = False
             self.kert_szol.emit(szam.yt)
+        self._lejatszott_kereseket_kivesz(szam, volt_kert)
         self.most_cim = szam.cim
         self.szam_valtozott.emit(szam.cim, self.forras.nev if self.forras else "")
         if szam.helyi:
@@ -853,6 +858,7 @@ class ZeneLejatszo(QObject):
         if self.spotify_mod or self.forras is None:
             return False
         szam.kert = True
+        szam.keresbol = True
         if not self.szamok:
             self._fuggo_kert.append(szam)
             return True
@@ -864,6 +870,41 @@ class ZeneLejatszo(QObject):
         self.lista_valtozott.emit()
         self._elore_letolt()
         return True
+
+    def _lejatszott_kereseket_kivesz(self, most: Szam, volt_kert: bool = False) -> None:
+        if not any(s.keresbol and not s.kert and s is not most for s in self.szamok):
+            if volt_kert:
+                self.lista_valtozott.emit()
+            return
+        self.szamok = [s for s in self.szamok if s is most or not (s.keresbol and not s.kert)]
+        self.index = next(i for i, s in enumerate(self.szamok) if s is most)
+        self.lista_valtozott.emit()
+
+    def kert_sor(self) -> list[tuple[int, Szam]]:
+        if self.spotify_mod or not self.szamok:
+            return []
+        hossz = len(self.szamok)
+        sorrend = ((self.index + i) % hossz for i in range(hossz))
+        return [(i, self.szamok[i]) for i in sorrend if self.szamok[i].kert]
+
+    def alap_lista(self) -> list[tuple[int, Szam]]:
+        if self.spotify_mod:
+            return []
+        return [(i, s) for i, s in enumerate(self.szamok) if not (s.kert or s.keresbol)]
+
+    def alap_pozicio(self) -> int | None:
+        if self.spotify_mod or not self.szamok:
+            return None
+        hossz = len(self.szamok)
+        for lepes in range(hossz):
+            szam = self.szamok[(self.index - lepes) % hossz]
+            if not (szam.kert or szam.keresbol):
+                return (self.index - lepes) % hossz
+        return None
+
+    def most_kert(self) -> bool:
+        return (self._szol and not self.spotify_mod and 0 <= self.index < len(self.szamok)
+                and self.szamok[self.index].keresbol)
 
     def kovetkezok(self, darab: int = 5) -> list[tuple[int, str]]:
         if self.spotify_mod or not self.szamok:

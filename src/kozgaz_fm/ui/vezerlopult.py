@@ -53,6 +53,7 @@ class Vezerlopult(Oldal):
     def __init__(self, v: Vezerlo) -> None:
         super().__init__("Vezérlőpult")
         self.v = v
+        self._forras_nev = ""
         self.add(self._allapot_kartya())
         self.racs = QGridLayout()
         self.racs.setSpacing(14)
@@ -337,11 +338,33 @@ class Vezerlopult(Oldal):
         if not szol:
             self.szam_cimke.setText("Nem szól zene")
             self.forras_cimke.setText("")
+        else:
+            self._hely_frissit()
 
     def _szam(self, cim: str, forras: str) -> None:
+        self._forras_nev = forras
         self.szam_cimke.setText(cim)
+        self._hely_frissit()
+
+    def _hely_frissit(self) -> None:
+        z = self.v.zene
+        if not z.szol:
+            return
         blokk = self.v.musor_blokk
-        self.forras_cimke.setText(f"Forrás: {forras}" + (f" · műsorblokk: {blokk.nev}" if blokk else ""))
+        reszek = [f"Forrás: {self._forras_nev}"]
+        if blokk:
+            reszek.append(f"műsorblokk: {blokk.nev}")
+        if z.most_kert():
+            reszek.append("kért zene")
+        kertek = len(z.kert_sor())
+        if kertek:
+            reszek.append(f"{kertek} kérés várakozik")
+        alap = z.alap_lista()
+        pozicio = z.alap_pozicio()
+        hely = next((n for n, (i, _s) in enumerate(alap, start=1) if i == pozicio), None)
+        if hely is not None:
+            reszek.append(f"alap lista: {hely}/{len(alap)}")
+        self.forras_cimke.setText(" · ".join(reszek))
 
     def _hangero(self, ertek: int) -> None:
         self.v.b.zene_hangero = ertek

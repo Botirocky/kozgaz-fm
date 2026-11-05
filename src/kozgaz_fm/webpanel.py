@@ -529,7 +529,10 @@ class WebMuveletek(_Fosszal):
                 "hangero": b.zene_hangero,
                 "keveres": b.keveres,
                 "blokk": v.musor_blokk.nev if v.musor_blokk else "",
-                "sor": [{"index": i, "cim": cim} for i, cim in v.zene.kovetkezok()] if v.zene.szol else [],
+                "sor": self._zenesor() if v.zene.szol else [],
+                "most_kert": v.zene.most_kert(),
+                "kert_db": len(v.zene.kert_sor()),
+                "alap": self._alap_hely(),
             },
             "ma": {
                 "csengetes": b.ma_nincs_csengetes != ma,
@@ -548,6 +551,18 @@ class WebMuveletek(_Fosszal):
                           "tiltott_telefonok": [{"kulcs": t.kulcs, "nev": t.nev, "ig": t.ig}
                                                 for t in b.tiltott_telefonok if t.ig >= ma]},
         }
+
+    def _zenesor(self) -> list[dict]:
+        z = self.v.zene
+        darab = max(5, len(z.kert_sor()) + 2)
+        return [{"index": i, "cim": cim, "kert": z.szamok[i].kert} for i, cim in z.kovetkezok(darab)]
+
+    def _alap_hely(self) -> dict | None:
+        z = self.v.zene
+        alap = z.alap_lista()
+        pozicio = z.alap_pozicio()
+        sor = next((n for n, (i, _s) in enumerate(alap, start=1) if i == pozicio), None)
+        return {"hely": sor, "osszes": len(alap)} if alap else None
 
     def _riasztas_kozben(self) -> None:
         if self.v.riasztas:

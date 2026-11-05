@@ -240,6 +240,11 @@ output { color: var(--szoveg); font-weight: 600; margin-left: 4px; }
   background: none; border: 0; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .zenesor-elem:hover { color: var(--kek); }
+.kert-jel {
+  display: inline-block; margin-right: 8px; padding: 1px 8px; border-radius: 10px;
+  background: var(--kek); color: #fff; font-size: 0.75rem; font-weight: 600; vertical-align: 1px;
+}
+.zene-hely { margin: -4px 0 10px; color: var(--halvany); font-size: 0.9rem; }
 .sablonok { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .sablon {
   max-width: 100%; min-height: 36px; padding: 6px 12px; border-radius: 18px; cursor: pointer;

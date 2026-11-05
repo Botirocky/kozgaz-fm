@@ -159,6 +159,12 @@ A diákok telefonról kérhetnek számot a szünetekre. Az ellenőrzésen átmen
 4. A diák beírja az előadót és a címet (vagy bemásolja a YouTube-linket), a program megkeresi a YouTube-on.
 5. A program ellenőrzi a címet, a korhatárt, a hosszt és a dalszöveget. Ha minden rendben, a szám a szünetzene
    következő helyére kerül; a diák a telefonján látja, hogy elfogadták, majd hogy szól.
+
+**A kért zenék sorrendje:** a kért zenék külön sorba kerülnek, és mindig ezek szólnak először, a kérés sorrendjében
+(aki elsőként kért, azé szól elsőnek, a második kérés másodiknak). A most szóló szám még végigmegy, utána jönnek a
+kérések. Ha elfogytak, az alap lejátszási lista onnan folytatódik, ahol abbamaradt. A lejátszott kérés kikerül a
+sorból, nem jön elő újra. A *Zene → Lejátszási sor* kártyán külön látszik a *Kért zenék* és az *Alap lejátszási
+lista*, kiemelve, hol tart az alap lista (pl. 4/12). Ugyanez látszik a Vezérlőpulton és a webpanelen is.
 6. A *Jóváhagyásra váró kérések* listájába (a programban és a webpanelen is) az kerül, amit nem sikerült
    ellenőrizni: nincs meg a dalszövege, nem érhető el a szolgáltatás, vagy már 10 elfogadott szám vár a sorra. A sorban
    látszik az ok; *Elfogadás* után ugyanúgy a sorba kerül.

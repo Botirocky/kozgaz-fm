@@ -23,6 +23,7 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QComboBox,
     QDoubleSpinBox,
     QFileDialog,
@@ -80,6 +81,7 @@ class ZeneOldal(Oldal):
         self.elrendezes.addStretch(1)
         v.zene.lista_valtozott.connect(self._lista_frissit)
         v.zene.szam_valtozott.connect(self._lista_kijeloles)
+        v.zene.allapot_valtozott.connect(self._lista_kijeloles)
         self._forrasok_frissit()
         self._lista_frissit()
         self._spotify_allapot()
@@ -117,12 +119,20 @@ class ZeneOldal(Oldal):
 
     def _lista_kartya(self) -> Kartya:
         k = Kartya("Lejátszási sor")
+        self.most_cimke = cimke("", sortores=True)
+        self.kert_cim = cimke("Kért zenék", "halvany")
+        self.kert_lista = QListWidget()
+        self.kert_lista.setMaximumHeight(130)
+        self.kert_lista.itemDoubleClicked.connect(self._ugras)
         self.sor_cim = cimke("", "halvany")
         self.lista = QListWidget()
-        self.lista.setMinimumHeight(300)
-        self.lista.itemDoubleClicked.connect(lambda e: self.v.zene.ugras(self.lista.row(e)))
+        self.lista.setMinimumHeight(240)
+        self.lista.itemDoubleClicked.connect(self._ugras)
         ujratolt = gomb("Újratöltés", "frissites", tipp="A forrás újraolvasása (pl. új fájlok a mappában)")
         ujratolt.clicked.connect(lambda: self.v.zene.betoltes())
+        k.add(self.most_cimke)
+        k.add(self.kert_cim)
+        k.add(self.kert_lista)
         k.add(self.sor_cim)
         k.add(self.lista)
         k.add(sor(cimke("Dupla kattintás: lejátszás onnan", "halvany"), None, ujratolt))
@@ -366,9 +376,17 @@ class ZeneOldal(Oldal):
         self._forrasok_frissit()
         self.musorblokk.frissit()
 
+    def _ugras(self, elem: QListWidgetItem) -> None:
+        index = elem.data(Qt.ItemDataRole.UserRole)
+        if isinstance(index, int):
+            self.v.zene.ugras(index)
+
     def _lista_frissit(self) -> None:
         z = self.v.zene
         self.lista.clear()
+        self.kert_lista.clear()
+        kertek = z.kert_sor()
+        alap = z.alap_lista()
         if z.forras is None:
             self.sor_cim.setText("Nincs kiválasztott forrás.")
         elif z.spotify_mod:
@@ -376,17 +394,49 @@ class ZeneOldal(Oldal):
         elif not z.szamok:
             self.sor_cim.setText(f"{z.forras.nev}: betöltés indításkor…")
         else:
-            self.sor_cim.setText(f"{z.forras.nev}: {len(z.szamok)} szám")
-            for i, szam in enumerate(z.szamok, start=1):
-                self.lista.addItem(f"{i}. {szam.cim}")
+            self.sor_cim.setText(f"Alap lejátszási lista – {z.forras.nev}: {len(alap)} szám")
+            for sorszam, (index, szam) in enumerate(alap, start=1):
+                elem = QListWidgetItem(f"{sorszam}. {szam.cim}")
+                elem.setData(Qt.ItemDataRole.UserRole, index)
+                self.lista.addItem(elem)
+        for sorszam, (index, szam) in enumerate(kertek, start=1):
+            elem = QListWidgetItem(f"{sorszam}. {szam.cim}")
+            elem.setData(Qt.ItemDataRole.UserRole, index)
+            self.kert_lista.addItem(elem)
+        self.kert_cim.setText(f"Kért zenék: {len(kertek)} várakozik – ezek szólnak először"
+                              if kertek else "Kért zenék: nincs várakozó kérés")
+        self.kert_lista.setVisible(bool(kertek))
         self._lista_kijeloles()
         self._forrasok_frissit(self._kijelolt() if self._kijelolt() >= 0 else None)
 
     def _lista_kijeloles(self, *_) -> None:
         z = self.v.zene
-        if z.szamok and 0 <= z.index < self.lista.count():
-            self.lista.setCurrentRow(z.index)
+        alap = z.alap_lista()
+        pozicio = z.alap_pozicio()
+        sor_szama = next((i for i, (index, _s) in enumerate(alap) if index == pozicio), None)
+        for i in range(self.lista.count()):
+            elem = self.lista.item(i)
+            betu = elem.font()
+            betu.setBold(i == sor_szama)
+            elem.setFont(betu)
+        if sor_szama is not None:
+            self.lista.setCurrentRow(sor_szama)
+            self.lista.scrollToItem(self.lista.item(sor_szama), QAbstractItemView.ScrollHint.PositionAtCenter)
+        else:
+            self.lista.clearSelection()
+        self.most_cimke.setText(self._most_szoveg(len(alap), sor_szama))
         self._gyors_meret()
+
+    def _most_szoveg(self, alap_db: int, sor_szama: int | None) -> str:
+        z = self.v.zene
+        if z.spotify_mod or not z.szamok:
+            return ""
+        hely = f"{sor_szama + 1}/{alap_db}" if sor_szama is not None else f"–/{alap_db}"
+        if not z.szol:
+            return f"Áll a zene. Az alap listában itt tart: {hely}."
+        if z.most_kert():
+            return f"Most szól (kért zene): {z.most_cim}\nUtána az alap lista folytatódik, eddig: {hely}."
+        return f"Most szól: {z.most_cim}\nAz alap listában: {hely}."
 
     def _gyors_meret(self) -> None:
         mappa = gyorsitotar_mappa() / "youtube"

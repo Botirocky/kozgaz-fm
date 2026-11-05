@@ -171,6 +171,14 @@ function megjelenit(a) {
   szam.textContent = z.szol ? z.cim || "Szünetzene szól" : "Nem szól zene";
   szam.title = z.szol && z.blokk ? `Műsorblokk: ${z.blokk}` : "";
   szam.classList.toggle("csend", !z.szol);
+  const hely = $("zene-hely");
+  const alap = z.alap && z.alap.hely ? `alap lista: ${z.alap.hely}/${z.alap.osszes}` : "";
+  const reszek = [];
+  if (z.szol && z.most_kert) reszek.push("kért zene szól");
+  if (z.kert_db) reszek.push(`${z.kert_db} kért zene várakozik`);
+  if (alap) reszek.push(alap);
+  hely.textContent = reszek.join(" · ");
+  hely.hidden = !reszek.length;
   $("zene-gomb").textContent = z.szol ? "Zene leállítása" : "Zene indítása";
   $("kovetkezo-gomb").disabled = !z.szol;
   $("most-tiltas-gomb").disabled = !z.szol;
@@ -294,6 +302,12 @@ function zenesor(sor) {
     g.dataset.cim = s.cim;
     g.title = "Lejátszás most";
     g.textContent = s.cim;
+    if (s.kert) {
+      const jel = document.createElement("span");
+      jel.className = "kert-jel";
+      jel.textContent = "Kért";
+      g.prepend(jel);
+    }
     li.append(g);
     return li;
   }));
