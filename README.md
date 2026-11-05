@@ -124,6 +124,10 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
 
+## Újdonságok az 1.11.1-ben
+
+- Javítva a Windows-os kiadás építése (az 1.10.0 és 1.11.0 újdonságai ezzel jelennek meg).
+
 ## Újdonságok az 1.11.0-ban
 
 - A zenekérő szerver Debian-csomagot kapott (`kozgaz-fm-szerver_VERZIO_all.deb`): Docker nélkül, systemd-
