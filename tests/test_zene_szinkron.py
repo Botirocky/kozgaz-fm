@@ -29,7 +29,8 @@ def szerver(tmp_path):
                 return
             ut = urllib.parse.urlsplit(self.path)
             if ut.path == "/api/zenek":
-                lista = [{"ut": f.relative_to(gyoker).as_posix(), "meret": f.stat().st_size, "ido": int(f.stat().st_mtime)}
+                lista = [{"ut": f.relative_to(gyoker).as_posix(), "meret": f.stat().st_size,
+                          "ido": int(f.stat().st_mtime)}
                          for f in sorted(gyoker.rglob("*")) if f.is_file()]
                 test = json.dumps({"data": lista + [{"ut": "../kilog.mp3", "meret": 1, "ido": 1}]}).encode()
             elif ut.path == "/api/zenek/fajl":
