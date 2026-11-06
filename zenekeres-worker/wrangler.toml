@@ -1,0 +1,12 @@
+name = "kozgazfm-zenekeres"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[vars]
+KFM_ENGEDETT_ORIGIN = "https://botirocky.github.io"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kozgazfm-zenekeres"
+database_id = "c79edb48-3d8a-46de-86b1-9a76cf2c6ac1"

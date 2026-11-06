@@ -124,6 +124,13 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
 
+## Újdonságok az 1.16.0-ban
+
+- **Zenekérés iskolai wifi nélkül:** új, ingyenes Cloudflare Worker közvetítő ([zenekeres-worker/](zenekeres-worker/README.md)).
+  A diák mobilnetről a kérőoldalon küldi a kérést, az iskolai gép csak kifelé kérdezi le, így az iskola hálózatán
+  semmit nem kell megnyitni. A kérőoldal (botirocky.github.io/kozgaz-fm) már ezt használja, a plakát és a QR-kód
+  változatlan. Az iskolai gépen a Zenekérés beállításainál a szerver címét és kulcsát kell megadni.
+
 ## Újdonságok az 1.15.0-ban
 
 - **Webes Közgáz FM a szervercsomagban:** a `kozgaz-fm-szerver` Debian-csomag a teljes, böngészőből kezelhető

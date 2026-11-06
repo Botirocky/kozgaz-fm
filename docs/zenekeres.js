@@ -1,6 +1,6 @@
 "use strict";
 
-const SZERVER = "https://picloud.tail7df6a9.ts.net";
+const SZERVER = "https://kozgazfm-zenekeres.kozgazfm-zenekeres-worker.workers.dev";
 const API = `${SZERVER}/api/zenekeres`;
 
 function eszkozAzon() {
