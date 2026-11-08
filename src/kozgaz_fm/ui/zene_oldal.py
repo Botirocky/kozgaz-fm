@@ -400,7 +400,7 @@ class ZeneOldal(Oldal):
                 elem.setData(Qt.ItemDataRole.UserRole, index)
                 self.lista.addItem(elem)
         for sorszam, (index, szam) in enumerate(kertek, start=1):
-            elem = QListWidgetItem(f"{sorszam}. {szam.cim}")
+            elem = QListWidgetItem(f"{sorszam}. {szam.cim}" + (f" (▲ {szam.szavazat})" if szam.szavazat else ""))
             elem.setData(Qt.ItemDataRole.UserRole, index)
             self.kert_lista.addItem(elem)
         self.kert_cim.setText(f"Kért zenék: {len(kertek)} várakozik – ezek szólnak először"

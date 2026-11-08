@@ -115,3 +115,37 @@ test("rádió elérhető", async () => {
   assert.equal(r.data.radio, true);
   assert.equal(r.data.verzio, "teszt");
 });
+
+test("szavazás: más kérésére, napi korláttal, visszavonható", async () => {
+  await gepKor({ napi: 5 });
+  const kero = ujEszkoz();
+  const azon = (await diak(kero, "POST", { szoveg: "Szavazós szám", nev: "" })).test.data.sajat[0].azon;
+  await gepKor({ napi: 5 });
+  const szavazo = ujEszkoz();
+  assert.equal((await diak(szavazo, "POST", { szavaz: azon })).statusz, 409);
+  await gepKor({ napi: 5 }, [{ azon, allapot: "elfogadva", allapot_nev: "Elfogadva", cim: "Szavazós – szám", ok: "", hely: 1 }]);
+  assert.equal((await diak(kero, "POST", { szavaz: azon })).test.error.code, "own_request");
+  const lista = (await diak(szavazo)).test.data;
+  const elem = lista.sor.find((k) => k.azon === azon);
+  assert.deepEqual([elem.cim, elem.szavazat, elem.szavaztam, elem.sajat], ["Szavazós – szám", 0, false, false]);
+  assert.equal(lista.szavazat_maradek, 5);
+  const utana = (await diak(szavazo, "POST", { szavaz: azon })).test.data;
+  assert.equal(utana.sor.find((k) => k.azon === azon).szavazat, 1);
+  assert.equal(utana.szavazat_maradek, 4);
+  assert.equal((await gepKor({ napi: 5 })).test.data.szavazatok[azon], 1);
+  const vissza = (await diak(szavazo, "POST", { szavaz: azon })).test.data;
+  assert.equal(vissza.sor.find((k) => k.azon === azon).szavaztam, false);
+  assert.equal(vissza.szavazat_maradek, 5);
+  assert.equal((await gepKor({ napi: 5 })).test.data.szavazatok[azon], undefined);
+  const sokan = [];
+  for (let i = 0; i < 6; i++) {
+    const e = ujEszkoz();
+    const a = (await diak(e, "POST", { szoveg: `Másik ${i}`, nev: "" })).test.data.sajat[0].azon;
+    sokan.push(a);
+  }
+  await gepKor({ napi: 5 }, sokan.map((a, i) => ({ azon: a, allapot: "elfogadva", allapot_nev: "", cim: `Másik ${i}`, ok: "" })));
+  for (const a of sokan.slice(0, 5)) {
+    assert.equal((await diak(szavazo, "POST", { szavaz: a })).statusz, 200);
+  }
+  assert.equal((await diak(szavazo, "POST", { szavaz: sokan[5] })).test.error.code, "vote_limit");
+});

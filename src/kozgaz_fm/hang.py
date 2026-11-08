@@ -191,6 +191,7 @@ class Szam:
     yt: str = ""
     kert: bool = False
     keresbol: bool = False
+    szavazat: int = 0
 
 
 def mappa_szamai(mappa: Path) -> list[Szam]:
@@ -886,6 +887,26 @@ class ZeneLejatszo(QObject):
         hossz = len(self.szamok)
         sorrend = ((self.index + i) % hossz for i in range(hossz))
         return [(i, self.szamok[i]) for i in sorrend if self.szamok[i].kert]
+
+    def kert_rendez(self, pontok: dict[str, int]) -> None:
+        if self.spotify_mod:
+            return
+        helyek = [i for i, s in enumerate(self.szamok) if s.kert and i != self.index]
+        valtozott = False
+        for i in helyek:
+            s = self.szamok[i]
+            uj = int(pontok.get(s.yt, 0)) if s.yt else 0
+            valtozott = valtozott or uj != s.szavazat
+            s.szavazat = uj
+        regi = [self.szamok[i] for i in helyek]
+        uj_sor = sorted(regi, key=lambda s: -s.szavazat)
+        if any(a is not b for a, b in zip(regi, uj_sor, strict=True)):
+            for i, s in zip(helyek, uj_sor, strict=True):
+                self.szamok[i] = s
+            self._elore_letolt()
+            valtozott = True
+        if valtozott:
+            self.lista_valtozott.emit()
 
     def alap_lista(self) -> list[tuple[int, Szam]]:
         if self.spotify_mod:

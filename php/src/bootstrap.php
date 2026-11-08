@@ -16,4 +16,4 @@ spl_autoload_register(static function (string $osztaly): void {
     }
 });
 
-const KFM_VERZIO = '1.17.0';
+const KFM_VERZIO = '1.18.0';

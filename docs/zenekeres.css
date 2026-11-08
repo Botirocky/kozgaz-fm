@@ -122,3 +122,12 @@ input[type="text"]:focus { outline: 2px solid var(--kek); outline-offset: 1px; b
 .uzenet.hibas { background: var(--hiba); color: #FFFFFF; }
 
 @media (prefers-reduced-motion: reduce) { .uzenet { transition: none; } }
+
+.elem.szavazhato { align-items: center; border-left-color: var(--szol); }
+.szavaz {
+  min-width: 64px; min-height: 40px; padding: 6px 12px; border-radius: 999px; font: inherit; font-weight: 600;
+  border: 1px solid var(--kek); background: transparent; color: var(--kek); cursor: pointer;
+}
+.szavaz.aktiv { background: var(--kek); color: #fff; }
+.szavaz:disabled { opacity: 0.45; cursor: not-allowed; }
+.szavaz:focus-visible { outline: 2px solid var(--kek); outline-offset: 2px; }

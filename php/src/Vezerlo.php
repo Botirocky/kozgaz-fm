@@ -1400,7 +1400,7 @@ final class Vezerlo
                 'sor' => $z->szol() ? array_map(fn($p) => ['index' => $p[0], 'cim' => $p[1], 'kert' => $z->szamok[$p[0]]->kert],
                     $z->kovetkezok(max(8, count($z->kertSor()) + 2))) : [],
                 'most_kert' => $z->mostKert(),
-                'kertek' => array_map(static fn($p) => ['index' => $p[0], 'cim' => $p[1]->cim], $z->kertSor()),
+                'kertek' => array_map(static fn($p) => ['index' => $p[0], 'cim' => $p[1]->cim, 'szavazat' => $p[1]->szavazat], $z->kertSor()),
                 'alap' => $this->alapHely(),
                 'szamok' => count($z->szamok),
                 'spotify' => $z->spotifyMod(),

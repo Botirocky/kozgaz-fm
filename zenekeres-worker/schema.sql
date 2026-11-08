@@ -18,3 +18,10 @@ CREATE INDEX IF NOT EXISTS keresek_atadva ON keresek (atadva);
 CREATE INDEX IF NOT EXISTS keresek_ip ON keresek (ip, ido);
 CREATE INDEX IF NOT EXISTS keresek_allapot ON keresek (allapot);
 CREATE TABLE IF NOT EXISTS ertekek (kulcs TEXT PRIMARY KEY, ertek TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS szavazatok (
+    azon TEXT NOT NULL,
+    eszkoz TEXT NOT NULL,
+    nap TEXT NOT NULL,
+    PRIMARY KEY (azon, eszkoz)
+);
+CREATE INDEX IF NOT EXISTS szavazatok_eszkoz ON szavazatok (eszkoz, nap);

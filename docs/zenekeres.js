@@ -85,7 +85,35 @@ function megjelenit(a) {
     li.append(cim, ido, allapot);
     return li;
   }));
-  const folyamatban = a.sajat.some((k) => ["kereses", "varakozik", "elfogadva"].includes(k.allapot));
+  const sor = a.sor || [];
+  $("sor-blokk").hidden = !sor.length;
+  $("szavazat-maradek").textContent = `Ma még ${a.szavazat_maradek ?? 0} szavazatod van. Újra koppintva visszavonhatod.`;
+  $("sor").replaceChildren(...sor.map((k) => {
+    const li = document.createElement("li");
+    li.className = "elem szavazhato";
+    const cim = document.createElement("strong");
+    cim.textContent = k.hely ? `${k.hely}. ${k.cim}` : k.cim;
+    const gomb = document.createElement("button");
+    gomb.type = "button";
+    gomb.className = `szavaz${k.szavaztam ? " aktiv" : ""}`;
+    gomb.textContent = `▲ ${k.szavazat}`;
+    gomb.disabled = k.sajat || (!k.szavaztam && !a.szavazat_maradek);
+    gomb.title = k.sajat ? "A saját kérésed" : k.szavaztam ? "Szavazat visszavonása" : "Szavazok rá";
+    gomb.setAttribute("aria-pressed", String(k.szavaztam));
+    gomb.setAttribute("aria-label", `${gomb.title}: ${k.cim}, ${k.szavazat} szavazat`);
+    gomb.addEventListener("click", async () => {
+      gomb.disabled = true;
+      try {
+        megjelenit(await keres("POST", { szavaz: k.azon }));
+      } catch (e) {
+        uzenet(e.message, true);
+        gomb.disabled = false;
+      }
+    });
+    li.append(cim, gomb);
+    return li;
+  }));
+  const folyamatban = sor.length > 0 || a.sajat.some((k) => ["kereses", "varakozik", "elfogadva"].includes(k.allapot));
   clearInterval(idozito);
   idozito = setInterval(frissit, folyamatban ? 4000 : 30000);
 }

@@ -1,6 +1,7 @@
 const MAX_SZOVEG = 150;
 const MAX_NEV = 30;
 const MAX_VARAKOZO = 40;
+const NAPI_SZAVAZAT = 5;
 const IP_ORANKENT = 20;
 const GEP_ELAVULT_MP = 90;
 const GEP_IRAS_MP = 30;
@@ -143,6 +144,15 @@ async function diakAllapot(db, eszkoz) {
     max_perc: Number(g.max_perc) | 0,
     tiltva: (g.tiltott_telefonok || []).includes(await telefonKulcs(eszkoz)),
     sajat: sajat.results.map(nyilvanos),
+    szavazat_maradek: Math.max(0, NAPI_SZAVAZAT - await szam(db, "SELECT COUNT(*) AS n FROM szavazatok WHERE eszkoz = ? AND nap = ?", eszkoz, nap)),
+    sor: elerheto ? (await db.prepare(`SELECT k.azon, k.cim, k.hely, k.eszkoz = ? AS sajat,
+        (SELECT COUNT(*) FROM szavazatok s WHERE s.azon = k.azon) AS szavazat,
+        EXISTS (SELECT 1 FROM szavazatok s WHERE s.azon = k.azon AND s.eszkoz = ?) AS szavaztam
+      FROM keresek k WHERE k.allapot = 'elfogadva' AND k.cim <> ''
+      ORDER BY k.hely = 0, k.hely, k.ido LIMIT 30`).bind(eszkoz, eszkoz).all()).results.map((k) => ({
+      azon: k.azon, cim: k.cim, hely: Number(k.hely) | 0, szavazat: Number(k.szavazat),
+      sajat: Boolean(k.sajat), szavaztam: Boolean(k.szavaztam),
+    })) : [],
   };
 }
 
@@ -201,10 +211,32 @@ async function ujKeres(db, eszkoz, ip, nyersSzoveg, nyersNev) {
   }
 }
 
+async function szavaz(db, eszkoz, azon) {
+  const k = typeof azon === "string" ? await db.prepare("SELECT eszkoz, allapot FROM keresek WHERE azon = ?").bind(azon).first() : null;
+  if (!k || k.allapot !== "elfogadva") {
+    throw new KeresHiba(409, "not_votable", "Erre a kérésre most nem lehet szavazni.");
+  }
+  if (k.eszkoz === eszkoz) {
+    throw new KeresHiba(409, "own_request", "A saját kérésedre nem szavazhatsz.");
+  }
+  const torolt = await db.prepare("DELETE FROM szavazatok WHERE azon = ? AND eszkoz = ?").bind(azon, eszkoz).run();
+  if (torolt.meta.changes) {
+    return;
+  }
+  const nap = ma();
+  const uj = await db.prepare(`INSERT INTO szavazatok (azon, eszkoz, nap) SELECT ?, ?, ?
+    WHERE (SELECT COUNT(*) FROM szavazatok WHERE eszkoz = ? AND nap = ?) < ?`)
+    .bind(azon, eszkoz, nap, eszkoz, nap, NAPI_SZAVAZAT).run();
+  if (!uj.meta.changes) {
+    throw new KeresHiba(429, "vote_limit", `Ma már nem szavazhatsz többet (napi ${NAPI_SZAVAZAT}).`);
+  }
+}
+
 async function lejartTakaritas(db) {
   const t = most();
   await db.batch([
     db.prepare("DELETE FROM keresek WHERE ido < ?").bind(t - MEGORZES_NAP * 86400),
+    db.prepare("DELETE FROM szavazatok WHERE azon NOT IN (SELECT azon FROM keresek)"),
     db.prepare(`UPDATE keresek SET allapot = 'elutasitva', allapot_nev = 'Elutasítva',
       ok = 'A rádió nem tudta feldolgozni, próbáld újra.' WHERE allapot = 'kereses' AND ido < ?`).bind(t - ATADATLAN_LEJAR_MP),
   ]);
@@ -253,8 +285,11 @@ async function gepSzinkron(db, adat) {
   await lejartTakaritas(db);
   const { results } = await db.prepare(`SELECT azon, szoveg, nev, eszkoz, ip, ido FROM keresek
     WHERE atadva = 0 AND allapot = 'kereses' ORDER BY ido LIMIT 20`).all();
+  const szavazatok = await db.prepare(`SELECT s.azon, COUNT(*) AS n FROM szavazatok s
+    JOIN keresek k ON k.azon = s.azon WHERE k.allapot = 'elfogadva' GROUP BY s.azon`).all();
   return {
     uj: results.map((k) => ({ azon: k.azon, szoveg: k.szoveg, nev: k.nev, eszkoz: k.eszkoz, ip: k.ip, ido: isoIdo(Number(k.ido)) })),
+    szavazatok: Object.fromEntries(szavazatok.results.map((s) => [s.azon, Number(s.n)])),
     ido: isoIdo(t),
   };
 }
@@ -370,6 +405,10 @@ async function kezel(request, env) {
         return hiba(403, "forbidden", "Hibás kérés.", cors);
       }
       const adat = await jsonTest(request);
+      if (adat.szavaz !== undefined) {
+        await szavaz(db, eszkoz, adat.szavaz);
+        return valasz(200, { data: await diakAllapot(db, eszkoz) }, cors);
+      }
       const ip = request.headers.get("CF-Connecting-IP") || "ismeretlen";
       await ujKeres(db, eszkoz, ip, adat.szoveg ?? "", adat.nev ?? "");
       return valasz(200, { data: await diakAllapot(db, eszkoz) }, cors);

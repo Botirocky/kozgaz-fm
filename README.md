@@ -124,6 +124,12 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
 
+## Újdonságok az 1.18.0-ban
+
+- **Szavazás a kérésekre:** a kérőoldalon látszanak a sorban lévő (elfogadott) kérések, és a diákok naponta 5
+  szavazatot adhatnak rájuk (a sajátjukra nem). A több szavazatot kapott kérés előbb szól, egyenlőségnél a
+  kérés sorrendje dönt; a most szóló számot ez nem mozdítja. A Kért zenék listában látszik a szavazatszám.
+
 ## Újdonságok az 1.17.0-ban
 
 - **Hely a sorban:** a kérőoldalon az elfogadott kérésnél látszik, hányadik a kért zenék sorában

@@ -149,6 +149,15 @@ final class ZenekeresSzerver
             }
         }
         $this->takarit();
+        if (is_array($valasz['szavazatok'] ?? null)) {
+            $pontok = [];
+            foreach ($this->v->keresek->lista as $k) {
+                if ($k['yt'] !== '' && isset($valasz['szavazatok'][$k['azon']])) {
+                    $pontok[$k['yt']] = (int)$valasz['szavazatok'][$k['azon']];
+                }
+            }
+            $this->v->zene->kertRendez($pontok);
+        }
         $this->kovetkezo = microtime(true) + ($this->allapotok() ? 0.2 : self::KOR_MP);
     }
 

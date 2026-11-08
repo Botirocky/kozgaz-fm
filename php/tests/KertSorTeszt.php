@@ -94,3 +94,17 @@ function teszt_ujrakever_a_kerteket_elol_hagyja(): void
     sort($maradek);
     egyezik(['c', 'd', 'e', 'f'], $maradek);
 }
+
+function teszt_kert_szavazat_szerint_rendez_a_most_szolot_nem_mozditja(): void
+{
+    $z = kert_lejatszo(['a', 'b', 'c'], 1);
+    foreach (['1', '2', '3'] as $n) {
+        $z->beszur(new Szam("k{$n}", "/x/k{$n}.mp3", $n));
+    }
+    $z->kertRendez(['3' => 2, '2' => 1]);
+    egyezik(['k3', 'k2', 'k1'], array_map(static fn($p) => $p[1]->cim, $z->kertSor()));
+    egyezik([2, 1, 0], array_map(static fn($p) => $p[1]->szavazat, $z->kertSor()));
+    egyezik('b', $z->szamok[$z->index]->cim);
+    $z->kertRendez(['1' => 1, '2' => 1, '3' => 1]);
+    egyezik(['k3', 'k2', 'k1'], array_map(static fn($p) => $p[1]->cim, $z->kertSor()));
+}

@@ -772,6 +772,36 @@ final class ZeneLejatszo
         return $lista;
     }
 
+    public function kertRendez(array $pontok): void
+    {
+        if ($this->spotifyMod()) {
+            return;
+        }
+        $helyek = [];
+        $valtozott = false;
+        foreach ($this->szamok as $i => $s) {
+            if ($s->kert && $i !== $this->index) {
+                $uj = $s->yt !== '' ? (int)($pontok[$s->yt] ?? 0) : 0;
+                $valtozott = $valtozott || $uj !== $s->szavazat;
+                $s->szavazat = $uj;
+                $helyek[] = $i;
+            }
+        }
+        $regi = array_map(fn(int $i) => $this->szamok[$i], $helyek);
+        $uj = $regi;
+        usort($uj, static fn(Szam $a, Szam $b) => $b->szavazat <=> $a->szavazat);
+        if ($uj !== $regi) {
+            foreach ($helyek as $n => $i) {
+                $this->szamok[$i] = $uj[$n];
+            }
+            $this->eloreLetolt();
+            $valtozott = true;
+        }
+        if ($valtozott) {
+            $this->jel($this->listaValtozott);
+        }
+    }
+
     public function alapLista(): array
     {
         if ($this->spotifyMod()) {

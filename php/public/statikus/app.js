@@ -639,7 +639,7 @@ function lejatszasiSor(doboz, a) {
   doboz.replaceChildren(el('p', { text: most }),
     el('h3', { text: z.kertek.length ? `Kért zenék: ${z.kertek.length} várakozik – ezek szólnak először` : 'Kért zenék: nincs várakozó kérés' }),
     z.kertek.length ? el('div', { class: 'lista' }, z.kertek.map((s, n) => el('div', { class: 'lista-elem' },
-      el('span', { class: 'noveszt', text: `${n + 1}. ${s.cim}` }), el('button', { class: 'gomb kicsi', text: 'Lejátszás', onclick: () => ugras(s) })))) : null,
+      el('span', { class: 'noveszt', text: `${n + 1}. ${s.cim}${s.szavazat ? ` (▲ ${s.szavazat})` : ''}` }), el('button', { class: 'gomb kicsi', text: 'Lejátszás', onclick: () => ugras(s) })))) : null,
     el('h3', { text: `Alap lejátszási lista: ${z.alap_lista.length} szám` }), alapLista);
   const aktiv = alapLista.querySelector('.aktiv');
   if (aktiv) alapLista.scrollTop = aktiv.offsetTop - alapLista.clientHeight / 2;

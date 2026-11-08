@@ -36,7 +36,8 @@ class AlVezerlo:
         self.keresek = Keresek()
         self.tartalek = SimpleNamespace(passziv=False)
         self.sor: list = []
-        self.zene = SimpleNamespace(kert_sor=lambda: self.sor)
+        self.pontok: list[dict] = []
+        self.zene = SimpleNamespace(kert_sor=lambda: self.sor, kert_rendez=self.pontok.append)
         self.naplo: list[str] = []
 
     def log(self, szoveg: str) -> None:
@@ -77,6 +78,13 @@ def test_hely_a_sorban(sz):
     assert sz._allapotok()[0]["hely"] == 2
     k.allapot = "szol"
     assert sz._allapotok()[0]["hely"] == 0
+
+
+def test_szavazatok_yt_szerint_a_lejatszonak(sz):
+    sz._kesz({"uj": [{"azon": "a1", "szoveg": "Queen", "eszkoz": "e" * 64}]}, [])
+    sz.v.keresek.lista[0].yt = "yt1"
+    sz._kesz({"uj": [], "szavazatok": {"a1": 3, "ismeretlen": 9}}, [])
+    assert sz.v.pontok == [{"yt1": 3}]
 
 
 def test_ugyanaz_az_azonosito_ketszer_nem(sz):

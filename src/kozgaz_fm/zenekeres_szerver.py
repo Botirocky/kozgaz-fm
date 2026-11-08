@@ -157,6 +157,10 @@ class ZenekeresSzerver(QObject):
             if isinstance(elem, dict):
                 self._fogad(elem)
         self._takarit()
+        szavazatok = valasz.get("szavazatok")
+        if isinstance(szavazatok, dict):
+            self.v.zene.kert_rendez({k.yt: int(szavazatok[k.azon]) for k in self.v.keresek.lista
+                                     if k.yt and k.azon in szavazatok})
         self.valtozott.emit()
         self._ido.start(200 if self._allapotok() else KOR_MP * 1000)
 

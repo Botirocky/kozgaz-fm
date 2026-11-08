@@ -12,6 +12,7 @@ final class Szam
         public string $yt = '',
         public bool $kert = false,
         public bool $keresbol = false,
+        public int $szavazat = 0,
     ) {
     }
 }

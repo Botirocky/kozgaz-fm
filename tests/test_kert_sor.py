@@ -86,3 +86,20 @@ def test_induló_kert_zene_kikerul_a_varakozok_kozul_es_jelez(zene):
     zene.lista_valtozott.connect(lambda: jelzes.append(1))
     zene._jatszd(zene.index + 1)
     assert zene.kert_sor() == [] and jelzes
+
+
+def test_szavazat_szerint_rendez_a_most_szolot_nem_mozditja(zene):
+    zene._jatszd(1)
+    for n in "123":
+        zene.beszur(Szam(f"k{n}", helyi=Path(f"k{n}.mp3"), yt=n))
+    jelek = []
+    zene.lista_valtozott.connect(lambda: jelek.append(1))
+    zene.kert_rendez({"3": 2, "2": 1})
+    assert [s.cim for _i, s in zene.kert_sor()] == ["k3", "k2", "k1"]
+    assert [s.szavazat for _i, s in zene.kert_sor()] == [2, 1, 0]
+    assert zene.most_cim == "b" and jelek
+    jelek.clear()
+    zene.kert_rendez({"3": 2, "2": 1})
+    assert not jelek
+    zene.kert_rendez({"1": 1, "2": 1, "3": 1})
+    assert [s.cim for _i, s in zene.kert_sor()] == ["k3", "k2", "k1"]
