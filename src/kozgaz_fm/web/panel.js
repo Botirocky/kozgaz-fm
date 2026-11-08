@@ -307,6 +307,7 @@ function zenesor(sor) {
       jel.className = "kert-jel";
       jel.textContent = "Kért";
       g.prepend(jel);
+      if (s.szavazat) g.append(` (▲ ${s.szavazat})`);
     }
     li.append(g);
     return li;

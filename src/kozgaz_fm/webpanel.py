@@ -555,7 +555,8 @@ class WebMuveletek(_Fosszal):
     def _zenesor(self) -> list[dict]:
         z = self.v.zene
         darab = max(5, len(z.kert_sor()) + 2)
-        return [{"index": i, "cim": cim, "kert": z.szamok[i].kert} for i, cim in z.kovetkezok(darab)]
+        return [{"index": i, "cim": cim, "kert": z.szamok[i].kert,
+                 "szavazat": z.szamok[i].szavazat} for i, cim in z.kovetkezok(darab)]
 
     def _alap_hely(self) -> dict | None:
         z = self.v.zene
