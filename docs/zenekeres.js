@@ -78,7 +78,8 @@ function megjelenit(a) {
     cim.textContent = k.cim || k.szoveg;
     const allapot = document.createElement("span");
     allapot.className = "allapot";
-    allapot.textContent = k.ok ? `${k.allapot_nev}: ${k.ok}` : k.allapot_nev;
+    allapot.textContent = k.ok ? `${k.allapot_nev}: ${k.ok}`
+      : k.hely === 1 ? "Következő szám" : k.hely > 1 ? `${k.hely}. a sorban` : k.allapot_nev;
     const ido = document.createElement("time");
     ido.textContent = k.ido;
     li.append(cim, ido, allapot);

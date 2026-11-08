@@ -119,6 +119,7 @@ function nyilvanos(k) {
     allapot: k.allapot,
     allapot_nev: nevek[k.allapot] ?? (k.allapot_nev || k.allapot),
     ok: k.ok,
+    hely: k.allapot === "elfogadva" ? Number(k.hely) | 0 : 0,
     ido: oraPerc(Number(k.ido)),
   };
 }
@@ -242,8 +243,9 @@ async function gepSzinkron(db, adat) {
     if (!a || typeof a.azon !== "string" || !ERVENYES_ALLAPOTOK.includes(a.allapot)) {
       continue;
     }
-    muveletek.push(db.prepare("UPDATE keresek SET allapot = ?, allapot_nev = ?, cim = ?, ok = ?, atadva = 1 WHERE azon = ?")
-      .bind(a.allapot, vag(a.allapot_nev ?? "", 60), vag(a.cim ?? "", 200), vag(a.ok ?? "", 200), a.azon));
+    muveletek.push(db.prepare("UPDATE keresek SET allapot = ?, allapot_nev = ?, cim = ?, ok = ?, hely = ?, atadva = 1 WHERE azon = ?")
+      .bind(a.allapot, vag(a.allapot_nev ?? "", 60), vag(a.cim ?? "", 200), vag(a.ok ?? "", 200),
+        Math.min(Math.max(Number(a.hely) | 0, 0), 999), a.azon));
   }
   if (muveletek.length) {
     await db.batch(muveletek);

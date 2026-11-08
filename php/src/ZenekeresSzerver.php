@@ -79,9 +79,15 @@ final class ZenekeresSzerver
     private function allapotok(): array
     {
         $lista = [];
+        $helyek = [];
+        foreach ($this->v->zene->kertSor() as $n => [, $szam]) {
+            if ($szam->yt !== '' && !isset($helyek[$szam->yt])) {
+                $helyek[$szam->yt] = $n + 1;
+            }
+        }
         foreach ($this->v->keresek->lista as $k) {
             if (isset($this->tavoli[$k['azon']])) {
-                $adat = Zenekeres::nyilvanos($k);
+                $adat = Zenekeres::nyilvanos($k) + ['hely' => $k['allapot'] === 'elfogadva' ? ($helyek[$k['yt']] ?? 0) : 0];
                 if (($this->elkuldott[$k['azon']] ?? null) !== $adat) {
                     $lista[] = $adat;
                 }

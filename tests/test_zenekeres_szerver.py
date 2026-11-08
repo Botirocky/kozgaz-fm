@@ -7,6 +7,7 @@ from PySide6.QtCore import QCoreApplication
 
 from kozgaz_fm import zenekeres_szerver
 from kozgaz_fm.beallitasok import alapertelmezett
+from kozgaz_fm.hang import Szam
 from kozgaz_fm.zenekeres import Keresek, KeresHiba
 from kozgaz_fm.zenekeres_szerver import SzerverHiba, ZenekeresSzerver, szerver_cim
 
@@ -34,6 +35,8 @@ class AlVezerlo:
         self.b.zenekeres_szerver_kulcs = "k" * 32
         self.keresek = Keresek()
         self.tartalek = SimpleNamespace(passziv=False)
+        self.sor: list = []
+        self.zene = SimpleNamespace(kert_sor=lambda: self.sor)
         self.naplo: list[str] = []
 
     def log(self, szoveg: str) -> None:
@@ -64,6 +67,16 @@ def test_uj_keresek_es_allapot_visszajelzes(sz):
     assert len(sz.v.keresek.lista) == 1 and sz._allapotok() == []
     sz.v.keresek.lista[0].allapot = "varakozik"
     assert [a["allapot"] for a in sz._allapotok()] == ["varakozik"]
+
+
+def test_hely_a_sorban(sz):
+    sz._kesz({"uj": [{"azon": "a1", "szoveg": "Queen", "eszkoz": "e" * 64}]}, [])
+    k = sz.v.keresek.lista[0]
+    k.allapot, k.yt = "elfogadva", "yt1"
+    sz.v.sor = [(4, Szam("Más", yt="yt0", kert=True)), (5, Szam("Queen", yt="yt1", kert=True))]
+    assert sz._allapotok()[0]["hely"] == 2
+    k.allapot = "szol"
+    assert sz._allapotok()[0]["hely"] == 0
 
 
 def test_ugyanaz_az_azonosito_ketszer_nem(sz):

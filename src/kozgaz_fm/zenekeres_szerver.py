@@ -105,9 +105,13 @@ class ZenekeresSzerver(QObject):
 
     def _allapotok(self) -> list[dict]:
         lista = []
+        helyek: dict[str, int] = {}
+        for n, (_, szam) in enumerate(self.v.zene.kert_sor(), 1):
+            if szam.yt:
+                helyek.setdefault(szam.yt, n)
         for k in self.v.keresek.lista:
             if k.azon in self._tavoli:
-                adat = k.nyilvanos()
+                adat = {**k.nyilvanos(), "hely": helyek.get(k.yt, 0) if k.allapot == "elfogadva" else 0}
                 if self._elkuldott.get(k.azon) != adat:
                     lista.append(adat)
         for azon, adat in self._kozvetlen.items():

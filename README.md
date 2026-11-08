@@ -124,6 +124,11 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
 
+## Újdonságok az 1.17.0-ban
+
+- **Hely a sorban:** a kérőoldalon az elfogadott kérésnél látszik, hányadik a kért zenék sorában
+  („3. a sorban”, „Következő szám”). Az asztali és a webes Közgáz FM is elküldi a közvetítőnek.
+
 ## Újdonságok az 1.16.1-ben
 
 - **Zenekérés bekapcsolása egy paranccsal:** `sudo kozgaz-fm-szerver zenekeres-be <kulcsfájl>` beállítja a webes

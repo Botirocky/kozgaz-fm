@@ -70,11 +70,14 @@ test("teljes kör: kérés → gép → állapot vissza", async () => {
   assert.equal(uj.nev, "Teszt");
   assert.match(uj.ido, /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d[+-]\d\d:\d\d$/);
 
-  const nyugta = await gepKor({ napi: 2 }, [{ azon: sajat.azon, allapot: "elfogadva", allapot_nev: "Elfogadva", cim: "Wellhello – Apuveded", ok: "" }]);
+  const nyugta = await gepKor({ napi: 2 }, [{ azon: sajat.azon, allapot: "elfogadva", allapot_nev: "Elfogadva", cim: "Wellhello – Apuveded", ok: "", hely: 3 }]);
   assert.ok(!nyugta.test.data.uj.some((k) => k.azon === sajat.azon));
   const utana = await diak(e);
   assert.equal(utana.test.data.sajat[0].allapot_nev, "Elfogadva, hamarosan szól");
   assert.equal(utana.test.data.sajat[0].cim, "Wellhello – Apuveded");
+  assert.equal(utana.test.data.sajat[0].hely, 3);
+  await gepKor({ napi: 2 }, [{ azon: sajat.azon, allapot: "szol", allapot_nev: "Most szól", cim: "Wellhello – Apuveded", ok: "", hely: 1 }]);
+  assert.equal((await diak(e)).test.data.sajat[0].hely, 0);
 });
 
 test("napi korlát", async () => {
