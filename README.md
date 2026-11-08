@@ -124,6 +124,12 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
 
+## Újdonságok az 1.16.1-ben
+
+- **Zenekérés bekapcsolása egy paranccsal:** `sudo kozgaz-fm-szerver zenekeres-be <kulcsfájl>` beállítja a webes
+  Közgáz FM-ben a közvetítő címét, a kulcsot és a kérőoldalt, majd megvárja, hogy a rádió kapcsolódjon. Ha a gép
+  nem éri el a közvetítőt, vagy rossz a kulcs, megmondja. Kikapcsolás: `zenekeres-ki`.
+
 ## Újdonságok az 1.16.0-ban
 
 - **Zenekérés iskolai wifi nélkül:** új, ingyenes Cloudflare Worker közvetítő ([zenekeres-worker/](zenekeres-worker/README.md)).

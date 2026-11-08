@@ -6,6 +6,8 @@ FM_ENV=/etc/$NEV/fm.env
 FM_FELHASZNALO=/etc/$NEV/fm-felhasznalo
 FM=/usr/share/$NEV/fm
 YTDLP=/var/lib/kozgaz-fm-ytdlp
+ZK_CIM=https://kozgazfm-zenekeres.kozgazfm-zenekeres-worker.workers.dev
+ZK_OLDAL=https://botirocky.github.io/kozgaz-fm/
 
 ertek() {
     sed -n "s/^$1=//p" "${2:-$ENV}" 2>/dev/null | tail -n 1
@@ -155,6 +157,40 @@ case "${1:-allapot}" in
         [ -n "$F" ] || { echo "Nincs bekapcsolva a webes Közgáz FM." >&2; exit 1; }
         fm_kezelo "$F" "$1"
         ;;
+    zenekeres-be)
+        root_kell zenekeres-be
+        F=$(fm_felhasznalo)
+        [ -n "$F" ] && [ -s "$FM_FELHASZNALO" ] || { echo "Előbb: sudo $NEV fm-be <felhasználó>" >&2; exit 1; }
+        [ -n "${2:-}" ] && [ -r "$2" ] || { echo "Használat: sudo $NEV zenekeres-be <kulcsfájl> [szervercím]" >&2; exit 1; }
+        CIM=${3:-$ZK_CIM}
+        if ! php -r 'exit(@file_get_contents($argv[1] . "/egeszseg", false, stream_context_create(["http" => ["timeout" => 10]])) === false ? 1 : 0);' "$CIM"; then
+            echo "A $CIM nem érhető el erről a gépről." >&2
+            echo "Ha más oldal megy, a suli szűri ezt a címet: saját domain kell a Workerre." >&2
+            exit 1
+        fi
+        systemctl stop "kozgaz-fm-web@$F.service" "kozgaz-fm-demon@$F.service"
+        tr -d ' \r\n' < "$2" | fm_kezelo "$F" zenekeres "$CIM" "$ZK_OLDAL" || { systemctl start "kozgaz-fm-web@$F.service" "kozgaz-fm-demon@$F.service"; exit 1; }
+        systemctl start "kozgaz-fm-web@$F.service" "kozgaz-fm-demon@$F.service"
+        echo "Beállítva, várom, hogy a rádió kapcsolódjon..."
+        for _ in $(seq 15); do
+            sleep 3
+            if php -r '$v = @file_get_contents($argv[1] . "/egeszseg"); exit(str_contains((string)$v, "\"radio\":true") ? 0 : 1);' "$CIM"; then
+                echo "Kész, a rádió kapcsolódott. Kérőoldal: $ZK_OLDAL"
+                exit 0
+            fi
+        done
+        echo "A rádió 45 mp alatt nem kapcsolódott. Rossz kulcs? Nézd meg: $NEV fm-naplo 30" >&2
+        exit 1
+        ;;
+    zenekeres-ki)
+        root_kell zenekeres-ki
+        F=$(fm_felhasznalo)
+        [ -n "$F" ] || { echo "Nincs bekapcsolva a webes Közgáz FM." >&2; exit 1; }
+        systemctl stop "kozgaz-fm-web@$F.service" "kozgaz-fm-demon@$F.service"
+        fm_kezelo "$F" zenekeres-ki
+        systemctl start "kozgaz-fm-web@$F.service" "kozgaz-fm-demon@$F.service"
+        echo "A zenekérő szerver kapcsolata törölve."
+        ;;
     ytdlp-frissites)
         root_kell ytdlp-frissites
         ytdlp_frissit
@@ -162,6 +198,7 @@ case "${1:-allapot}" in
     *)
         echo "Használat: $NEV [allapot|kulcs|uj-kulcs|beallitas|naplo [sorok]|ujraindit]" >&2
         echo "  webes Közgáz FM: fm-be [felhasználó]|fm-ki|fm-naplo [sorok]|fm-beallitas|pin-torles|jelszo-torles|ytdlp-frissites" >&2
+        echo "  zenekérés diákoktól: zenekeres-be <kulcsfájl> [szervercím]|zenekeres-ki" >&2
         exit 2
         ;;
 esac

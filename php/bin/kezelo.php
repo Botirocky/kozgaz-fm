@@ -41,6 +41,24 @@ switch ($parancs) {
         exit(0);
     case 'van-jelszo':
         exit($b['web_jelszo'] !== '' ? 0 : 1);
+    case 'zenekeres':
+        $cim = rtrim(trim($argv[2] ?? ''), '/');
+        $kulcs = trim((string)stream_get_contents(STDIN));
+        if (!preg_match('#^https://[^\s/]+#', $cim) || strlen($kulcs) < 16) {
+            fwrite(STDERR, "Kell egy https:// szervercím és legalább 16 karakteres kulcs.\n");
+            exit(1);
+        }
+        $b['zenekeres_szerver'] = $cim;
+        $b['zenekeres_szerver_kulcs'] = $kulcs;
+        $b['zenekeres_oldal'] = trim($argv[3] ?? '') !== '' ? trim($argv[3]) : $b['zenekeres_oldal'];
+        $b['zenekeres'] = true;
+        Beallitasok::ment($b);
+        exit(0);
+    case 'zenekeres-ki':
+        $b['zenekeres_szerver'] = '';
+        $b['zenekeres_szerver_kulcs'] = '';
+        Beallitasok::ment($b);
+        exit(0);
 }
-fwrite(STDERR, "Használat: php bin/kezelo.php pin-torles|jelszo-torles|jelszo (a jelszó a bemeneten)|van-jelszo\n");
+fwrite(STDERR, "Használat: php bin/kezelo.php pin-torles|jelszo-torles|jelszo (a jelszó a bemeneten)|van-jelszo|zenekeres <cím> [kérőoldal] (a kulcs a bemeneten)|zenekeres-ki\n");
 exit(2);

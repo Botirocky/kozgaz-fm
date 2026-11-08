@@ -69,6 +69,8 @@ sudo kozgaz-fm-szerver fm-beallitas          az fm.env szerkesztése, utána új
 sudo kozgaz-fm-szerver pin-torles            elfelejtett PIN törlése
 sudo kozgaz-fm-szerver jelszo-torles         elfelejtett webes jelszó törlése (megnyitáskor újat kér)
 sudo kozgaz-fm-szerver ytdlp-frissites       a yt-dlp frissítése
+sudo kozgaz-fm-szerver zenekeres-be <kulcsfájl> [cím]  diákok zenekérése a Cloudflare-közvetítőn át, ellenőrzéssel
+sudo kozgaz-fm-szerver zenekeres-ki          a közvetítő kapcsolatának törlése
 ```
 
 ### Beállítások (`/etc/kozgaz-fm-szerver/szerver.env`)
