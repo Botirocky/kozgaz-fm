@@ -124,6 +124,12 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
 
+## Újdonságok az 1.19.0-ban
+
+- Saját riasztóhang: emelkedő szirénás söprés, ami másodpercenként ismétlődik, így jól elkülönül a csengőktől.
+  Ez lett a riasztás alapértelmezett hangja; aki korábban mást állított be, annál a beállítás megmarad.
+  A Csengetési rend oldalon „Riasztó” néven bármelyik hanghoz kiválasztható.
+
 ## Újdonságok az 1.18.1-ben
 
 - Az asztali program webpaneljén is látszik a kért zenék szavazatszáma.

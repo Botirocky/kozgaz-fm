@@ -16,6 +16,7 @@ BEEPITETT_HANGOK = {
     "becsengo": "Becsengő",
     "kicsengo": "Kicsengő",
     "jelzo": "Jelzőcsengő",
+    "riaszto": "Riasztó",
 }
 
 REGI_HANGOK = {"csengo": "becsengo", "dallam": "becsengo", "rovid": "jelzo", "gong": "jelzo", "riasztas": "kicsengo"}
@@ -136,7 +137,7 @@ class Beallitasok:
     hang_kicsengo: str = "beepitett:kicsengo"
     hang_jelzo: str = "beepitett:jelzo"
     hang_gong: str = "beepitett:jelzo"
-    hang_riasztas: str = "beepitett:kicsengo"
+    hang_riasztas: str = "beepitett:riaszto"
     csengo_hangero: int = 90
     zene_hangero: int = 60
     zene_szunetben: bool = True

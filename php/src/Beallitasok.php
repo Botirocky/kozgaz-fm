@@ -10,6 +10,7 @@ final class Beallitasok
         'becsengo' => 'Becsengő',
         'kicsengo' => 'Kicsengő',
         'jelzo' => 'Jelzőcsengő',
+        'riaszto' => 'Riasztó',
     ];
 
     public const REGI_HANGOK = ['csengo' => 'becsengo', 'dallam' => 'becsengo', 'rovid' => 'jelzo', 'gong' => 'jelzo', 'riasztas' => 'kicsengo'];
@@ -43,7 +44,7 @@ final class Beallitasok
         'hang_kicsengo' => 'beepitett:kicsengo',
         'hang_jelzo' => 'beepitett:jelzo',
         'hang_gong' => 'beepitett:jelzo',
-        'hang_riasztas' => 'beepitett:kicsengo',
+        'hang_riasztas' => 'beepitett:riaszto',
     ];
 
     private const ELEMEK = [
@@ -74,7 +75,7 @@ final class Beallitasok
             'hang_kicsengo' => 'beepitett:kicsengo',
             'hang_jelzo' => 'beepitett:jelzo',
             'hang_gong' => 'beepitett:jelzo',
-            'hang_riasztas' => 'beepitett:kicsengo',
+            'hang_riasztas' => 'beepitett:riaszto',
             'csengo_hangero' => 90,
             'zene_hangero' => 60,
             'zene_szunetben' => true,
