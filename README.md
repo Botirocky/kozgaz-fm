@@ -127,6 +127,7 @@ A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válasz
 ## Újdonságok az 1.19.0-ban
 
 - Saját riasztóhang: emelkedő szirénás söprés, ami másodpercenként ismétlődik, így jól elkülönül a csengőktől.
+  Életszerű hangzás: hangszórós szirénahangszín, folyosói visszhang, és a söprések között apró eltérések vannak.
   Ez lett a riasztás alapértelmezett hangja; aki korábban mást állított be, annál a beállítás megmarad.
   A Csengetési rend oldalon „Riasztó” néven bármelyik hanghoz kiválasztható.
 
