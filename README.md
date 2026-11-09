@@ -124,7 +124,7 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
 
-## Újdonságok az 1.19.0-ban
+## Újdonságok az 1.18.2-ben
 
 - Saját riasztóhang: emelkedő szirénás söprés, ami másodpercenként ismétlődik, így jól elkülönül a csengőktől.
   Életszerű hangzás: hangszórós szirénahangszín, folyosói visszhang, és a söprések között apró eltérések vannak.
