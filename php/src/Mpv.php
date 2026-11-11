@@ -99,7 +99,7 @@ final class Mpv
         }
     }
 
-    public function betolt(string $ut, bool $ismetles = false, float $kezdoHangero = 0.0): bool
+    public function betolt(string $ut, bool $ismetles = false, float $kezdoHangero = 0.0, float $kezdetMp = 0.0): bool
     {
         if (!$this->indit()) {
             return false;
@@ -108,7 +108,7 @@ final class Mpv
         $this->kuld(['set_property', 'loop-file', $ismetles ? 'inf' : 'no']);
         $this->kuld(['set_property', 'pause', false]);
         $this->inditasraVar = true;
-        $this->kuld(['loadfile', $ut, 'replace']);
+        $this->kuld($kezdetMp > 0 ? ['loadfile', $ut, 'replace', -1, 'start=' . round($kezdetMp, 3)] : ['loadfile', $ut, 'replace']);
         $this->fajl = $ut;
         $this->szol = true;
         $this->szunetel = false;

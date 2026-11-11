@@ -289,6 +289,7 @@ final class Vezerlo
         $this->zene->gyorsitotar = $b['youtube_gyorsitotar'];
         $this->zene->elhalkitasMp = $b['elhalkitas'];
         $this->zene->atusztatasMp = $b['atusztatas'];
+        $this->zene->atusztatasBe = $b['atusztatas_be'];
         $this->zene->hangero($b['zene_hangero']);
         $this->zene->spotifyEszkoz = $b['spotify_eszkoz'];
         $this->zene->spotifyClientId = trim($b['spotify_client_id']) ?: null;
@@ -548,7 +549,7 @@ final class Vezerlo
                 if ($e->rendkivuli) {
                     if ($this->zene->szol()) {
                         $this->autoZene = false;
-                        $this->zene->megallit(false);
+                        $this->zene->megallit(false, true, true);
                     }
                     $this->csengetes($e->rendkivuli['hang'], $e->leiras(), null, $e->ido, 'rendkivuli');
                 }
@@ -581,7 +582,7 @@ final class Vezerlo
             case Esemeny::BECSENGO:
                 if ($this->zene->szol()) {
                     $this->autoZene = false;
-                    $this->zene->megallit(false);
+                    $this->zene->megallit(false, true, true);
                 }
                 $hang = $e->tipus === Esemeny::JELZO ? $this->b['hang_jelzo'] : $this->b['hang_becsengo'];
                 $this->csengetes($hang, $e->leiras(), $e->hangero, $e->ido, $e->nev());
@@ -688,7 +689,7 @@ final class Vezerlo
         $this->riasztas = true;
         $this->autoRiado = false;
         $this->autoZene = false;
-        $this->zene->megallit(false);
+        $this->zene->megallit(false, true, true);
         $this->log('RIASZTÁS ELINDÍTVA');
         $this->ertesito->kuld('riasztas', 'Riasztás indult', date('H:i') . '-kor elindult a riasztás a Közgáz FM-en.', 'hiba', 60);
         $this->sor = [['tipus' => 'hang', 'ertek' => $this->b['hang_riasztas'], 'ismetles' => true, 'tartalek' => Beallitasok::HANG_MEZOK['hang_riasztas'], 'hangero' => null, 'cel' => 'mind']];

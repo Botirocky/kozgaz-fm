@@ -8,6 +8,7 @@ use KozgazFM\Beallitasok;
 use KozgazFM\Bemondo;
 use KozgazFM\Dalszoveg;
 use KozgazFM\Ertesito;
+use KozgazFM\Atuszas;
 use KozgazFM\Hangossag;
 use KozgazFM\Hiba;
 use KozgazFM\SajatHangok;
@@ -81,6 +82,10 @@ function feladat(string $nev, array $a): mixed
         case 'meres':
             [$lufs, $csucs] = Hangossag::meres((string)$a['ut']);
             Hangossag::beir((string)$a['ut'], $lufs, $csucs);
+            return true;
+        case 'csend':
+            [$eleje, $vege] = Atuszas::meres((string)$a['ut']);
+            Atuszas::beir((string)$a['ut'], $eleje, $vege);
             return true;
         case 'forras':
             $f = (array)$a['forras'];

@@ -56,12 +56,12 @@ final class Csoport
         return $this->aktiv ? $this->tagok[$this->aktiv[0]] : null;
     }
 
-    public function betolt(string $ut, bool $ismetles = false): bool
+    public function betolt(string $ut, bool $ismetles = false, float $kezdetMp = 0.0): bool
     {
         $siker = false;
         foreach ($this->tagok as $i => $m) {
             if (in_array($i, $this->aktiv, true)) {
-                $siker = $m->betolt($ut, $ismetles, $this->zonaAmplitudo($i)) || $siker;
+                $siker = $m->betolt($ut, $ismetles, $this->zonaAmplitudo($i), $kezdetMp) || $siker;
             } elseif ($m->szol) {
                 $m->allj();
             }

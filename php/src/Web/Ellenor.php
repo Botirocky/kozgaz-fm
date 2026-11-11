@@ -170,7 +170,7 @@ final class Ellenor
         $tartomanyok = [
             'jelzo_perc' => [0, 15, 'Jelzőcsengő'], 'csengo_hangero' => [0, 100, 'Csengő hangereje'], 'zene_hangero' => [0, 100, 'Zene hangereje'],
             'zene_min_szunet' => [0, 60, 'Legrövidebb zenés szünet'], 'zene_kesleltetes' => [0, 600, 'Zene késleltetése'],
-            'zene_leall_elotte' => [0, 600, 'Zene leállása'], 'elhalkitas' => [0, 15, 'Elhalkítás'], 'atusztatas' => [0, 15, 'Átúsztatás'],
+            'zene_leall_elotte' => [0, 600, 'Zene leállása'], 'elhalkitas' => [0, 15, 'Elhalkítás'], 'atusztatas' => [0, 12, 'Átúsztatás'],
             'zenekeres_napi' => [1, 50, 'Napi kérés'], 'zenekeres_max_perc' => [1, 60, 'Leghosszabb kért szám'],
             'admin_zar_perc' => [1, 240, 'Automatikus zárolás'], 'smtp_port' => [1, 65535, 'SMTP-port'], 'web_port' => [1, 65535, 'Port'],
         ];
