@@ -124,6 +124,14 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
 
+## Újdonságok az 1.19.0-ban
+
+- DJ-szerű keverés: a számok egyenlő teljesítményű görbével úsznak át egymásba, a szám eleji és végi csend levágva.
+  Kézi váltásnál (következő, ugrás, kért szám) rövid átúszás; csengőnél a zene 0,25 mp alatt halkul el, a csengő nem késik.
+  Beállítás a Zene oldalon és a webes felületen: be/ki (alapból be), hossz 0–12 mp (alapból 5 mp).
+- Megújult a diákok zenekérő oldala: telefonra szabott, világos és sötét mód, külön nézet a betöltésre, hibára és sikerre.
+- Terv a zenekérés végleges megoldásáról: `docs/tervek/zenekeres-vegleges.md`.
+
 ## Újdonságok az 1.18.2-ben
 
 - Saját riasztóhang: emelkedő szirénás söprés, ami másodpercenként ismétlődik, így jól elkülönül a csengőktől.
