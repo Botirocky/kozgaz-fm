@@ -4,54 +4,81 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#2F6CA6" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#101317" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#2B659C" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#10293F" media="(prefers-color-scheme: dark)">
 <meta name="robots" content="noindex">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src https://kozgazfm-zenekeres.kozgazfm-zenekeres-worker.workers.dev; base-uri 'none'; form-action 'none'">
 <title>Zenekérés – Közgáz FM</title>
-<link rel="icon" href="logo.png">
-<link rel="stylesheet" href="zenekeres.css?v=2">
-<script src="zenekeres.js?v=2" defer></script>
+<link rel="icon" href="jel.png">
+<link rel="stylesheet" href="zenekeres.css?v=4">
+<script src="zenekeres.js?v=4" defer></script>
 </head>
 <body>
 <header class="fejlec">
-  <img src="logo.png" alt="" width="40" height="40">
-  <div>
-    <span id="cim" class="fejlec-cim">Közgáz FM</span>
-    <span class="fejlec-al">iskolarádió · zenekérés</span>
+  <div class="fejlec-belso">
+    <p class="allomas">
+      <img src="jel.png" alt="" width="44" height="44">
+      <span id="cim">Közgáz FM</span>
+    </p>
+    <h1>Kérj zenét a szünetre</h1>
+    <p id="leiras" class="fejlec-leiras">A kért szám a szünetekben szól.</p>
   </div>
 </header>
 
 <main class="tartalom">
-  <section class="blokk">
-    <h1>Kérj zenét a szünetre</h1>
-    <p id="leiras" class="halvany">Írd be a szám előadóját és címét, vagy másold be a YouTube-linkjét.</p>
-    <p id="betolt" class="doboz">Betöltés…</p>
-    <p id="kikapcsolva" class="doboz" hidden></p>
+  <p id="kapcsolat" class="kapcsolat" role="status" hidden>Nincs kapcsolat a szerverrel. Magától újrapróbáljuk.</p>
+
+  <section class="kartya" aria-labelledby="keres-cim">
+    <h2 id="keres-cim" class="csak-olvaso">Új kérés</h2>
+
+    <div id="betolt" class="betolt" role="status">
+      <span class="csak-olvaso">Betöltés…</span>
+      <span class="csont csont-cimke"></span>
+      <span class="csont csont-mezo"></span>
+      <span class="csont csont-cimke"></span>
+      <span class="csont csont-mezo"></span>
+      <span class="csont csont-gomb"></span>
+    </div>
+
+    <div id="hiba" class="allapot-doboz hibas" role="alert" hidden>
+      <h3>Nem sikerült betölteni</h3>
+      <p id="hiba-szoveg"></p>
+      <button id="ujra" type="button" class="gomb masodlagos">Próbáld újra</button>
+    </div>
+
+    <div id="kikapcsolva" class="allapot-doboz" hidden>
+      <h3>Most nem lehet zenét kérni</h3>
+      <p id="kikapcsolva-szoveg"></p>
+    </div>
+
     <form id="urlap" hidden>
       <label for="szoveg">Előadó és cím, vagy YouTube-link</label>
-      <input id="szoveg" type="text" maxlength="150" autocomplete="off" enterkeyhint="send" required
+      <input id="szoveg" type="text" maxlength="150" autocomplete="off" autocapitalize="sentences" enterkeyhint="send" required
              placeholder="pl. Queen – Don't Stop Me Now">
-      <label for="nev">Neved vagy osztályod (nem kötelező)</label>
+      <label for="nev">Neved vagy osztályod <span class="nem-kotelezo">(nem kötelező)</span></label>
       <input id="nev" type="text" maxlength="30" autocomplete="off" placeholder="pl. 10.B">
-      <button type="submit" class="gomb">Kérés küldése</button>
-      <p id="maradek" class="halvany kicsi"></p>
+      <button id="kuld" type="submit" class="gomb">Kérés küldése</button>
+      <p class="keret">
+        <span id="pottyok" class="pottyok" aria-hidden="true"></span>
+        <span id="maradek"></span>
+      </p>
     </form>
   </section>
 
-  <section id="sajat-blokk" class="blokk" hidden>
-    <h2>Mai kéréseid</h2>
-    <ul id="sajat" class="lista"></ul>
+  <section id="sajat-blokk" class="szakasz" aria-labelledby="sajat-cim" hidden>
+    <h2 id="sajat-cim">Mai kéréseid</h2>
+    <ul id="sajat" class="lista" role="list"></ul>
   </section>
 
-  <section id="sor-blokk" class="blokk" hidden>
-    <h2>Sorban lévő kérések</h2>
-    <p id="szavazat-maradek" class="halvany kicsi"></p>
-    <ul id="sor" class="lista"></ul>
+  <section id="sor-blokk" class="szakasz" aria-labelledby="sor-cim" hidden>
+    <h2 id="sor-cim">Sorban lévő kérések</h2>
+    <p id="szavazat-maradek" class="szakasz-leiras"></p>
+    <p id="sor-ures" class="ures" hidden>Még nincs szám a sorban. Legyen a tiéd az első!</p>
+    <ol id="sor" class="lista" role="list"></ol>
   </section>
 
-  <section class="blokk szabalyok">
-    <h2>Tudnivalók</h2>
+  <section class="szakasz tudnivalok" aria-labelledby="tudnivalok-cim">
+    <h2 id="tudnivalok-cim">Tudnivalók</h2>
     <ul>
       <li>A szám a szünetekben szól, a tanórák alatt nem.</li>
       <li>Trágár szövegű vagy korhatáros szám nem kerül adásba, ezt a rendszer ellenőrzi.</li>

@@ -7,14 +7,18 @@
   --szoveg: #17202C;
   --halvany: #5E6A7A;
   --kek: #2F6CA6;
+  --kek-szoveg: #2F6CA6;
   --sarga: #DCBD31;
   --sarga-szoveg: #16140A;
-  --elo: #A8860F;
-  --szol: #1E9150;
-  --hiba: #C4382C;
+  --elo: #8A6D00;
+  --szol: #1B7F45;
+  --hiba: #B5332A;
+  --hiba-hatter: #FCEEEC;
+  --jo-hatter: #E8F5EE;
   --fejlec: #2F6CA6;
   --fejlec-szoveg: #FFFFFF;
-  --sugar: 12px;
+  --arnyek: 0 1px 2px rgba(16, 41, 63, 0.08);
+  --sugar: 14px;
   color-scheme: light;
 }
 
@@ -24,15 +28,19 @@
     --felulet: #171B21;
     --felulet2: #1F242C;
     --keret: #262C35;
-    --keret-eros: #363E4A;
+    --keret-eros: #3A424E;
     --szoveg: #E8EBEF;
-    --halvany: #8D96A3;
+    --halvany: #9BA4B1;
     --kek: #4085C0;
+    --kek-szoveg: #6CA6DB;
     --elo: #DCBD31;
     --szol: #3FB66B;
-    --hiba: #D9483B;
+    --hiba: #E5685C;
+    --hiba-hatter: #2A1B1A;
+    --jo-hatter: #16251C;
     --fejlec: #0C0F12;
     --fejlec-szoveg: #E8EBEF;
+    --arnyek: none;
     color-scheme: dark;
   }
 }
@@ -45,89 +53,181 @@ body {
   margin: 0;
   background: var(--hatter);
   color: var(--szoveg);
-  font: 16px/1.45 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Noto Sans", Roboto, sans-serif;
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
 }
 
-h1, h2 { margin: 0; line-height: 1.2; }
-h1 { font-size: 1.45rem; margin-bottom: 8px; }
-h2 { font-size: 1.1rem; margin-bottom: 4px; }
+h1, h2, h3 { margin: 0; line-height: 1.2; }
+h1 { font-size: 1.5rem; }
+h2 { font-size: 1.1rem; }
+h3 { font-size: 1.05rem; }
 p { margin: 0; }
 
+.csak-olvaso {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+:focus-visible { outline: 3px solid var(--sarga); outline-offset: 2px; }
+
 .fejlec {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top));
   background: var(--fejlec); color: var(--fejlec-szoveg);
   border-bottom: 4px solid var(--sarga);
+  padding: 16px max(16px, env(safe-area-inset-right)) 20px max(16px, env(safe-area-inset-left));
+  padding-top: max(16px, env(safe-area-inset-top));
 }
-.fejlec img { border-radius: 9px; background: #FFFFFF; padding: 2px; }
-.fejlec div { display: grid; }
-.fejlec-cim { font-weight: 700; font-size: 1.1rem; }
-.fejlec-al { font-size: 0.85rem; opacity: 0.85; }
+.fejlec-belso { max-width: 560px; margin: 0 auto; display: grid; gap: 8px; }
+.allomas { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 1rem; letter-spacing: 0.01em; }
+.allomas img { border-radius: 11px; background: #FFFFFF; padding: 2px; }
+.fejlec-leiras { opacity: 0.9; font-size: 0.95rem; }
 
 .tartalom {
-  max-width: 560px; margin: 0 auto; padding: 16px; padding-bottom: max(24px, env(safe-area-inset-bottom));
-  display: grid; gap: 16px;
+  max-width: 560px; margin: 0 auto; display: grid; gap: 24px;
+  padding: 16px max(16px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
 }
 
-.blokk {
+.kapcsolat {
+  padding: 10px 14px; border-radius: 10px; font-size: 0.92rem; font-weight: 600;
+  background: var(--hiba-hatter); color: var(--hiba); border: 1px solid var(--hiba);
+}
+
+.kartya {
   background: var(--felulet); border: 1px solid var(--keret); border-radius: var(--sugar);
-  padding: 18px 16px;
+  padding: 20px 16px; box-shadow: var(--arnyek);
 }
 
-.halvany { color: var(--halvany); }
-.kicsi { font-size: 0.9rem; margin-top: 12px; }
-.doboz { margin-top: 14px; padding: 12px; border-radius: 8px; background: var(--felulet2); }
+.szakasz { display: grid; gap: 10px; align-content: start; }
+.szakasz-leiras { color: var(--halvany); font-size: 0.92rem; }
 
-form { display: grid; margin-top: 14px; }
-label { font-weight: 600; font-size: 0.95rem; margin: 10px 0 6px; }
+form { display: grid; }
+label { font-weight: 600; font-size: 0.95rem; margin: 16px 0 8px; }
+form label:first-child { margin-top: 0; }
+.nem-kotelezo { font-weight: 400; color: var(--halvany); }
 input[type="text"] {
-  width: 100%; font: inherit; color: inherit; background: var(--felulet2);
-  border: 1px solid var(--keret-eros); border-radius: 10px; padding: 12px;
+  width: 100%; min-height: 48px; font: inherit; font-size: 16px; color: inherit; background: var(--felulet2);
+  border: 1px solid var(--keret-eros); border-radius: 10px; padding: 10px 12px;
 }
-input[type="text"]:focus { outline: 2px solid var(--kek); outline-offset: 1px; border-color: var(--kek); }
+input[type="text"]::placeholder { color: var(--halvany); opacity: 0.8; }
+input[type="text"]:focus { outline: 3px solid var(--kek); outline-offset: 0; border-color: var(--kek); }
 
 .gomb {
-  margin-top: 16px; min-height: 48px; font: inherit; font-weight: 700; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-top: 20px; min-height: 52px; padding: 0 20px; font: inherit; font-weight: 600; cursor: pointer;
   background: var(--sarga); color: var(--sarga-szoveg); border: 0; border-radius: 10px;
+  touch-action: manipulation;
 }
-.gomb:hover { filter: brightness(1.05); }
+.gomb:active { transform: translateY(1px); }
 .gomb:disabled { opacity: 0.5; cursor: not-allowed; }
-.gomb:focus-visible { outline: 2px solid var(--kek); outline-offset: 2px; }
-
-.lista { list-style: none; margin: 10px 0 0; padding: 0; }
-.elem {
-  display: grid; grid-template-columns: 1fr auto; gap: 2px 10px;
-  padding: 10px 12px; border-radius: 8px; background: var(--felulet2); border-left: 4px solid var(--keret-eros);
+.gomb.masodlagos {
+  margin-top: 8px; background: transparent; color: var(--kek-szoveg); border: 2px solid var(--kek);
 }
-.elem + .elem { margin-top: 8px; }
-.elem strong { overflow-wrap: anywhere; }
-.elem time { color: var(--halvany); font-size: 0.9rem; }
-.allapot { grid-column: 1 / -1; color: var(--halvany); font-size: 0.9rem; }
-.elem.varakozik, .elem.kereses { border-left-color: var(--elo); }
-.elem.elfogadva, .elem.szol { border-left-color: var(--szol); }
-.elem.szol .allapot { color: var(--szol); font-weight: 600; }
-.elem.elutasitva { border-left-color: var(--hiba); }
-.elem.elutasitva .allapot, .elem.levett .allapot { color: var(--hiba); }
 
-.szabalyok ul { margin: 8px 0 0; padding-left: 20px; color: var(--halvany); }
-.szabalyok li + li { margin-top: 4px; }
+.keret { display: flex; align-items: center; gap: 12px; margin-top: 12px; color: var(--halvany); font-size: 0.9rem; }
+.pottyok { display: inline-flex; gap: 4px; }
+.pottyok i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--keret-eros); }
+.pottyok i.van { background: var(--sarga); border-color: var(--sarga); }
+
+.betolt { display: grid; gap: 12px; }
+.csont {
+  display: block; border-radius: 8px;
+  background: linear-gradient(90deg, var(--felulet2) 25%, var(--keret) 50%, var(--felulet2) 75%);
+  background-size: 200% 100%; animation: csillan 1.4s linear infinite;
+}
+.csont-cimke { height: 16px; width: 55%; }
+.csont-mezo { height: 48px; margin-bottom: 8px; }
+.csont-gomb { height: 52px; margin-top: 8px; }
+@keyframes csillan { to { background-position: -200% 0; } }
+
+.allapot-doboz { display: grid; gap: 8px; justify-items: start; }
+.allapot-doboz p { color: var(--halvany); }
+.allapot-doboz::before {
+  content: ""; width: 44px; height: 44px; border-radius: 50%;
+  background: var(--felulet2) center / 22px no-repeat;
+  border: 2px solid var(--keret-eros);
+}
+.allapot-doboz.hibas { padding: 16px; border-radius: 12px; background: var(--hiba-hatter); border: 1px solid var(--hiba); }
+.allapot-doboz.hibas::before {
+  border-color: var(--hiba);
+  background-image: linear-gradient(var(--hiba), var(--hiba)), linear-gradient(var(--hiba), var(--hiba));
+  background-size: 4px 18px, 4px 4px;
+  background-position: center 9px, center 31px;
+}
+.allapot-doboz.hibas p { color: var(--szoveg); }
+
+.ures {
+  padding: 16px; border: 2px dashed var(--keret-eros); border-radius: 12px; text-align: center; color: var(--halvany);
+}
+
+.lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+
+.keres {
+  display: grid; gap: 4px; padding: 12px 16px; border-radius: 12px;
+  background: var(--felulet); border: 1px solid var(--keret); border-left: 4px solid var(--keret-eros);
+}
+.keres-fej { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.keres-fej strong { overflow-wrap: anywhere; }
+.keres-fej time { color: var(--halvany); font-size: 0.85rem; flex: none; }
+.keres-allapot { display: flex; align-items: center; gap: 8px; font-size: 0.92rem; color: var(--halvany); }
+.jel { width: 8px; height: 8px; border-radius: 50%; background: var(--keret-eros); flex: none; }
+.keres.varakozik, .keres.kereses { border-left-color: var(--elo); }
+.keres.varakozik .jel, .keres.kereses .jel { background: var(--elo); }
+.keres.elfogadva { border-left-color: var(--szol); }
+.keres.elfogadva .jel { background: var(--szol); }
+.keres.szol { border-left-color: var(--szol); background: var(--jo-hatter); }
+.keres.szol .keres-allapot { color: var(--szol); font-weight: 600; }
+.keres.elutasitva, .keres.levett { border-left-color: var(--hiba); }
+.keres.elutasitva .jel, .keres.levett .jel { background: var(--hiba); }
+.keres.elutasitva .keres-allapot, .keres.levett .keres-allapot { color: var(--hiba); font-weight: 600; }
+
+.hangsav { display: inline-flex; align-items: flex-end; gap: 2px; height: 16px; flex: none; }
+.hangsav i { width: 3px; background: var(--szol); border-radius: 1px; animation: hang 0.9s ease-in-out infinite; }
+.hangsav i:nth-child(1) { height: 60%; }
+.hangsav i:nth-child(2) { height: 100%; animation-delay: 0.2s; }
+.hangsav i:nth-child(3) { height: 45%; animation-delay: 0.4s; }
+@keyframes hang { 50% { transform: scaleY(0.4); } }
+.hangsav i { transform-origin: bottom; }
+
+.sor-elem {
+  display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px; min-height: 56px;
+  border-radius: 12px; background: var(--felulet); border: 1px solid var(--keret);
+}
+.hely { min-width: 28px; font-weight: 600; color: var(--halvany); font-variant-numeric: tabular-nums; }
+.sor-elem strong { flex: 1; min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
+.sajat-jelzo {
+  display: inline-flex; align-items: center; gap: 8px; flex: none; padding: 8px 12px; border-radius: 999px;
+  background: var(--felulet2); border: 1px solid var(--keret-eros); font-size: 0.85rem; color: var(--halvany);
+}
+.sajat-szam { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--szoveg); }
+
+.szavaz {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: none;
+  min-width: 64px; min-height: 44px; padding: 8px 16px; border-radius: 22px; font: inherit; font-weight: 600; font-variant-numeric: tabular-nums;
+  border: 2px solid var(--kek); background: transparent; color: var(--kek-szoveg); cursor: pointer;
+  touch-action: manipulation;
+}
+.szavaz.aktiv { background: var(--kek); color: #FFFFFF; }
+.szavaz:disabled { opacity: 0.45; cursor: not-allowed; }
+.szavaz[aria-busy="true"] { opacity: 0.6; }
+.nyil {
+  width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 9px solid currentColor;
+}
+
+.tudnivalok ul { margin: 0; padding-left: 20px; color: var(--halvany); display: grid; gap: 8px; font-size: 0.95rem; }
 
 .uzenet {
-  position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translate(-50%, 160%);
-  max-width: calc(100vw - 32px); padding: 12px 18px; border-radius: 10px;
-  background: var(--szoveg); color: var(--hatter); font-weight: 600;
+  position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translate(-50%, 200%);
+  width: max-content; max-width: calc(100vw - 32px); padding: 12px 20px; border-radius: 12px;
+  background: var(--szol); color: #FFFFFF; font-weight: 600; text-align: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
   transition: transform 0.25s ease; pointer-events: none;
 }
 .uzenet.latszik { transform: translate(-50%, 0); }
-.uzenet.hibas { background: var(--hiba); color: #FFFFFF; }
-
-@media (prefers-reduced-motion: reduce) { .uzenet { transition: none; } }
-
-.elem.szavazhato { align-items: center; border-left-color: var(--szol); }
-.szavaz {
-  min-width: 64px; min-height: 40px; padding: 6px 12px; border-radius: 999px; font: inherit; font-weight: 600;
-  border: 1px solid var(--kek); background: transparent; color: var(--kek); cursor: pointer;
+.uzenet.hibas { background: var(--hiba); }
+@media (prefers-color-scheme: dark) {
+  .uzenet { color: #0C0F12; }
+  .uzenet.hibas { color: #0C0F12; }
 }
-.szavaz.aktiv { background: var(--kek); color: #fff; }
-.szavaz:disabled { opacity: 0.45; cursor: not-allowed; }
-.szavaz:focus-visible { outline: 2px solid var(--kek); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .uzenet { transition: none; }
+  .csont, .hangsav i { animation: none; }
+}

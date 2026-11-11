@@ -2,6 +2,8 @@
 
 const SZERVER = "https://kozgazfm-zenekeres.kozgazfm-zenekeres-worker.workers.dev";
 const API = `${SZERVER}/api/zenekeres`;
+const FOLYAMATBAN = ["kereses", "varakozik", "elfogadva"];
+const MAX_POTTY = 8;
 
 function eszkozAzon() {
   let azon = "";
@@ -18,6 +20,16 @@ const $ = (id) => document.getElementById(id);
 let uzenetIdozito = null;
 let idozito = null;
 let autoMod = false;
+let betoltve = false;
+let sajatKulcs = "";
+let sorKulcs = "";
+
+function elem(nev, osztaly, szoveg) {
+  const e = document.createElement(nev);
+  if (osztaly) e.className = osztaly;
+  if (szoveg !== undefined) e.textContent = szoveg;
+  return e;
+}
 
 async function keres(metodus, adat) {
   const opciok = { method: metodus, headers: { "X-Kozgaz-FM": "1", "X-Kozgaz-FM-Eszkoz": eszkozAzon() }, credentials: "omit", cache: "no-store" };
@@ -47,20 +59,81 @@ function uzenet(szoveg, hibas = false) {
   doboz.classList.toggle("hibas", hibas);
   doboz.classList.add("latszik");
   clearTimeout(uzenetIdozito);
-  uzenetIdozito = setTimeout(() => doboz.classList.remove("latszik"), hibas ? 5000 : 3000);
+  uzenetIdozito = setTimeout(() => doboz.classList.remove("latszik"), hibas ? 6000 : 3500);
+}
+
+function allapotSzoveg(k) {
+  if (k.ok) return `${k.allapot_nev}: ${k.ok}`;
+  if (k.hely === 1) return "Következő szám";
+  if (k.hely > 1) return `${k.hely}. a sorban`;
+  return k.allapot_nev;
+}
+
+function sajatElem(k) {
+  const li = elem("li", `keres ${k.allapot}`);
+  const fej = elem("div", "keres-fej");
+  fej.append(elem("strong", "", k.cim || k.szoveg), elem("time", "", k.ido));
+  const allapot = elem("p", "keres-allapot");
+  const jel = elem("span", k.allapot === "szol" ? "hangsav" : "jel");
+  jel.setAttribute("aria-hidden", "true");
+  if (k.allapot === "szol") jel.append(elem("i"), elem("i"), elem("i"));
+  allapot.append(jel, elem("span", "", allapotSzoveg(k)));
+  li.append(fej, allapot);
+  return li;
+}
+
+async function szavaz(gomb, azon) {
+  if (gomb.getAttribute("aria-busy") === "true") return;
+  gomb.setAttribute("aria-busy", "true");
+  try {
+    megjelenit(await keres("POST", { szavaz: azon }));
+  } catch (e) {
+    uzenet(e.message, true);
+    gomb.removeAttribute("aria-busy");
+  }
+}
+
+function sorElem(k, maradek) {
+  const li = elem("li", "sor-elem");
+  const hely = elem("span", "hely", k.hely ? `${k.hely}.` : "–");
+  if (!k.hely) hely.setAttribute("aria-hidden", "true");
+  const cim = elem("strong", "", k.cim);
+  li.append(hely, cim);
+  if (k.sajat) {
+    const sajat = elem("span", "sajat-jelzo");
+    sajat.append(elem("span", "sajat-szam", String(k.szavazat)), elem("span", "", "a tiéd"));
+    sajat.setAttribute("role", "img");
+    sajat.setAttribute("aria-label", `A te kérésed, ${k.szavazat} szavazat`);
+    li.append(sajat);
+    return li;
+  }
+  const gomb = elem("button", `szavaz${k.szavaztam ? " aktiv" : ""}`);
+  gomb.type = "button";
+  gomb.dataset.azon = k.azon;
+  const nyil = elem("span", "nyil");
+  nyil.setAttribute("aria-hidden", "true");
+  gomb.append(nyil, elem("span", "", String(k.szavazat)));
+  gomb.disabled = !k.szavaztam && !maradek;
+  gomb.setAttribute("aria-pressed", String(k.szavaztam));
+  gomb.setAttribute("aria-label", `${k.szavaztam ? "Szavazat visszavonása" : "Szavazok rá"}: ${k.cim}, ${k.szavazat} szavazat`);
+  gomb.addEventListener("click", () => szavaz(gomb, k.azon));
+  li.append(gomb);
+  return li;
 }
 
 function megjelenit(a) {
+  betoltve = true;
   $("betolt").hidden = true;
+  $("hiba").hidden = true;
+  $("kapcsolat").hidden = true;
   $("cim").textContent = a.cim || "Közgáz FM";
   autoMod = a.auto;
   $("leiras").textContent = a.auto
-    ? "Írd be a szám előadóját és címét, vagy másold be a YouTube-linkjét. Ha a szám rendben van, magától bekerül a szünetzenébe."
-    : "Írd be a szám előadóját és címét, vagy másold be a YouTube-linkjét. Jóváhagyás után a következő szünetek egyikében szól.";
+    ? "Ha a szám rendben van, magától bekerül a szünetzenébe."
+    : "Jóváhagyás után a következő szünetek egyikében szól.";
   $("szabaly-napi").textContent = `Naponta ${a.napi} számot kérhetsz, legfeljebb ${a.max_perc} perceset.`;
-  const kikapcsolva = $("kikapcsolva");
-  kikapcsolva.hidden = a.aktiv;
-  kikapcsolva.textContent = a.elerheto
+  $("kikapcsolva").hidden = a.aktiv;
+  $("kikapcsolva-szoveg").textContent = a.elerheto
     ? "A zenekérés most nincs bekapcsolva. Nézz vissza később!"
     : "Az iskolarádió most nem elérhető (például tanítási időn kívül). Nézz vissza később!";
   $("urlap").hidden = !a.aktiv;
@@ -69,51 +142,38 @@ function megjelenit(a) {
     ? `Ma még ${a.maradek} számot kérhetsz.`
     : "Mára elfogytak a kéréseid, holnap újra kérhetsz.";
   if (a.tiltva) maradek.textContent = "Erről a telefonról most nem kérhetsz számot.";
-  $("urlap").querySelector("button").disabled = !a.maradek || a.tiltva;
+  const pottyok = $("pottyok");
+  pottyok.hidden = a.tiltva || a.napi > MAX_POTTY;
+  pottyok.replaceChildren(...Array.from({ length: Math.min(a.napi, MAX_POTTY) }, (_, i) => elem("i", i < a.maradek ? "van" : "")));
+  $("kuld").disabled = !a.maradek || a.tiltva;
+
+  const ujSajat = JSON.stringify(a.sajat);
   $("sajat-blokk").hidden = !a.sajat.length;
-  $("sajat").replaceChildren(...a.sajat.map((k) => {
-    const li = document.createElement("li");
-    li.className = `elem ${k.allapot}`;
-    const cim = document.createElement("strong");
-    cim.textContent = k.cim || k.szoveg;
-    const allapot = document.createElement("span");
-    allapot.className = "allapot";
-    allapot.textContent = k.ok ? `${k.allapot_nev}: ${k.ok}`
-      : k.hely === 1 ? "Következő szám" : k.hely > 1 ? `${k.hely}. a sorban` : k.allapot_nev;
-    const ido = document.createElement("time");
-    ido.textContent = k.ido;
-    li.append(cim, ido, allapot);
-    return li;
-  }));
+  if (ujSajat !== sajatKulcs) {
+    sajatKulcs = ujSajat;
+    $("sajat").replaceChildren(...a.sajat.map(sajatElem));
+  }
+
   const sor = a.sor || [];
-  $("sor-blokk").hidden = !sor.length;
-  $("szavazat-maradek").textContent = `Ma még ${a.szavazat_maradek ?? 0} szavazatod van. Újra koppintva visszavonhatod.`;
-  $("sor").replaceChildren(...sor.map((k) => {
-    const li = document.createElement("li");
-    li.className = "elem szavazhato";
-    const cim = document.createElement("strong");
-    cim.textContent = k.hely ? `${k.hely}. ${k.cim}` : k.cim;
-    const gomb = document.createElement("button");
-    gomb.type = "button";
-    gomb.className = `szavaz${k.szavaztam ? " aktiv" : ""}`;
-    gomb.textContent = `▲ ${k.szavazat}`;
-    gomb.disabled = k.sajat || (!k.szavaztam && !a.szavazat_maradek);
-    gomb.title = k.sajat ? "A saját kérésed" : k.szavaztam ? "Szavazat visszavonása" : "Szavazok rá";
-    gomb.setAttribute("aria-pressed", String(k.szavaztam));
-    gomb.setAttribute("aria-label", `${gomb.title}: ${k.cim}, ${k.szavazat} szavazat`);
-    gomb.addEventListener("click", async () => {
-      gomb.disabled = true;
-      try {
-        megjelenit(await keres("POST", { szavaz: k.azon }));
-      } catch (e) {
-        uzenet(e.message, true);
-        gomb.disabled = false;
-      }
-    });
-    li.append(cim, gomb);
-    return li;
-  }));
-  const folyamatban = sor.length > 0 || a.sajat.some((k) => ["kereses", "varakozik", "elfogadva"].includes(k.allapot));
+  const szavazatMaradek = a.szavazat_maradek ?? 0;
+  $("sor-blokk").hidden = !sor.length && !a.aktiv;
+  $("sor-ures").hidden = sor.length > 0;
+  $("szavazat-maradek").hidden = !sor.length;
+  $("szavazat-maradek").textContent = szavazatMaradek
+    ? `Koppints a nyílra, ha te is hallanád. Ma még ${szavazatMaradek} szavazatod van, újra koppintva visszavonhatod.`
+    : "Mára elfogytak a szavazataid. A leadottakat újra koppintva visszavonhatod.";
+  const ujSor = JSON.stringify([sor, szavazatMaradek]);
+  if (ujSor !== sorKulcs) {
+    sorKulcs = ujSor;
+    const fokusz = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.azon : "";
+    $("sor").replaceChildren(...sor.map((k) => sorElem(k, szavazatMaradek)));
+    if (fokusz) {
+      const gomb = Array.from($("sor").querySelectorAll("button")).find((g) => g.dataset.azon === fokusz);
+      if (gomb && !gomb.disabled) gomb.focus();
+    }
+  }
+
+  const folyamatban = sor.length > 0 || a.sajat.some((k) => FOLYAMATBAN.includes(k.allapot));
   clearInterval(idozito);
   idozito = setInterval(frissit, folyamatban ? 4000 : 30000);
 }
@@ -123,19 +183,35 @@ async function frissit() {
   try {
     megjelenit(await keres("GET"));
   } catch (e) {
-    $("betolt").textContent = e.message;
+    if (betoltve) {
+      $("kapcsolat").hidden = false;
+      return;
+    }
+    $("betolt").hidden = true;
+    $("hiba-szoveg").textContent = e.message;
+    $("hiba").hidden = false;
+    clearInterval(idozito);
+    idozito = setInterval(frissit, 10000);
   }
 }
 
+$("ujra").addEventListener("click", async () => {
+  $("hiba").hidden = true;
+  $("betolt").hidden = false;
+  await frissit();
+  if (!$("hiba").hidden) $("ujra").focus();
+});
+
 $("urlap").addEventListener("submit", async (esemeny) => {
   esemeny.preventDefault();
-  const gomb = esemeny.submitter || esemeny.target.querySelector("button");
+  const gomb = $("kuld");
   const szoveg = $("szoveg").value.trim();
   if (!szoveg) {
     $("szoveg").focus();
     return;
   }
   gomb.disabled = true;
+  gomb.textContent = "Küldés…";
   try {
     megjelenit(await keres("POST", { szoveg, nev: $("nev").value.trim() }));
     $("szoveg").value = "";
@@ -144,6 +220,7 @@ $("urlap").addEventListener("submit", async (esemeny) => {
     uzenet(e.message, true);
     gomb.disabled = false;
   }
+  gomb.textContent = "Kérés küldése";
 });
 
 document.addEventListener("visibilitychange", () => {
@@ -157,7 +234,7 @@ async function indul() {
   if (!szam) return;
   history.replaceState(null, "", location.pathname);
   $("szoveg").value = szam.slice(0, 150);
-  if (!$("urlap").hidden && !$("urlap").querySelector("button").disabled) $("urlap").requestSubmit();
+  if (!$("urlap").hidden && !$("kuld").disabled) $("urlap").requestSubmit();
 }
 
 indul();
