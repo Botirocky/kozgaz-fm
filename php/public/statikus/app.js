@@ -677,14 +677,15 @@ const Zene = {
         el('button', { class: 'gomb kicsi', text: 'Lista újratöltése (új fájlok, YouTube-lista)', onclick: () => api('POST', '/api/v1/forras-ujratoltes').then(() => uzenet('Újratöltés elindítva.', 'siker')) })),
         { leiras: `Helyi zene a konténer ${r.zene_gyoker || '/zene'} mappájában (a gépen: KFM_ZENE_MAPPA, alapból ~/Zenék).`, utana: () => this.rajzol() }),
       el('div', { class: 'racs' },
-        beallitasKartya('Szünetzene', ['zene_szunetben', 'zene_min_szunet', 'zene_kesleltetes', 'zene_leall_elotte', 'reggeli_zene', 'reggeli_zene_tol', 'keveres', 'elhalkitas', 'atusztatas', 'zene_hangero', 'zene_kihagyott_szunetek'], (p, valt) => el('div', {},
+        beallitasKartya('Szünetzene', ['zene_szunetben', 'zene_min_szunet', 'zene_kesleltetes', 'zene_leall_elotte', 'reggeli_zene', 'reggeli_zene_tol', 'keveres', 'elhalkitas', 'atusztatas_be', 'atusztatas', 'zene_hangero', 'zene_kihagyott_szunetek'], (p, valt) => el('div', {},
           kapcsolo(p, 'zene_szunetben', 'Szünetzene automatikusan a szünetekben', '', valt),
           el('div', { class: 'mezok ket' }, szam(p, 'zene_min_szunet', 'Legrövidebb zenés szünet', 0, 60, 1, 'perc', valt),
             szam(p, 'zene_kesleltetes', 'Indulás a kicsengetés után', 0, 600, 1, 'mp', valt),
             szam(p, 'zene_leall_elotte', 'Leállás a jelző/becsengő előtt', 0, 600, 1, 'mp', valt),
             szam(p, 'zene_hangero', 'Hangerő', 0, 100, 1, '%', valt),
             szam(p, 'elhalkitas', 'Elhalkítás leállításkor', 0, 15, 0.5, 'mp', valt),
-            szam(p, 'atusztatas', 'Átúsztatás a számok között', 0, 15, 0.5, 'mp', valt)),
+            szam(p, 'atusztatas', 'Átúsztatás hossza', 0, 12, 0.5, 'mp', valt)),
+          kapcsolo(p, 'atusztatas_be', 'DJ-keverés: átúsztatás a számok között, a csend levágásával', 'Egyenlő teljesítményű átúsztatás; a csengő ettől nem csúszik.', valt),
           el('label', { text: 'Ezekben a szünetekben ne legyen zene' }),
           el('div', { class: 'gombsor' }, Array.from({ length: 10 }, (_, sz) => {
             const c = el('input', { type: 'checkbox', checked: p.zene_kihagyott_szunetek.includes(sz) });

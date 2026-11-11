@@ -9,6 +9,7 @@ __lazy_modules__ = [
     "pathlib",
     "PySide6.QtCore",
     "kozgaz_fm",
+    "kozgaz_fm.atuszas",
     "kozgaz_fm.beallitasok",
     "kozgaz_fm.bemondo",
     "kozgaz_fm.ertesites",
@@ -44,6 +45,7 @@ from PySide6.QtCore import QObject, QTimer, Signal
 from PySide6.QtMultimedia import QMediaDevices
 
 from kozgaz_fm import __version__, dalszoveg, hatter, kert_mentes, sajat_hangok, youtube
+from kozgaz_fm.atuszas import CsendTar
 from kozgaz_fm.beallitasok import (
     Beallitasok,
     Bemondas,
@@ -114,6 +116,7 @@ class Vezerlo(QObject):
         self.zene = ZeneLejatszo(self)
         self.kiegyenlito = Kiegyenlito(self)
         self.zene.kiegyenlito = self.kiegyenlito
+        self.zene.csend_tar = CsendTar()
         self.kiegyenlito.mert.connect(self.zene.mert_jott)
         self.bemondo = Bemondo(self)
         self.stat = self._statisztika_nyit()
@@ -352,6 +355,7 @@ class Vezerlo(QObject):
         self.zene.gyorsitotar = b.youtube_gyorsitotar
         self.zene.elhalkitas_mp = b.elhalkitas
         self.zene.atusztatas_mp = b.atusztatas
+        self.zene.atusztatas_be = b.atusztatas_be
         self.zene.hangero(b.zene_hangero)
         self.zene.spotify_eszkoz = b.spotify_eszkoz
         self.kiegyenlito.bekapcsolva = b.hangero_kiegyenlites
@@ -568,7 +572,7 @@ class Vezerlo(QObject):
         elif e.tipus is Tipus.RENDKIVULI and e.rendkivuli:
             if self.zene.szol:
                 self._auto_zene = False
-                self.zene.megallit(elhalkitas=False)
+                self.zene.megallit(elhalkitas=False, gyors=True)
             self.csengetes(e.rendkivuli.hang, e.leiras, tervezett=e.ido, tipus=e.tipus.name.lower())
         elif e.tipus is Tipus.ZENE_INDUL:
             self._musor_kezi = False
@@ -590,7 +594,7 @@ class Vezerlo(QObject):
         elif e.tipus in (Tipus.JELZO, Tipus.BECSENGO):
             if self.zene.szol:
                 self._auto_zene = False
-                self.zene.megallit(elhalkitas=False)
+                self.zene.megallit(elhalkitas=False, gyors=True)
             hang = self.b.hang_jelzo if e.tipus is Tipus.JELZO else self.b.hang_becsengo
             self.csengetes(hang, e.leiras, e.hangero, tervezett=e.ido, tipus=e.tipus.name.lower())
         elif e.tipus is Tipus.KICSENGO:
@@ -667,7 +671,7 @@ class Vezerlo(QObject):
         self.riasztas = True
         self._auto_riado = False
         self._auto_zene = False
-        self.zene.megallit(elhalkitas=False)
+        self.zene.megallit(elhalkitas=False, gyors=True)
         self.log("RIASZTÁS ELINDÍTVA")
         self.ertesito.kuld("riasztas", "Riasztás indult", f"{datetime.now():%H:%M}-kor elindult a riasztás a "
                            "Közgáz FM-en.", "hiba", ismetles_mp=60)

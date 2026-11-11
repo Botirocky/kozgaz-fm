@@ -81,9 +81,9 @@ def kimenet_ertelmez(kimenet: str) -> tuple[float, float]:
     return _szam(i[-1]), _szam(csucs[-1]) if csucs else 0.0
 
 
-def _parancs(program: str, ut: Path) -> tuple[list[str], dict]:
+def _parancs(program: str, ut: Path, szuro: str = "ebur128=peak=true") -> tuple[list[str], dict]:
     parancs = [program, "-nostdin", "-hide_banner", "-nostats", "-i", str(ut), "-vn", "-sn",
-               "-af", "ebur128=peak=true", "-f", "null", "-"]
+               "-af", szuro, "-f", "null", "-"]
     if sys.platform == "win32":
         return parancs, {"creationflags": getattr(subprocess, "CREATE_NO_WINDOW", 0)
                          | getattr(subprocess, "BELOW_NORMAL_PRIORITY_CLASS", 0)}

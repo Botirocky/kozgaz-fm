@@ -157,17 +157,24 @@ class ZeneOldal(Oldal):
             ("A következő csengő előtt ennyivel áll le:", QSpinBox(minimum=0, maximum=600, suffix=" mp"),
              "zene_leall_elotte"),
             ("Elhalkítás hossza:", QDoubleSpinBox(minimum=0, maximum=15, singleStep=0.5, suffix=" mp"), "elhalkitas"),
-            ("Átúsztatás a számok között:", QDoubleSpinBox(minimum=0, maximum=12, singleStep=0.5, suffix=" mp",
+            ("Átúsztatás hossza:", QDoubleSpinBox(minimum=0, maximum=12, singleStep=0.5, suffix=" mp",
                                                           specialValueText="nincs"),
              "atusztatas"),
         ]
+        atuszas = kapcsolo("DJ-keverés: a számok átúsztatása, a csend levágásával", b.atusztatas_be,
+                           "Egyenlő teljesítményű átúsztatás; a csengő ettől nem csúszik")
+        atuszas.toggled.connect(lambda e: self._allit("atusztatas_be", e))
         for i, (felirat, mezo, nev) in enumerate(mezok):
             mezo.setValue(getattr(b, nev))
             mezo.valueChanged.connect(lambda e, n=nev: self._allit(n, e))
+            if nev == "atusztatas":
+                mezo.setEnabled(b.atusztatas_be)
+                atuszas.toggled.connect(mezo.setEnabled)
             racs.addWidget(cimke(felirat, sortores=True), i, 0)
             racs.addWidget(mezo, i, 1)
         racs.setColumnStretch(0, 1)
         k.add(auto)
+        k.add(atuszas)
         k.add(racs)
         k.add(cimke("Ezekben a szünetekben ne legyen zene:", sortores=True))
         kihagy = []

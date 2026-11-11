@@ -15,7 +15,10 @@ final class ZeneLejatszo
     private Animacio $animacio;
     private Animacio $kifutoAnimacio;
     private float $erosites = 1.0;
-    private float $kifutoErosites = 1.0;
+    private float $kifutoAlap = 0.0;
+    private float $foAlap = 0.0;
+    private string $gorbe = '';
+    private array $csendProbalt = [];
 
     public ?array $forras = null;
     public array $szamok = [];
@@ -25,7 +28,8 @@ final class ZeneLejatszo
     public bool $gyorsitotar = true;
     public int $hangeroErtek = 60;
     public float $elhalkitasMp = 3.0;
-    public float $atusztatasMp = 4.0;
+    public float $atusztatasMp = 5.0;
+    public bool $atusztatasBe = true;
     public string $spotifyEszkoz = '';
     public ?string $spotifyClientId = null;
     private bool $halkitva = false;
@@ -63,8 +67,72 @@ final class ZeneLejatszo
         $this->kifuto = new Csoport('zene-b');
         $this->fo->aktival('zene');
         $this->kifuto->aktival('zene');
-        $this->animacio = new Animacio(fn(float $v) => $this->fo->hangero(self::szint($v, $this->erosites)));
-        $this->kifutoAnimacio = new Animacio(fn(float $v) => $this->kifuto->hangero(self::szint($v, $this->kifutoErosites)));
+        $this->animacio = new Animacio(fn(float $v) => $this->foSzint($v));
+        $this->kifutoAnimacio = new Animacio(fn(float $v) => $this->kifutoSzint($v));
+    }
+
+    private function foSzint(float $v): void
+    {
+        $this->fo->hangero(match ($this->gorbe) {
+            'be' => self::szint($this->celHangero(), $this->erosites) * Atuszas::gorbeBe($v),
+            'ki' => $this->foAlap * Atuszas::gorbeKi($v),
+            default => self::szint($v, $this->erosites),
+        });
+    }
+
+    private function kifutoSzint(float $v): void
+    {
+        $this->kifuto->hangero($this->kifutoAlap * Atuszas::gorbeKi($v));
+    }
+
+    private function csendMp(?string $ut): array
+    {
+        return $this->atusztatasBe ? Atuszas::csendMp($ut) : [0.0, 0.0];
+    }
+
+    private function csendElore(): void
+    {
+        if (!$this->atusztatasBe || !$this->szamok) {
+            return;
+        }
+        for ($i = 0; $i < 3; $i++) {
+            $ut = $this->szamok[($this->index + $i) % count($this->szamok)]->helyi;
+            if ($ut === null || isset($this->csendProbalt[$ut]) || Atuszas::keres($ut) !== null) {
+                continue;
+            }
+            $this->csendProbalt[$ut] = true;
+            $this->hatter->futtat('csend', ['ut' => $ut], null, null, 'csend', 300);
+        }
+    }
+
+    private function kifutoHalkit(float $mp): void
+    {
+        if (!$this->kifuto->szol()) {
+            return;
+        }
+        $this->kifutoAlap = $this->kifuto->amplitudo();
+        $this->kifutoAnimacio->indit(0.0, 1.0, $mp, function (): void {
+            $this->kifuto->allj();
+        });
+    }
+
+    private function atuszasIndit(float $mp): void
+    {
+        [$this->fo, $this->kifuto] = [$this->kifuto, $this->fo];
+        [$this->animacio, $this->kifutoAnimacio] = [
+            new Animacio(fn(float $v) => $this->foSzint($v)),
+            new Animacio(fn(float $v) => $this->kifutoSzint($v)),
+        ];
+        $this->kifutoHalkit($mp);
+    }
+
+    private function keziAtuszasMp(): float
+    {
+        $mp = min(Atuszas::hossz($this->atusztatasBe, $this->atusztatasMp), Atuszas::KEZI_ATUSZTATAS_MP);
+        if ($mp <= 0 || !$this->szol || $this->halkitva || $this->spotifyMod() || !$this->fo->szol() || $this->fo->szunetel()) {
+            return 0.0;
+        }
+        return $mp;
     }
 
     public static function szint(float $szazalek, float $erosites): float
@@ -467,7 +535,11 @@ final class ZeneLejatszo
         $this->mostCim = $szam->cim;
         $this->jel($this->szamValtozott, $szam->cim, $this->forrasNev());
         if ($szam->helyi) {
-            $this->forrastIndit($szam->helyi);
+            $mp = $this->keziAtuszasMp();
+            if ($mp > 0) {
+                $this->atuszasIndit($mp);
+            }
+            $this->forrastIndit($szam->helyi, $mp > 0 ? $mp : null);
         } else {
             $this->ideiglenesTakaritas($szam->yt);
             $meglevo = YouTube::gyorsitott($szam->yt, $this->ytMappa());
@@ -497,9 +569,10 @@ final class ZeneLejatszo
     private function forrastIndit(string $ut, ?float $beuszasMp = null): void
     {
         $this->animacio->allj();
+        $this->gorbe = '';
         $this->erosites = $this->kiegyenlito->szorzo($ut);
         $this->fo->hangero(0.0);
-        if (!$this->fo->betolt($ut)) {
+        if (!$this->fo->betolt($ut, false, $this->csendMp($ut)[0])) {
             $this->lejatszasiHiba('az mpv nem indult el');
             return;
         }
@@ -533,6 +606,7 @@ final class ZeneLejatszo
 
     private function eloreLetolt(): void
     {
+        $this->csendElore();
         if ($this->szamok) {
             for ($e = 3; $e >= 0; $e--) {
                 $this->kiegyenlito->kell($this->szamok[($this->index + $e) % count($this->szamok)]->helyi, true);
@@ -609,7 +683,13 @@ final class ZeneLejatszo
 
     private function beuszas(?float $hosszMp = null): void
     {
-        $this->animacio->indit(0.0, $this->celHangero(), $hosszMp ?? min($this->elhalkitasMp, 2.0));
+        if ($hosszMp !== null) {
+            $this->gorbe = 'be';
+            $this->animacio->indit(0.0, 1.0, $hosszMp);
+            return;
+        }
+        $this->gorbe = '';
+        $this->animacio->indit(0.0, $this->celHangero(), min($this->elhalkitasMp, 2.0));
     }
 
     private function celHangero(): float
@@ -644,6 +724,7 @@ final class ZeneLejatszo
             return;
         }
         $cel = $this->celHangero();
+        $this->gorbe = '';
         $this->animacio->indit(min(100.0, $cel * sqrt($regi / $uj)), $cel, 1.2);
     }
 
@@ -655,7 +736,7 @@ final class ZeneLejatszo
         }
     }
 
-    public function megallit(bool $elhalkitas = true, bool $kovetkezore = true): void
+    public function megallit(bool $elhalkitas = true, bool $kovetkezore = true, bool $gyors = false): void
     {
         if (!$this->szol) {
             return;
@@ -663,7 +744,13 @@ final class ZeneLejatszo
         $this->szol = false;
         $this->kesleltetettLepes = null;
         $this->jel($this->allapotValtozott, false);
-        $this->kifutoLeallit();
+        $halkul = $elhalkitas || $gyors;
+        $mp = $gyors ? Atuszas::CSENGO_ELHALKITAS_MP : $this->elhalkitasMp;
+        if ($halkul && !$this->spotifyMod()) {
+            $this->kifutoHalkit($mp);
+        } else {
+            $this->kifutoLeallit();
+        }
         if ($this->spotifyMod()) {
             $this->spotifyMegallit($elhalkitas);
             return;
@@ -679,8 +766,10 @@ final class ZeneLejatszo
                 $this->fo->szunet(true);
             }
         };
-        if ($elhalkitas && $this->fo->szol() && !$this->fo->szunetel()) {
-            $this->animacio->indit($this->celHangero(), 0.0, $this->elhalkitasMp, $vege);
+        if ($halkul && $this->fo->szol() && !$this->fo->szunetel()) {
+            $this->gorbe = 'ki';
+            $this->foAlap = $this->fo->amplitudo();
+            $this->animacio->indit(0.0, 1.0, $mp, $vege);
         } else {
             $this->animacio->allj();
             $vege();
@@ -897,7 +986,7 @@ final class ZeneLejatszo
         }
         $this->halkitva = $halkitva;
         if ($halkitva) {
-            $this->kifutoLeallit();
+            $this->kifutoHalkit(0.6);
         }
         if (!$this->szol) {
             return;
@@ -906,6 +995,7 @@ final class ZeneLejatszo
             $this->spotifyHivas('hangero', ['szazalek' => (int)round($this->celHangero())]);
             return;
         }
+        $this->gorbe = '';
         $this->animacio->indit($this->hangeroErtek * ($halkitva ? 1.0 : 0.25), $this->celHangero(), 0.6);
     }
 
@@ -960,13 +1050,17 @@ final class ZeneLejatszo
 
     private function atusztatasEllenoriz(): void
     {
-        if (!$this->szol || $this->halkitva || $this->atusztatasMp <= 0 || count($this->szamok) < 2 || !$this->fo->szol()) {
+        $atusztatas = Atuszas::hossz($this->atusztatasBe, $this->atusztatasMp);
+        if (!$this->szol || $this->halkitva || $atusztatas <= 0 || count($this->szamok) < 2 || !$this->fo->szol()) {
             return;
         }
         $hossz = $this->fo->hossz();
         $pozicio = $this->fo->pozicio();
-        $atusztatas = $this->atusztatasMp;
-        if ($hossz < $atusztatas * 3 || $hossz - $pozicio > $atusztatas || $this->kifuto->szol()) {
+        if ($hossz < $atusztatas * 3 || $this->kifuto->szol()) {
+            return;
+        }
+        $vegeCsend = $this->csendMp($this->szamok[$this->index % count($this->szamok)]->helyi)[1];
+        if ($pozicio < Atuszas::kezdetMp($hossz, $vegeCsend, $atusztatas)) {
             return;
         }
         $kovetkezo = ($this->index + 1) % count($this->szamok);
@@ -974,15 +1068,7 @@ final class ZeneLejatszo
         if (!$szam->helyi) {
             return;
         }
-        [$this->fo, $this->kifuto] = [$this->kifuto, $this->fo];
-        [$this->animacio, $this->kifutoAnimacio] = [
-            new Animacio(fn(float $v) => $this->fo->hangero(self::szint($v, $this->erosites))),
-            new Animacio(fn(float $v) => $this->kifuto->hangero(self::szint($v, $this->kifutoErosites))),
-        ];
-        $this->kifutoErosites = $this->erosites;
-        $this->kifutoAnimacio->indit($this->celHangero(), 0.0, $atusztatas, function (): void {
-            $this->kifuto->allj();
-        });
+        $this->atuszasIndit($atusztatas);
         $this->index = $kovetkezo;
         $voltKert = $szam->kert;
         if ($szam->kert) {
