@@ -166,6 +166,13 @@ F0 → F1 → F2 → F3 egy kiadási sorozatban (kb. 13 óra). Ezután döntés 
 9. **Régi PHP-közvetítő:** maradjon az elavult README-jelöléssel, vagy távolítsuk el a közvetítő-kódot (a `debian/` marad)?
 10. **Ingyenes keret:** ha a mérés szerint F1 után is szűk, vállalod-e a fizetős Workers csomagot (havi néhány dollár)?
 
+### Meghozott döntések (2026-11-11)
+
+- Saját domain: most nem; az iskolai próba dönt (ha a `workers.dev` szűrt, akkor F4).
+- Őrszem-értesítés: ntfy.sh.
+- Iskolai gép frissítése: automatikusan GitHubról.
+- A még nyitott döntések (Cloudflare-fiók átadása, Turnstile) az F1–F3 után.
+
 ## Bizonytalanságok
 
 - A `workers.dev` tiltása nem tesztelhető otthonról, csak az iskolai gépen.
