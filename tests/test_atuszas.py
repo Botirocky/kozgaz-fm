@@ -2,6 +2,7 @@ import math
 import subprocess
 import time
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -202,7 +203,7 @@ def zene(monkeypatch, tmp_path) -> Any:
 
 def inditasok(zene: ZeneLejatszo, monkeypatch) -> list:
     lista: list = []
-    monkeypatch.setattr(zene, "_forrast_indit", lambda url, ms=None: lista.append((url.toLocalFile(), ms)))
+    monkeypatch.setattr(zene, "_forrast_indit", lambda url, ms=None: lista.append((Path(url.toLocalFile()), ms)))
     return lista
 
 
@@ -211,7 +212,7 @@ def test_atuszas_a_vegi_csend_elott_indul(zene, monkeypatch):
     zene._pozicio(190_999)
     assert not lista and zene.lejatszo is zene.fo
     zene._pozicio(191_000)
-    assert lista == [(str(zene.szamok[1].helyi), 5000)]
+    assert lista == [(Path(zene.szamok[1].helyi), 5000)]
     assert zene.lejatszo is zene.ki and zene._kifuto is zene.fo and zene.index == 1
 
 
@@ -256,7 +257,7 @@ def test_kezi_valtas_rovid_atuszassal(zene, monkeypatch):
     lista = inditasok(zene, monkeypatch)
     zene._vedelem._ig = 0.0
     zene._jatszd(1)
-    assert lista == [(str(zene.szamok[1].helyi), int(atuszas.KEZI_ATUSZTATAS_MP * 1000))]
+    assert lista == [(Path(zene.szamok[1].helyi), int(atuszas.KEZI_ATUSZTATAS_MP * 1000))]
     assert zene.lejatszo is zene.ki and zene._kifuto is zene.fo
 
 
@@ -264,7 +265,7 @@ def test_kezi_valtas_allo_zenenel_nincs_atuszas(zene, monkeypatch):
     lista = inditasok(zene, monkeypatch)
     zene.fo.allapot = QMediaPlayer.PlaybackState.StoppedState
     zene._jatszd(1)
-    assert lista == [(str(zene.szamok[1].helyi), None)] and zene.lejatszo is zene.fo
+    assert lista == [(Path(zene.szamok[1].helyi), None)] and zene.lejatszo is zene.fo
 
 
 def test_csengo_gyors_leallitas_atuszas_kozben(zene, monkeypatch):
