@@ -124,6 +124,10 @@ POST /api/v1/zenekeres    {"szoveg": "Előadó – cím vagy YouTube-link", "nev
 A `POST` kéréshez `X-Kozgaz-FM: 1` fejléc kell. A kérés állapota a válaszban és a `GET` hívással követhető: `kereses`,
 `varakozik`, `elfogadva`, `szol`, `elutasitva` (az `ok` mezőben az indokkal).
 
+## Újdonságok az 1.19.2-ben
+
+- Csiszoltabb felület: jobb kontraszt, egységesebb betűsúlyok, lekerekítések és térközök az asztali appban, a webes panelen és a PHP-felületen.
+
 ## Újdonságok az 1.19.1-ben
 
 - DJ-szerű keverés: a számok egyenlő teljesítményű görbével úsznak át egymásba, a szám eleji és végi csend levágva.
