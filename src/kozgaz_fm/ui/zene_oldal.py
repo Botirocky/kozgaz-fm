@@ -184,7 +184,13 @@ class ZeneOldal(Oldal):
             pipa.toggled.connect(lambda _e: self._allit("zene_kihagyott_szunetek",
                                                         [i for i, p in enumerate(kihagy) if p.isChecked()]))
             kihagy.append(pipa)
-        k.add(sor(*kihagy, nyujt=True))
+        kihagy_racs = QGridLayout()
+        kihagy_racs.setHorizontalSpacing(16)
+        kihagy_racs.setVerticalSpacing(8)
+        for i, pipa in enumerate(kihagy):
+            kihagy_racs.addWidget(pipa, i // 5, i % 5)
+        kihagy_racs.setColumnStretch(5, 1)
+        k.add(kihagy_racs)
         k.add(sor(reggeli, reggel_ido, nyujt=True))
         k.add(keveres)
         gyors = kapcsolo("YouTube-számok előre letöltése", b.youtube_gyorsitotar,
@@ -223,8 +229,8 @@ class ZeneOldal(Oldal):
         leiras = cimke(
             "A Spotify vezérléséhez <b>Premium</b> fiók és a gépen futó Spotify alkalmazás kell. Egyszeri "
             "beállítás: <a href='https://developer.spotify.com/dashboard' style='color:" + SZIN["kek"] + "'>"
-            "developer.spotify.com/dashboard</a> → <i>Create app</i> → Redirect URI: <b>" + ATIRANYITAS +
-            "</b>, API: <i>Web API</i>. A kapott <b>Client ID</b>-t másold ide.", "halvany", sortores=True)
+            "developer.spotify.com/dashboard</a> → „Create app” → Redirect URI: <b>" + ATIRANYITAS +
+            "</b>, API: „Web API”. A kapott <b>Client ID</b>-t másold ide.", "halvany", sortores=True)
         leiras.setOpenExternalLinks(True)
         k.add(leiras)
         self.client_id = QLineEdit(b.spotify_client_id)

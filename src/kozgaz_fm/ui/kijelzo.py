@@ -38,7 +38,7 @@ class Kijelzo(QWidget):
         e.setSpacing(18)
         self.logo = cimke()
         self.cim = cimke(v.b.kijelzo_cim)
-        self.cim.setStyleSheet(f"font-size: 30pt; font-weight: 800; color: {SZIN['kek']};")
+        self.cim.setStyleSheet(f"font-size: 30pt; font-weight: 600; color: {SZIN['kek']};")
         self.datum = cimke()
         self.datum.setStyleSheet(f"font-size: 22pt; color: {SZIN['halvany']};")
         e.addLayout(sor(self.logo, self.cim, None, self.datum, terkoz=24))
@@ -60,13 +60,13 @@ class Kijelzo(QWidget):
         e.addStretch(1)
         self.zene = cimke()
         self.zene.setTextFormat(Qt.TextFormat.PlainText)
-        self.zene.setStyleSheet(f"font-size: 20pt; color: {SZIN['kiemelt']};")
+        self.zene.setStyleSheet(f"font-size: 20pt; color: {SZIN['elo_szin']};")
         self.kovetkezo = cimke()
         self.kovetkezo.setStyleSheet(f"font-size: 20pt; color: {SZIN['halvany']};")
         self.qr = cimke()
         self.qr_felirat = cimke("Kérj zenét!")
         self.qr_felirat.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.qr_felirat.setStyleSheet(f"font-size: 16pt; font-weight: 700; color: {SZIN['kiemelt']};")
+        self.qr_felirat.setStyleSheet(f"font-size: 16pt; font-weight: 600; color: {SZIN['elo_szin']};")
         qr_doboz = QVBoxLayout()
         qr_doboz.setSpacing(6)
         qr_doboz.addWidget(self.qr, 0, Qt.AlignmentFlag.AlignCenter)
@@ -85,8 +85,8 @@ class Kijelzo(QWidget):
     def _meretez(self) -> None:
         m = self.height() or 1080
         self.logo.setPixmap(logo_pixmap(max(80, m // 9)))
-        self.ora.setStyleSheet(f"font-size: {max(60, m // 6)}px; font-weight: 800; color: {SZIN['szoveg']};")
-        self.szakasz.setStyleSheet(f"font-size: {max(30, m // 16)}px; font-weight: 750; color: {SZIN['kiemelt']};")
+        self.ora.setStyleSheet(f"font-size: {max(60, m // 6)}px; font-weight: 600; color: {SZIN['szoveg']};")
+        self.szakasz.setStyleSheet(f"font-size: {max(30, m // 16)}px; font-weight: 600; color: {SZIN['elo_szin']};")
         self.hatra.setStyleSheet(f"font-size: {max(24, m // 22)}px; color: {SZIN['szoveg']};")
 
     def showEvent(self, esemeny) -> None:
